@@ -5,10 +5,12 @@
     getTime,
   } from 'date-fns'
 
-// import Layout from "./__layout.svelte";
+  // import Layout from "./__layout.svelte";
 
-  // import Messenger from "$lib/Messenger.svelte"
-  import Item from "$lib/Item.svelte"
+  import AddItem from "../components/AddItem.svelte"
+  import Item from "../components/Item.svelte"
+  import Messenger from "../components/Messenger.svelte"
+  import { message } from "../stores";
 
   let items = [];
 
@@ -25,11 +27,28 @@
       email: email,
       password: password,
     });
+    message.set('Successfully logged in.')
   };
 
   const logOut = async () => {
     const { error } = await supabase.auth.signOut();
+    message.set('Successfully logged out.')
   };
+
+  const addItems = (e) => {
+    const newItems = e.detail
+    newItems.forEach(item => {
+      item.time = time
+      items = [...items, item]
+    });
+  }
+
+  const removeItem = (e) => {
+    const index = items.findIndex((x) => x.id === e.detail.id)
+    if (index !== -1) {
+      items = [...items.slice(0, index), ...items.slice(index + 1)]
+    }
+  }
 
   const resetPwd = () => {
     console.log('resetting!')
@@ -54,10 +73,9 @@
 </script>
 
 <div class="decay mx-auto max-w-50rem text-white">
-  <!-- <Messenger /> -->
+  <Messenger />
   <div class="header">
     {#if $user}
-      Logged In {$user.id}!
       <button on:click={logOut} class="btn">Log Out</button>
     {:else}
       <form on:submit|preventDefault={logIn} class="form form--login">
@@ -88,8 +106,20 @@
     {/if}
   </div>
   {#if $user}
+    <div class="homebase">
+      <div class="panel">
+        <button class="btn">Search</button>
+        <button class="btn">Add Item</button>
+      </div>
+      <div class="add-item-menu">
+        <AddItem on:add={addItems} />
+      </div>
+      <div class="search-menu">
+        
+      </div>
+    </div>
     {#each items as item}
-      <Item item={item} time={time} />
+      <Item item={item} time={time} on:remove={removeItem} />
     {:else}
       <p>No items found</p>
     {/each}

@@ -1,9 +1,8 @@
 <script lang="ts">
   import { supabase, user } from "$lib/db";
-  import { onDestroy, onMount } from "svelte";
+  import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { slide } from 'svelte/transition';
-  import Flatpickr from 'svelte-flatpickr';
-	import 'flatpickr/dist/flatpickr.css';
+  import { message } from "../stores";
   import {
     formatDistanceToNowStrict,
     getTime,
@@ -27,21 +26,46 @@
     subHours,
     subMinutes,
   } from 'date-fns'
-  
-  import { message } from "../stores"
 
   export let item
   export let time
 
   let itemElement
+  let menuVisible = true
+
+  const dispatch = createEventDispatcher();
 
   const getLifespan = (startTime, endTime) => {
     return getTime(new Date(endTime)) - getTime(new Date(startTime))
   }
   const getTimeElapsed = (startTime) => {
+    // console.log(`running getTimeElapsed :: time is ${time}`)
     return time - getTime(new Date(startTime))
   }
-  const timeBar = () => {
+  const removeItem = async() => {
+    const { data, error } = await supabase
+      .from('items')
+      .delete()
+      .match({ id: item.id })
+    if (error) {
+      // console.log('error', error)
+      return
+    }
+    if (data) {
+      if (data[0] && data[0].imagePath) {
+        const fromPath = `${$user.id}/${data[0].imagePath}`
+        // Ideally, this should be done behind the scenes or in a housekeeping like fashion // Worked
+        await supabase
+          .storage
+          .from('Decay')
+          .remove([fromPath])
+      }
+      // if (editingItem.value === true) enableEditing()
+      dispatch('remove', item)
+      message.set('Item successfully deleted.')
+    }
+  }
+  const getTimeBar = () => {
     let timeElapsed = getTimeElapsed(item.startTime)
     let lifespan = getLifespan(item.startTime, item.endTime)
     let timeLeft = lifespan - timeElapsed
@@ -49,29 +73,36 @@
       return 'transform: translateX(-100%)'
     }
     else {
-      const percentLeft = `-${(timeElapsed / lifespan) * 100}%`
-      const percentLeftCSS = `transform: translateX(${percentLeft})`
+      let percentLeft = `-${(timeElapsed / lifespan) * 100}%`
+      let percentLeftCSS = `transform: translateX(${percentLeft})`
       return percentLeftCSS
     }
   }
-  const timeRemainder = () => {
+  const getTimeRemainder = () => {
     let timeElapsed = getTimeElapsed(item.startTime)
     let lifespan = getLifespan(item.startTime, item.endTime)
     if (timeElapsed > lifespan) {
       return 'Expired'
     }
     else {
-      const timeRemaining = lifespan - timeElapsed + time
-      const timeReported = formatDistanceToNowStrict(timeRemaining)
+      // console.log(`running timeRemainder :: time is ${time}`)
+      let timeRemaining = lifespan - timeElapsed + time
+      let timeReported = formatDistanceToNowStrict(timeRemaining)
       return timeReported
     }
   }
+  let timeBar = getTimeBar()
+  let timeRemainder = getTimeRemainder()
   const getItemImage = async (path) => {
     const { data, error } = await supabase
       .storage
       .from('Decay')
       .download(path)
-      if (data) return URL.createObjectURL(data)
+    if (data) return URL.createObjectURL(data)
+    if (error) {
+      console.log(error)
+      console.log(path)
+    }
   }
   const io = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
@@ -100,8 +131,34 @@
       return false
     }
   }
+
+  const deleteImage = async() => {
+    if (item.imagePath && $user.id) {
+      const fromPath = `${$user.id}/${item.imagePath}`
+      const { data, error } = await supabase
+        .storage
+        .from('Decay')
+        .remove([fromPath])
+      if (error) {
+        // console.log(error)
+      }
+      if (data && data.length > 0) {
+        // Edit item to remove imagePath
+        const { error } = await supabase
+          .from('items')
+          .update({ imagePath: null })
+          .match({ id: item.id })
+        item.imagePath = null
+        if (error) {
+          // console.log('error', error)
+          return
+        }
+        else message.set('Successfully deleted item image.')
+      }
+    }
+  }
+
   const updateItem = async () => {
-    
     const { data, error } = await supabase
       .from('items')
       .update({
@@ -123,21 +180,60 @@
       editedName = data[0].name
       pickerStart = new Date(data[0].startTime)
       pickerEnd = new Date(data[0].endTime)
-      // editItem.name = data[0].name
       // editItem.category = data[0].category
-      // editItem.startTime = data[0].startTime
-      // editItem.endTime = data[0].endTime
       updateEndTimeRelativity()
-      // enableEditing()
+      menuVisible = false
+      message.set('Item updated.')
       // toast.push('Item updated.')
     }
   }
 
-  // Flatpickr
-  // const options = {
-	// 	enableTime: true,
-	// 	onChange: (selectedDates, dateStr, instance) => { console.log('flatpickr hook', selectedDates, dateStr); }
-	// }
+  let confirmDelete = false
+
+  let fileInput
+  let file
+  let itemImagePreview
+  const addImage = async() => {
+    if (file) {
+      const { data, error } = await supabase
+        .storage
+        .from('Decay')
+        .upload(`${$user.id}/${item.id}`, file)
+      if (error) {
+        console.log('error below:')
+        console.log(error)
+      }
+      if (data.Key) {
+        const { error } = await supabase
+          .from('items')
+          .update({ imagePath: item.id })
+          .match({ id : item.id })
+        if (error) {
+          console.log('error', error)
+          return
+        }
+        file = null
+        fileInput = null
+        itemImagePreview = null
+        message.set('Successfully added image to item.')
+        item.imagePath = `${item.id}`
+        // getItemImage(`${$user.id}/${item.id}`)
+      }
+    }
+    
+  }
+  const analyzeFile = () => {
+    file = fileInput.files[0]
+    if (file) {
+      itemImagePreview = URL.createObjectURL(file)
+      // newItemImagePreview = URL.createObjectURL(file)
+      // console.log(newItem.image)
+    }
+    else {
+      itemImagePreview = null
+      // newItemImagePreview = null
+    }
+  }
 
   let editedName = item.name
   let pickerStart = new Date(item.startTime)
@@ -145,31 +241,6 @@
 
   let datetimeStart = format(new Date(item.startTime), 'yyyy-MM-dd\'T\'HH:mm')
   let datetimeEnd = format(new Date(item.endTime), 'yyyy-MM-dd\'T\'HH:mm')
-
-  const flatpickrStarttimeOptions = {
-    dateFormat: "l, F J, Y h:iK",
-    element: `#edit-${item.id}--starttime-picker`,
-    enableTime: true,
-    onChange: (selectedDates, dateStr, instance) => { 
-      // console.log('flatpickr starttime hook', selectedDates, dateStr);
-      pickerStart = selectedDates[0]
-      // Update relative time inputs
-      updateEndTimeRelativity()
-      checkUpdateValidity()
-    }
-  };
-  const flatpickrEndtimeOptions = {
-    dateFormat: "l, F J, Y h:iK",
-    element: `#edit-${item.id}--endtime-picker`,
-    enableTime: true,
-    onChange: (selectedDates, dateStr, instance) => { 
-      // console.log('flatpickr endtime hook', selectedDates, dateStr);
-      pickerEnd = selectedDates[0]
-      // Update relative time inputs
-      updateEndTimeRelativity()
-    }
-  };
-  // function handleChange(selectedDates, dateStr, instance) {}
 
   const endRelatively = {
     years: null,
@@ -181,7 +252,6 @@
   }
 
   const updateEndTimeRelatively = () => {
-    // let adjTime = new Date(item.startTime)
     if (datetimeEnd) {
       let adjTime = new Date(datetimeStart)
       if (endRelatively.years)
@@ -194,16 +264,14 @@
         adjTime = addDays(adjTime, endRelatively.days)
       if (endRelatively.hours)
         adjTime = addHours(adjTime, endRelatively.hours)
-      if (endRelatively.days)
+      if (endRelatively.minutes)
         adjTime = addMinutes(adjTime, endRelatively.minutes)
         datetimeEnd = format(new Date(adjTime), 'yyyy-MM-dd\'T\'HH:mm')
     }
-    // checkUpdateValidity()
+    checkUpdateValidity()
   }
 
   const updateEndTimeRelativity = () => {
-    // let endTime = new Date(item.endTime)
-    // const startTime = new Date(item.startTime)
     const startTime = new Date(datetimeStart)
     if (datetimeEnd) {
       let endTime = new Date(datetimeEnd)
@@ -245,8 +313,8 @@
   // Reactivity to Time
   $: {
     if (time) {
-      timeBar()
-      timeRemainder()
+      timeBar = getTimeBar()
+      timeRemainder = getTimeRemainder()
     }
   }
 </script>
@@ -265,77 +333,65 @@
               class="item-image"
             >
           {/await}
+          {#if menuVisible}
+            <button class="btn leading-tight negative mt-4" on:click="{deleteImage}">
+              Delete image
+            </button>
+          {/if}
         {:else}
           <div class="image-upload-region">
-            <!-- <img v-if="uploadReady === true" ref="itemImage" :src="itemImagePreview" alt="" /> -->
+            {#if itemImagePreview}
+              <img v-if="uploadReady === true" src="{itemImagePreview}" alt="" />
+              <button class="btn my-4 w-full" on:click="{addImage}">
+                Save
+              </button>
+            {/if}
             <div class="file-input-region overflow-hidden">
               <div class="form-field">
-                <!-- <label :for="`edit-${item.id}--image`">Choose</label> -->
                 <input
+                  bind:this={fileInput}
+                  id="new-item--file"
                   type="file"
                   accept="image/*"
                   class="file-input"
                   capture
-                />
+                  on:change="{analyzeFile}"
+                >
               </div>
             </div>
-            <!-- <button v-show="uploadReady === true" :disabled="uploadReady === false" @click="addImage">
-              Save
-            </button> -->
+
           </div>
         {/if}
       </div>
     </div>
     <div class="item__main">
       <div class="item__main-wrapper">
-        <div class="item-title-area grid gap-8">
+        <div class="item-title-area grid gap-8 pb-4">
           <div class="item-title">
             {item.name}
           </div>
           <aside>
-            <button class="btn">
+            <button class="btn" on:click="{() => menuVisible = !menuVisible}">
               Menu
             </button>
           </aside>
         </div>
         <div class="item-menu-wrapper">
-          <div transition:slide class="item-menu py-4">
-            <div class="menu-area">
-              <div class="area area--name">
-                <div class="form-field grid gap-4 mb-2">
-                  <label for="edit-{item.id}--name">Change Item Name</label>
-                  <input type="text" id="edit-{item.id}--name" class="bg-black p-1 text-white" bind:value="{editedName}" />
-                </div>
-              </div>
-              <div class="area area--start-time">
-                <div class="form-field grid gap-4 mb-2">
-                  <label for="">Start Time</label>
-                  <div class="relative">
-                    <input
-                      bind:value="{datetimeStart}"
-                      type="datetime-local"
-                      pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
-                      required
-                      style="background-color: white; color: black;"
-                      class="w-full"
-                      on:change="{updateEndTimeRelativity}"
-                    >
-                    <Flatpickr options="{ flatpickrStarttimeOptions }" bind:value={pickerStart} element="#edit-{item.id}--starttime-picker">
-                      <div class="flatpickr" id="edit-{item.id}--starttime-picker">
-                        <input type="text" placeholder="Select Date.." data-input class="bg-black p-1 text-white w-full">
-                        <button class="input-button" title="clear" data-clear>
-                          <i class="icon-close"></i>
-                        </button>
-                      </div>
-                    </Flatpickr>
+          {#if menuVisible}
+            <div transition:slide class="item-menu pb-4">
+              <div class="menu-area">
+                <div class="area area--name">
+                  <div class="form-field grid gap-4 mb-2">
+                    <label for="edit-{item.id}--name">Change Item Name</label>
+                    <input type="text" id="edit-{item.id}--name" class="bg-black p-1 text-white" bind:value="{editedName}" />
                   </div>
                 </div>
-                <div class="area area--end-time">
+                <div class="area area--start-time">
                   <div class="form-field grid gap-4 mb-2">
-                    <label for="">End Time</label>
+                    <label for="">Start Time</label>
                     <div class="relative">
                       <input
-                        bind:value="{datetimeEnd}"
+                        bind:value="{datetimeStart}"
                         type="datetime-local"
                         pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
                         required
@@ -343,79 +399,87 @@
                         class="w-full"
                         on:change="{updateEndTimeRelativity}"
                       >
-                      <Flatpickr options="{ flatpickrEndtimeOptions }" bind:value={pickerEnd} element="#edit-{item.id}--endtime-picker">
-                        <div class="flatpickr" id="edit-{item.id}--endtime-picker">
-                          <input type="text" placeholder="Select Date.." data-input class="bg-black p-1 text-white w-full">
-                          <button class="input-button" title="clear" data-clear>
-                            <i class="icon-close"></i>
-                          </button>
-                        </div>
-                      </Flatpickr>
                     </div>
                   </div>
-                </div>
-                <div class="area area--end-time mb-2">
-                  <form>
-                    <fieldset>
-                      <div class="unit-form-fields">
-                        <div class="form-field grid gap-4 mb-2">
-                          <label for="edit-{item.id}--endtime-years">Years</label>
-                          <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-years" bind:value="{endRelatively.years}" on:input="{updateEndTimeRelatively}" />
-                        </div>
-                        <div class="form-field grid gap-4 mb-2">
-                          <label for="edit-{item.id}--endtime-months">Months</label>
-                          <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-months" bind:value="{endRelatively.months}" on:input="{updateEndTimeRelatively}" />
-                        </div>
-                        <div class="form-field grid gap-4 mb-2">
-                          <label for="edit-{item.id}--endtime-weeks">Weeks</label>
-                          <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-weeks" bind:value="{endRelatively.weeks}" on:input="{updateEndTimeRelatively}" />
-                        </div>
-                        <div class="form-field grid gap-4 mb-2">
-                          <label for="edit-{item.id}--endtime-days">Days</label>
-                          <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-days" bind:value="{endRelatively.days}" on:input="{updateEndTimeRelatively}" />
-                        </div>
-                        <div class="form-field grid gap-4 mb-2">
-                          <label for="edit-{item.id}--endtime-hours">Hours</label>
-                          <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-hours" bind:value="{endRelatively.hours}" on:input="{updateEndTimeRelatively}" />
-                        </div>
-                        <div class="form-field grid gap-4 mb-2">
-                          <label for="edit-{item.id}--endtime-minutes">Minutes</label>
-                          <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-minutes" bind:value="{endRelatively.minutes}" on:input="{updateEndTimeRelatively}" />
-                        </div>
+                  <div class="area area--end-time">
+                    <div class="form-field grid gap-4 mb-2">
+                      <label for="">End Time</label>
+                      <div class="relative">
+                        <input
+                          bind:value="{datetimeEnd}"
+                          type="datetime-local"
+                          pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
+                          required
+                          style="background-color: white; color: black;"
+                          class="w-full"
+                          on:change="{updateEndTimeRelativity}"
+                        >
                       </div>
-                    </fieldset>
-                  </form>
-                </div>
-                {#if !updateValid}
-                  <div class="py-2">Invalid</div>
-                {/if}
-                <div class="area area--remove">
-                  <button type="button" class="btn edit-item" on:click="{updateItem}" disabled="{!updateValid}">
-                    Update Item
-                  </button>
-                  <button type="button" class="btn remove-item mx-2 negative">
-                    Delete Item
-                  </button>
-                  <div>
-                    Delete this item?
-                    <button class="negative">
-                      Yes
+                    </div>
+                  </div>
+                  <div class="area area--end-time mb-2">
+                    <form>
+                      <fieldset>
+                        <div class="unit-form-fields">
+                          <div class="form-field grid gap-4 mb-2">
+                            <label for="edit-{item.id}--endtime-years">Years</label>
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-years" bind:value="{endRelatively.years}" on:input="{updateEndTimeRelatively}" />
+                          </div>
+                          <div class="form-field grid gap-4 mb-2">
+                            <label for="edit-{item.id}--endtime-months">Months</label>
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-months" bind:value="{endRelatively.months}" on:input="{updateEndTimeRelatively}" />
+                          </div>
+                          <div class="form-field grid gap-4 mb-2">
+                            <label for="edit-{item.id}--endtime-weeks">Weeks</label>
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-weeks" bind:value="{endRelatively.weeks}" on:input="{updateEndTimeRelatively}" />
+                          </div>
+                          <div class="form-field grid gap-4 mb-2">
+                            <label for="edit-{item.id}--endtime-days">Days</label>
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-days" bind:value="{endRelatively.days}" on:input="{updateEndTimeRelatively}" />
+                          </div>
+                          <div class="form-field grid gap-4 mb-2">
+                            <label for="edit-{item.id}--endtime-hours">Hours</label>
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-hours" bind:value="{endRelatively.hours}" on:input="{updateEndTimeRelatively}" />
+                          </div>
+                          <div class="form-field grid gap-4 mb-2">
+                            <label for="edit-{item.id}--endtime-minutes">Minutes</label>
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-minutes" bind:value="{endRelatively.minutes}" on:input="{updateEndTimeRelatively}" />
+                          </div>
+                        </div>
+                      </fieldset>
+                    </form>
+                  </div>
+                  {#if !updateValid}
+                    <div class="py-2">Invalid</div>
+                  {/if}
+                  <div class="area area--remove">
+                    <button type="button" class="btn edit-item" on:click="{updateItem}" disabled="{!updateValid}">
+                      Update Item
                     </button>
-                    <button class="mx-2">
-                      No
+                    <button type="button" class="btn remove-item mx-2 negative">
+                      Delete Item
                     </button>
+                    <div class="mt-4">
+                      Delete this item?
+                      <button class="btn negative" on:click="{removeItem}">
+                        Yes
+                      </button>
+                      <button class="btn mx-2">
+                        No
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          {/if}
         </div>
       </div>
       <div class="timer">
         <div class="timer__bar">
-          <div class="measure" style="{ timeBar() }"></div>
+          <div class="measure" style="{ timeBar }"></div>
           <div class="timer__remainder">
-            { timeRemainder() }
+            { timeRemainder }
           </div>
         </div>
       </div>
@@ -442,10 +506,6 @@
   }
   .unset .item-image {
     opacity: 0;
-  }
-  .flatpickr-input {
-    background-color: black;
-    color: white;
   }
   /* Refactor This Copy Pasta Below: */
   .item__main {

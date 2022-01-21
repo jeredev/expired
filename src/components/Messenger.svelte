@@ -1,30 +1,30 @@
 <script>
   import { onDestroy, onMount } from "svelte";
-  // import { message } from "../stores"
+  import { message } from '../stores';
 
-  // const dispatch = createEventDispatcher();
-
-  let active = true
+  let active = false
   const duration = 2500
-  // let message
   let timeBomb
+  let text
 
-  const transmitMessage = (e) => {
-    console.log(`transmitting`)
+  const transmitMessage = () => {
     active = true
-    // message = e.message
     if (timeBomb) window.clearTimeout(timeBomb)
     timeBomb = window.setTimeout(() => {
       active = false
+      message.set(null)
     }, duration)
   }
 
   message.subscribe(value => {
-    console.log(value)
+    if (value) {
+      text = value
+      transmitMessage()
+    }
   })
   
   onMount(() => {
-    // emitter.on('transmitMessage', transmitMessage)
+
   });
   onDestroy(() => {
     if (timeBomb) window.clearTimeout(timeBomb)
@@ -35,8 +35,7 @@
 
 <div class="message" class:active>
   <div class="text">
-    <!-- { message }  -->
-    <button on:click="{transmit}">Transmit</button>
+    { text } 
   </div>
   <div class="elapser">
     <div class="measure"></div>
