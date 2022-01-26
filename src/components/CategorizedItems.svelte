@@ -1,9 +1,13 @@
 <script>
   import Item from "../components/Item.svelte"
   import Icon from '@iconify/svelte'
+  import { slide } from 'svelte/transition';
+
+  let itemsVisible = true
 
   export let items
   export let categories
+  export let category
   export let time
 
   const removeItem = (e) => {
@@ -17,19 +21,27 @@
 <div class="grouping">
   <div class="category bg-red-800 gap-2 grid p-2">
     <div class="category__name">
-      {category.name}
+      {#if category.name}
+        {category.name}
+      {:else}
+        Uncategorized
+      {/if}
     </div>
     <div class="category__panel">
-      <button>
-        <Icon icon="clarity:plus-line" />
-      </button>
+      {#if items.length}
+        <button on:click={() => { itemsVisible = !itemsVisible }}>
+          <Icon icon="clarity:plus-line" />
+        </button>
+      {/if}
     </div>
   </div>
-  <div class="items-list">
-    {#each items as item}
-      <Item item={item} time={time} categories={categories} on:remove={removeItem} />
-    {/each}
-  </div>
+  {#if itemsVisible}
+    <div transition:slide class="items-list">
+      {#each items as item}
+        <Item item={item} time={time} categories={categories} on:remove={removeItem} />
+      {/each}
+    </div>
+  {/if}
 </div>
 
 <style>

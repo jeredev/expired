@@ -9,6 +9,7 @@
   // import Layout from "./__layout.svelte";
 
   import AddItem from "../components/AddItem.svelte"
+  import CategorizedItems from "../components/CategorizedItems.svelte"
   import Item from "../components/Item.svelte"
   import Messenger from "../components/Messenger.svelte"
   import { message } from "../stores";
@@ -221,7 +222,6 @@
     categories = await getCategories()
     if (categories) {
       categories.forEach((category) => {
-        // category.items = []
         category.items = items.filter((item) => {
           if (item.category?.id === category.id) {
             return true
@@ -323,7 +323,8 @@
         <div class="items-listing">
           {#if categorized}
             {#each categories as category}
-              <div class="grouping">
+              <CategorizedItems categories={categories} category={category} time={time} items={category.items} />
+              <!-- <div class="grouping">
                 <div class="category bg-red-800 gap-2 grid p-2">
                   <div class="category__name">
                     {category.name}
@@ -339,10 +340,11 @@
                     <Item item={item} time={time} categories={categories} on:remove={removeItem} />
                   {/each}
                 </div>
-              </div>
+              </div> -->
             {/each}
             {#if uncategorizedItems}
-              <div class="grouping">
+              <CategorizedItems categories={categories} category=null time={time} items={uncategorizedItems} />
+              <!-- <div class="grouping">
                 <div class="category bg-red-800 gap-2 grid p-2">
                   <div class="category__name">
                     Uncategorized
@@ -358,7 +360,7 @@
                     <Item item={item} time={time} categories={categories} on:remove={removeItem} />
                   {/each}
                 </div>
-              </div>
+              </div> -->
             {/if}
           {:else}
           {#each items as item}

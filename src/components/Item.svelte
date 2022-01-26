@@ -55,7 +55,7 @@
   }
 
   let itemElement
-  let menuVisible = true
+  let menuVisible = false
 
   const dispatch = createEventDispatcher();
 
@@ -116,6 +116,7 @@
   let timeBar = getTimeBar()
   let timeRemainder = getTimeRemainder()
   const getItemImage = async (path) => {
+    console.log('getItemImage :: fetching from supabase')
     const { data, error } = await supabase
       .storage
       .from('Decay')
@@ -130,7 +131,7 @@
     const imagePath = $user.id + "/" + item.imagePath
     item.image = await getItemImage(imagePath)
   }
-  if (item.imagePath) {
+  if (item.imagePath && !item.image) {
     buildItemImage(item.imagePath)
   }
   const io = new IntersectionObserver((entries) => {
