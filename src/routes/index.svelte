@@ -12,6 +12,7 @@
   import Item from "../components/Item.svelte"
   import Messenger from "../components/Messenger.svelte"
   import { message } from "../stores";
+  // import ja from "date-fns/locale/ja";
 
   let allItems = []
   let items = []
