@@ -250,21 +250,21 @@
             autocomplete="email"
             placeholder="Email address"
             required
-            class="bg-black text-white p-2"
+            class="bg-black text-white p-2 w-full"
           >
           <input
             bind:value="{password}"
             type="password" 
             autocomplete="current-password" 
             placeholder="Password"
-            class="bg-black text-white p-2"
-          >
-          <button on:click={resetPwd} type="button" class="btn">
-            Reset
-          </button>
+            class="bg-black text-white my-2 p-2 w-full"
+          > 
           <button type="submit" class="btn">
             Login
           </button>
+          <!-- <button on:click={resetPwd} type="button" class="btn">
+            Reset
+          </button> -->
         </div>
       </form>
     {/if}
@@ -371,7 +371,7 @@
       {/if}
     </div>
   {:else}
-    Please log in.
+    <div class="py-4">Authorized users only.</div>
   {/if}
 </div>
 
@@ -382,5 +382,15 @@
     position: sticky;
     top: 0;
     z-index: 2;
+  }
+  @media only all and (min-width: 40em) {
+    .login-form-fields {
+      display: grid;
+      grid-gap: 1rem;
+      grid-template-columns: 1fr 1fr min-content;
+    }
+    .login-form-fields input[type="password"] {
+      margin: 0;
+    }
   }
 </style>
