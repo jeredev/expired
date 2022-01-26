@@ -26,14 +26,36 @@
     subHours,
     subMinutes,
   } from 'date-fns'
-// import ja from "date-fns/locale/ja";
 
   export let categories
   export let item
   export let time
 
+  item.edits = {
+    name: item.name,
+    category: {},
+    startTime: format(new Date(item.startTime), 'yyyy-MM-dd\'T\'HH:mm'),
+    endTime: format(new Date(item.endTime), 'yyyy-MM-dd\'T\'HH:mm'), 
+    endRelatively: {
+      years: null,
+      months: null,
+      weeks: null,
+      days: null,
+      hours: null,
+      minutes: null,
+    }
+  }
+
+  if (item.category) {
+    item.edits.category = item.category
+  }
+  else {
+    item.edits.category = {}
+    item.edits.category.id = null
+  }
+
   let itemElement
-  let menuVisible = false
+  let menuVisible = true
 
   const dispatch = createEventDispatcher();
 
@@ -127,11 +149,7 @@
 
   let updateValid = false
   const checkUpdateValidity = () => {
-    // console.log('checking validity')
-    // updateValid = true
-    // console.log(`pickerStart is ${pickerStart}`)
-    // console.log(`pickerEnd is ${pickerEnd}`)
-    if (/([^\s])/.test(editedName) && new Date(datetimeEnd) > new Date(datetimeStart)) {
+    if (/([^\s])/.test(item.edits.name) && new Date(item.edits.endTime) > new Date(item.edits.startTime)) {
       updateValid = true
       return true
     } else {
@@ -171,10 +189,10 @@
     const { data, error } = await supabase
       .from('items')
       .update({
-        name: editedName,
-        startTime: pickerStart,
-        endTime: pickerEnd,
-        category: editedCategory.id,
+        name: item.edits.name,
+        startTime: item.edits.startTime,
+        endTime: item.edits.endTime,
+        category: item.edits.category.id,
       })
       .match({ id: item.id })
     if (error) {
@@ -185,19 +203,17 @@
       item.name = data[0].name
       item.startTime = data[0].startTime
       item.endTime = data[0].endTime
-      // item.category = data[0].category
-      editedName = data[0].name
-      editedCategory.id = data[0].category
+      item.edits.name = data[0].name
+      item.edits.category.id = data[0].category
       // Find category name
-      const categoryName = categories.find((category) => category.id === editedCategory.id)
-      editedCategory.name = categoryName
-      pickerStart = new Date(data[0].startTime)
-      pickerEnd = new Date(data[0].endTime)
+      const categoryName = categories.find((category) => category.id === item.edits.category.id)
+      item.edits.category.name = categoryName
+      item.edits.startTime = format(new Date(data[0].startTime), 'yyyy-MM-dd\'T\'HH:mm')
+      item.edits.endTime = format(new Date(data[0].endTime), 'yyyy-MM-dd\'T\'HH:mm')
       // editItem.category = data[0].category
       updateEndTimeRelativity()
       menuVisible = false
       message.set('Item updated.')
-      // toast.push('Item updated.')
     }
   }
 
@@ -240,84 +256,57 @@
     file = fileInput.files[0]
     if (file) {
       itemImagePreview = URL.createObjectURL(file)
-      // newItemImagePreview = URL.createObjectURL(file)
-      // console.log(newItem.image)
     }
     else {
       itemImagePreview = null
-      // newItemImagePreview = null
     }
   }
 
-  let editedName = item.name
-  let editedCategory
-  if (item.category) {
-    editedCategory = item.category
-  }
-  else {
-    editedCategory = {}
-    editedCategory.id = null
-  }
-  // let pickerStart = new Date(item.startTime)
-  // let pickerEnd = new Date(item.endTime)
-
-  let datetimeStart = format(new Date(item.startTime), 'yyyy-MM-dd\'T\'HH:mm')
-  let datetimeEnd = format(new Date(item.endTime), 'yyyy-MM-dd\'T\'HH:mm')
-
-  const endRelatively = {
-    years: null,
-    months: null,
-    weeks: null,
-    days: null,
-    hours: null,
-    minutes: null,
-  }
-
   const updateEndTimeRelatively = () => {
-    if (datetimeEnd) {
-      let adjTime = new Date(datetimeStart)
-      if (endRelatively.years)
-        adjTime = addYears(adjTime, endRelatively.years)
-      if (endRelatively.months)
-        adjTime = addMonths(adjTime, endRelatively.months)
-      if (endRelatively.weeks)
-        adjTime = addWeeks(adjTime, endRelatively.weeks)
-      if (endRelatively.days)
-        adjTime = addDays(adjTime, endRelatively.days)
-      if (endRelatively.hours)
-        adjTime = addHours(adjTime, endRelatively.hours)
-      if (endRelatively.minutes)
-        adjTime = addMinutes(adjTime, endRelatively.minutes)
-        datetimeEnd = format(new Date(adjTime), 'yyyy-MM-dd\'T\'HH:mm')
+    if (item.edits.endTime) {
+      let adjTime = new Date(item.edits.startTime)
+      if (item.edits.endRelatively.years)
+        adjTime = addYears(adjTime, item.edits.endRelatively.years)
+      if (item.edits.endRelatively.months)
+        adjTime = addMonths(adjTime, item.edits.endRelatively.months)
+      if (item.edits.endRelatively.weeks)
+        adjTime = addWeeks(adjTime, item.edits.endRelatively.weeks)
+      if (item.edits.endRelatively.days)
+        adjTime = addDays(adjTime, item.edits.endRelatively.days)
+      if (item.edits.endRelatively.hours)
+        adjTime = addHours(adjTime, item.edits.endRelatively.hours)
+      if (item.edits.endRelatively.minutes)
+        adjTime = addMinutes(adjTime, item.edits.endRelatively.minutes)
+        item.edits.endTime = format(new Date(adjTime), 'yyyy-MM-dd\'T\'HH:mm')
     }
     checkUpdateValidity()
   }
 
   const updateEndTimeRelativity = () => {
-    const startTime = new Date(datetimeStart)
-    if (datetimeEnd) {
-      let endTime = new Date(datetimeEnd)
-      endRelatively.years = differenceInYears(endTime, startTime)
-      endTime = subYears(new Date(endTime), endRelatively.years)
-      endRelatively.months = differenceInMonths(endTime, startTime)
+    const startTime = new Date(item.edits.startTime)
+    if (item.edits.endTime) {
+      let endTime = new Date(item.edits.endTime)
+      item.edits.endRelatively.years = differenceInYears(endTime, startTime)
+      endTime = subYears(new Date(endTime), item.edits.endRelatively.years)
+      item.edits.endRelatively.months = differenceInMonths(endTime, startTime)
       endTime = subMonths(new Date(endTime), differenceInMonths(endTime, startTime))
-      endRelatively.weeks = differenceInWeeks(endTime, startTime)
+      item.edits.endRelatively.weeks = differenceInWeeks(endTime, startTime)
       endTime = subWeeks(new Date(endTime), differenceInWeeks(endTime, startTime))
-      endRelatively.days = differenceInDays(endTime, startTime)
+      item.edits.endRelatively.days = differenceInDays(endTime, startTime)
       endTime = subDays(new Date(endTime), differenceInDays(endTime, startTime))
-      endRelatively.hours = differenceInHours(endTime, startTime)
+      item.edits.endRelatively.hours = differenceInHours(endTime, startTime)
       endTime = subHours(new Date(endTime), differenceInHours(endTime, startTime))
-      endRelatively.minutes = differenceInMinutes(endTime, startTime)
+      item.edits.endRelatively.minutes = differenceInMinutes(endTime, startTime)
       endTime = subMinutes(new Date(endTime), differenceInMinutes(endTime, startTime))
       checkUpdateValidity()
     }
     else {
-      endRelatively.years = 0
-      endRelatively.months = 0
-      endRelatively.weeks = 0
-      endRelatively.days = 0
-      endRelatively.hours = 0
-      endRelatively.minutes = 0
+      item.edits.endRelatively.years = 0
+      item.edits.endRelatively.months = 0
+      item.edits.endRelatively.weeks = 0
+      item.edits.endRelatively.days = 0
+      item.edits.endRelatively.hours = 0
+      item.edits.endRelatively.minutes = 0
     }
   }
 
@@ -400,15 +389,15 @@
             <div transition:slide class="item-menu pb-4">
               <div class="menu-area">
                 <div class="area area--name">
-                  <div class="form-field grid gap-4 mb-2">
-                    <label for="edit-{item.id}--name">Change Item Name</label>
-                    <input type="text" id="edit-{item.id}--name" class="bg-black p-1 text-white" bind:value="{editedName}" on:input="{checkUpdateValidity}" />
+                  <div class="form-field mb-2">
+                    <label for="edit-{item.id}--name" class="block">Change Item Name</label>
+                    <input type="text" id="edit-{item.id}--name" class="bg-black p-2 text-white w-full" bind:value="{item.edits.name}" on:input="{checkUpdateValidity}" />
                   </div>
                 </div>
                 <div class="area area--category">
                   <div class="form-field mb-2">
-                    <label for="edit-{item.id}--category">Category</label>
-                    <select name="" id="" class="bg-black p-2 text-white w-full" bind:value="{editedCategory.id}">
+                    <label for="edit-{item.id}--category" class="block">Category</label>
+                    <select name="" id="" class="bg-black p-2 text-white w-full" bind:value="{item.edits.category.id}">
                       {#each categories as category}
                         <option value="{category.id}">{category.name}</option>
                       {/each}
@@ -417,31 +406,31 @@
                   </div>
                 </div>
                 <div class="area area--start-time">
-                  <div class="form-field grid gap-4 mb-2">
-                    <label for="">Start Time</label>
+                  <div class="form-field mb-2">
+                    <label for="" class="block">Start Time</label>
                     <div class="relative">
                       <input
-                        bind:value="{datetimeStart}"
+                        bind:value="{item.edits.startTime}"
                         type="datetime-local"
                         pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
                         required
                         style="background-color: white; color: black;"
-                        class="w-full"
+                        class="px-2 py-1 w-full"
                         on:change="{updateEndTimeRelativity}"
                       >
                     </div>
                   </div>
                   <div class="area area--end-time">
-                    <div class="form-field grid gap-4 mb-2">
-                      <label for="">End Time</label>
+                    <div class="form-field mb-2">
+                      <label for="" class="block">End Time</label>
                       <div class="relative">
                         <input
-                          bind:value="{datetimeEnd}"
+                          bind:value="{item.edits.endTime}"
                           type="datetime-local"
                           pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
                           required
                           style="background-color: white; color: black;"
-                          class="w-full"
+                          class="px-2 py-1 w-full"
                           on:change="{updateEndTimeRelativity}"
                         >
                       </div>
@@ -453,27 +442,27 @@
                         <div class="unit-form-fields">
                           <div class="form-field grid gap-4 mb-2">
                             <label for="edit-{item.id}--endtime-years">Years</label>
-                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-years" bind:value="{endRelatively.years}" on:input="{updateEndTimeRelatively}" />
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-years" bind:value="{item.edits.endRelatively.years}" on:input="{updateEndTimeRelatively}" />
                           </div>
                           <div class="form-field grid gap-4 mb-2">
                             <label for="edit-{item.id}--endtime-months">Months</label>
-                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-months" bind:value="{endRelatively.months}" on:input="{updateEndTimeRelatively}" />
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-months" bind:value="{item.edits.endRelatively.months}" on:input="{updateEndTimeRelatively}" />
                           </div>
                           <div class="form-field grid gap-4 mb-2">
                             <label for="edit-{item.id}--endtime-weeks">Weeks</label>
-                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-weeks" bind:value="{endRelatively.weeks}" on:input="{updateEndTimeRelatively}" />
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-weeks" bind:value="{item.edits.endRelatively.weeks}" on:input="{updateEndTimeRelatively}" />
                           </div>
                           <div class="form-field grid gap-4 mb-2">
                             <label for="edit-{item.id}--endtime-days">Days</label>
-                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-days" bind:value="{endRelatively.days}" on:input="{updateEndTimeRelatively}" />
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-days" bind:value="{item.edits.endRelatively.days}" on:input="{updateEndTimeRelatively}" />
                           </div>
                           <div class="form-field grid gap-4 mb-2">
                             <label for="edit-{item.id}--endtime-hours">Hours</label>
-                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-hours" bind:value="{endRelatively.hours}" on:input="{updateEndTimeRelatively}" />
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-hours" bind:value="{item.edits.endRelatively.hours}" on:input="{updateEndTimeRelatively}" />
                           </div>
                           <div class="form-field grid gap-4 mb-2">
                             <label for="edit-{item.id}--endtime-minutes">Minutes</label>
-                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-minutes" bind:value="{endRelatively.minutes}" on:input="{updateEndTimeRelatively}" />
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-minutes" bind:value="{item.edits.endRelatively.minutes}" on:input="{updateEndTimeRelatively}" />
                           </div>
                         </div>
                       </fieldset>

@@ -12,7 +12,6 @@
   import Item from "../components/Item.svelte"
   import Messenger from "../components/Messenger.svelte"
   import { message } from "../stores";
-  // import ja from "date-fns/locale/ja";
 
   let allItems = []
   let items = []
@@ -237,7 +236,7 @@
   })
 </script>
 
-<div class="decay mx-auto max-w-50rem text-white">
+<div class="decay mx-auto max-w-50rem p-4 text-white">
   <Messenger />
   <div class="header">
     {#if $user}
