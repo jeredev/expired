@@ -116,7 +116,7 @@
   let timeBar = getTimeBar()
   let timeRemainder = getTimeRemainder()
   const getItemImage = async (path) => {
-    console.log('getItemImage :: fetching from supabase')
+    // console.log('getItemImage :: fetching from supabase')
     const { data, error } = await supabase
       .storage
       .from('Decay')

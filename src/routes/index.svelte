@@ -80,6 +80,7 @@
   const filterAll = () => {
     timeStatusMode = 'all'
     items = allItems
+    sortItems()
   }
   const filterSafe = () => {
     timeStatusMode = 'safe'
@@ -89,6 +90,7 @@
       return timeElapsed < lifespan
     })
     items = safe
+    sortItems()
   }
   const filterExpired = () => {
     timeStatusMode = 'expired'
@@ -98,6 +100,7 @@
       return timeElapsed > lifespan
     })
     items = expired
+    sortItems()
   }
   const sortAlphaAsc = () => {
     sortingMode = 'alpha-ascending'
@@ -189,6 +192,23 @@
     }
   }
 
+  const sortItems = () => {
+    switch (sortingMode) {
+      case 'alpha-ascending':
+        sortAlphaAsc()
+        break
+      case 'alpha-descending':
+        sortAlphaDesc()
+        break
+      case 'endtime-ascending':
+        sortEndtimeAsc()
+        break
+      case 'endtime-descending':
+        sortEndtimeDesc()
+        break
+    }
+  }
+
   let categories = []
   const getCategories = async() => {
     const { data, error } = await supabase
@@ -218,6 +238,7 @@
         imagePath
       `)
     items = data
+    sortItems()
     allItems = data
     categories = await getCategories()
     if (categories) {
@@ -230,6 +251,7 @@
       })
       uncategorizedItems = items.filter((item) => !item.category)
     }
+    // sortItems()
   });
   onDestroy(() => {
     clearInterval(clock)
@@ -324,43 +346,9 @@
           {#if categorized}
             {#each categories as category}
               <CategorizedItems categories={categories} category={category} time={time} items={category.items} />
-              <!-- <div class="grouping">
-                <div class="category bg-red-800 gap-2 grid p-2">
-                  <div class="category__name">
-                    {category.name}
-                  </div>
-                  <div class="category__panel">
-                    <button>
-                      <Icon icon="clarity:plus-line" />
-                    </button>
-                  </div>
-                </div>
-                <div class="items-list">
-                  {#each category.items as item}
-                    <Item item={item} time={time} categories={categories} on:remove={removeItem} />
-                  {/each}
-                </div>
-              </div> -->
             {/each}
             {#if uncategorizedItems}
               <CategorizedItems categories={categories} category=null time={time} items={uncategorizedItems} />
-              <!-- <div class="grouping">
-                <div class="category bg-red-800 gap-2 grid p-2">
-                  <div class="category__name">
-                    Uncategorized
-                  </div>
-                  <div class="category__panel">
-                    <button>
-                      <Icon icon="clarity:plus-line" />
-                    </button>
-                  </div>
-                </div>
-                <div class="items-list">
-                  {#each uncategorizedItems as item}
-                    <Item item={item} time={time} categories={categories} on:remove={removeItem} />
-                  {/each}
-                </div>
-              </div> -->
             {/if}
           {:else}
           {#each items as item}
