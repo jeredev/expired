@@ -26,12 +26,14 @@
     subHours,
     subMinutes,
   } from 'date-fns'
+import ja from "date-fns/locale/ja";
 
+  export let categories
   export let item
   export let time
 
   let itemElement
-  let menuVisible = true
+  let menuVisible = false
 
   const dispatch = createEventDispatcher();
 
@@ -39,7 +41,6 @@
     return getTime(new Date(endTime)) - getTime(new Date(startTime))
   }
   const getTimeElapsed = (startTime) => {
-    // console.log(`running getTimeElapsed :: time is ${time}`)
     return time - getTime(new Date(startTime))
   }
   const removeItem = async() => {
@@ -60,7 +61,6 @@
           .from('Decay')
           .remove([fromPath])
       }
-      // if (editingItem.value === true) enableEditing()
       dispatch('remove', item)
       message.set('Item successfully deleted.')
     }
@@ -104,6 +104,13 @@
       console.log(path)
     }
   }
+  const buildItemImage = async (path) => {
+    const imagePath = $user.id + "/" + item.imagePath
+    item.image = await getItemImage(imagePath)
+  }
+  if (item.imagePath) {
+    buildItemImage(item.imagePath)
+  }
   const io = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.intersectionRatio > 0) {
@@ -120,10 +127,11 @@
 
   let updateValid = false
   const checkUpdateValidity = () => {
+    // console.log('checking validity')
     // updateValid = true
     // console.log(`pickerStart is ${pickerStart}`)
     // console.log(`pickerEnd is ${pickerEnd}`)
-    if (pickerEnd > pickerStart) {
+    if (/([^\s])/.test(editedName) && new Date(datetimeEnd) > new Date(datetimeStart)) {
       updateValid = true
       return true
     } else {
@@ -149,6 +157,7 @@
           .update({ imagePath: null })
           .match({ id: item.id })
         item.imagePath = null
+        item.image = null
         if (error) {
           // console.log('error', error)
           return
@@ -165,7 +174,7 @@
         name: editedName,
         startTime: pickerStart,
         endTime: pickerEnd,
-        // category: editItem.category,
+        category: editedCategory.id,
       })
       .match({ id: item.id })
     if (error) {
@@ -178,6 +187,10 @@
       item.endTime = data[0].endTime
       // item.category = data[0].category
       editedName = data[0].name
+      editedCategory.id = data[0].category
+      // Find category name
+      const categoryName = categories.find((category) => category.id === editedCategory.id)
+      editedCategory.name = categoryName
       pickerStart = new Date(data[0].startTime)
       pickerEnd = new Date(data[0].endTime)
       // editItem.category = data[0].category
@@ -215,9 +228,10 @@
         file = null
         fileInput = null
         itemImagePreview = null
+        menuVisible = false
         message.set('Successfully added image to item.')
         item.imagePath = `${item.id}`
-        // getItemImage(`${$user.id}/${item.id}`)
+        buildItemImage(item.imagePath)
       }
     }
     
@@ -236,8 +250,16 @@
   }
 
   let editedName = item.name
-  let pickerStart = new Date(item.startTime)
-  let pickerEnd = new Date(item.endTime)
+  let editedCategory
+  if (item.category) {
+    editedCategory = item.category
+  }
+  else {
+    editedCategory = {}
+    editedCategory.id = null
+  }
+  // let pickerStart = new Date(item.startTime)
+  // let pickerEnd = new Date(item.endTime)
 
   let datetimeStart = format(new Date(item.startTime), 'yyyy-MM-dd\'T\'HH:mm')
   let datetimeEnd = format(new Date(item.endTime), 'yyyy-MM-dd\'T\'HH:mm')
@@ -287,6 +309,7 @@
       endTime = subHours(new Date(endTime), differenceInHours(endTime, startTime))
       endRelatively.minutes = differenceInMinutes(endTime, startTime)
       endTime = subMinutes(new Date(endTime), differenceInMinutes(endTime, startTime))
+      checkUpdateValidity()
     }
     else {
       endRelatively.years = 0
@@ -323,16 +346,12 @@
   <div class="item-internal grid gap-4 py-4">
     <div class="item__aside">
       <div class="image-block">
-        {#if item.imagePath}
-          {#await getItemImage(`${$user.id}/${item.imagePath}`)}
-            Loading...
-          {:then data}
-            <img 
-              src="{data}" 
-              alt="{item.name}" 
-              class="item-image"
-            >
-          {/await}
+        {#if item.image}
+          <img 
+            src="{item.image}" 
+            alt="{item.name}" 
+            class="item-image"
+          >
           {#if menuVisible}
             <button class="btn leading-tight negative mt-4" on:click="{deleteImage}">
               Delete image
@@ -383,7 +402,18 @@
                 <div class="area area--name">
                   <div class="form-field grid gap-4 mb-2">
                     <label for="edit-{item.id}--name">Change Item Name</label>
-                    <input type="text" id="edit-{item.id}--name" class="bg-black p-1 text-white" bind:value="{editedName}" />
+                    <input type="text" id="edit-{item.id}--name" class="bg-black p-1 text-white" bind:value="{editedName}" on:input="{checkUpdateValidity}" />
+                  </div>
+                </div>
+                <div class="area area--category">
+                  <div class="form-field mb-2">
+                    <label for="edit-{item.id}--category">Category</label>
+                    <select name="" id="" class="bg-black p-2 text-white w-full" bind:value="{editedCategory.id}">
+                      {#each categories as category}
+                        <option value="{category.id}">{category.name}</option>
+                      {/each}
+                    </select>
+                    <!-- <input type="text" id="edit-{item.id}--category" class="bg-black p-1 text-white" bind:value="{editedCategory.name}" /> -->
                   </div>
                 </div>
                 <div class="area area--start-time">
@@ -456,18 +486,20 @@
                     <button type="button" class="btn edit-item" on:click="{updateItem}" disabled="{!updateValid}">
                       Update Item
                     </button>
-                    <button type="button" class="btn remove-item mx-2 negative">
+                    <button type="button" class="btn remove-item mx-2 negative" on:click={() => { confirmDelete = !confirmDelete }}>
                       Delete Item
                     </button>
-                    <div class="mt-4">
-                      Delete this item?
-                      <button class="btn negative" on:click="{removeItem}">
-                        Yes
-                      </button>
-                      <button class="btn mx-2">
-                        No
-                      </button>
-                    </div>
+                    {#if confirmDelete}
+                      <div transition:slide class="mt-4">
+                        Delete this item?
+                        <button class="btn negative" on:click="{removeItem}">
+                          Yes
+                        </button>
+                        <button class="btn mx-2" on:click="{() => { confirmDelete = false }}">
+                          No
+                        </button>
+                      </div>
+                    {/if}
                   </div>
                 </div>
               </div>

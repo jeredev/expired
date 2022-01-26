@@ -1,9 +1,10 @@
 <script>
   import { supabase, user } from "$lib/db";
   import { message } from "../stores";
+  import { onMount } from "svelte";
+  import { slide } from 'svelte/transition';
+  import Icon from '@iconify/svelte'
   import {
-    formatDistanceToNowStrict,
-    getTime,
     addYears,
     addMonths,
     addWeeks,
@@ -24,9 +25,11 @@
     subHours,
     subMinutes,
   } from 'date-fns'
-import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher } from "svelte";
 
   const dispatch = createEventDispatcher();
+
+  export let active
 
   let newItem = {
     name: null,
@@ -38,7 +41,7 @@ import { createEventDispatcher } from "svelte";
 
   let newItemValid = false
   const checkNewItemValidity = () => {
-    if (newItem.name && newItem.endTime > newItem.startTime) {
+    if (/([^\s])/.test(newItem.name) && newItem.endTime > newItem.startTime) {
       newItemValid = true
       return true
     } else {
@@ -109,7 +112,7 @@ import { createEventDispatcher } from "svelte";
       .from('items')
       .insert([
         {
-          name: newItem.name,
+          name: newItem.name.trim(),
           startTime: new Date(newItem.startTime),
           endTime: new Date(newItem.endTime),
           imagePath: newItem.image,
@@ -188,148 +191,238 @@ import { createEventDispatcher } from "svelte";
     }
   }
 
+  let addingCategory = false
+  let newCategory
+  let newCategoryValid = false
+
+  const checkNewCategoryValidity = () => {
+    if (newCategory && /([^\s])/.test(newCategory)) {
+      newCategoryValid = true
+      return true
+    }
+    else {
+      newCategoryValid = false
+      return false
+    }
+  }
+
+  const addNewCategory = async() => {
+    const { data, error } = await supabase
+      .from('categories')
+      .insert([
+        {
+          name: newCategory.trim(),
+        },
+      ])
+    if (error) {
+      console.log('error adding new category:', error)
+      return
+    }
+    if (data) {
+      categories = await getCategories()
+      newCategory = null
+      addingCategory = false
+      // fileInput.value = null // Doesn't work
+    }
+  }
+
+  const getCategories = async() => {
+    const { data, error } = await supabase
+      .from('categories')
+      .select()
+      .order('name', { ascending: true })
+    if (data) return data
+  }
+  let categories
+
+  onMount(async() => {
+    categories = await getCategories()
+  })
+
   // console.log($user)
 
 </script>
 
-<div class="container" style="max-width: 60rem;">
-  <form on:submit|preventDefault class="form form--add-item">
-    <div class="form-field my-2">
-      <label for="new-item--name">Item Name</label>
-      <input id="new-item-name" bind:value={newItem.name} type="text" class="bg-black p-1 text-white w-full" on:input="{checkNewItemValidity}" required>
-    </div>
-    <div class="form-field my-2">
-      <div class="add-item-image">
-        {#if newItemImagePreview}
-          <h1>Preview</h1>
-          <img src="{newItemImagePreview}" alt="">
+{#if active}
+  <div transition:slide class="container" style="max-width: 60rem;">
+    <form on:submit|preventDefault class="form form--add-item">
+      <div class="form-field my-2">
+        <label for="new-item--name block mb-1">Item Name</label>
+        <input id="new-item-name" bind:value={newItem.name} type="text" class="bg-black p-1 text-white w-full" on:input="{checkNewItemValidity}" required>
+      </div>
+      <div class="form-field my-2">
+        <div class="add-item-image">
+          {#if newItemImagePreview}
+            <h1>Preview</h1>
+            <img src="{newItemImagePreview}" alt="">
+          {/if}
+          <div class="file-input-region">
+            <label for="new-item--file">Choose Image</label>
+            <input
+              bind:this={fileInput}
+              id="new-item--file"
+              type="file"
+              accept="image/*"
+              class="file-input"
+              capture
+              on:change="{analyzeFile}"
+            >
+          </div>
+        </div>
+      </div>
+      <div class="form-field my-2">
+        <label for="new-item--start-time block mb-1">Start Time</label>
+        <div class="date-picker">
+          <input
+            bind:value={newItem.startTime}
+            type="datetime-local"
+            pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
+            required
+            style="background-color: white; color: black;"
+            class="px-2 py-1 w-full"
+          >
+        </div>
+      </div>
+      <div v-show="newItem.startTime" class="form-field my-2">
+        <label for="new-item--end-time block mb-1">End Time</label>
+        <div class="date-picker">
+          <input
+            bind:value={newItem.endTime}
+            type="datetime-local"
+            pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
+            required
+            style="background-color: white; color: black;"
+            class="px-2 py-1 w-full"
+            on:change={updateEndTimeRelativity}
+          >
+        </div>
+        <div class="relative relativity-fields grid grid-cols-6 gap-2 my-4">
+          <div class="form-field">
+            <label for="new-item--end-time-years">Years</label>
+            <input
+              id="new-item--end-time-years"
+              bind:value={endRelatively.years}
+              type="number"
+              min="0"
+              step="1"
+              class="bg-black p-1 text-white"
+              on:input="{updateEndTimeRelatively}"
+            >
+          </div>
+          <div class="form-field">
+            <label for="new-item--end-time-months">Months</label>
+            <input
+              id="new-item--end-time-months"
+              bind:value={endRelatively.months}
+              type="number"
+              min="0"
+              step="1"
+              class="bg-black p-1 text-white"
+              on:input="{updateEndTimeRelatively}"
+            >
+          </div>
+          <div class="form-field">
+            <label for="new-item--end-time-weeks">Weeks</label>
+            <input
+              id="new-item--end-time-weeks"
+              bind:value={endRelatively.weeks}
+              type="number"
+              min="0"
+              step="1"
+              class="bg-black p-1 text-white"
+              on:input="{updateEndTimeRelatively}"
+            >
+          </div>
+          <div class="form-field">
+            <label for="new-item--end-time-days">Days</label>
+            <input
+              id="new-item--end-time-days"
+              bind:value={endRelatively.days}
+              type="number"
+              min="0"
+              step="1"
+              class="bg-black p-1 text-white"
+              on:input="{updateEndTimeRelatively}"
+            >
+          </div>
+          <div class="form-field">
+            <label for="new-item--end-time-days">Hours</label>
+            <input
+              id="new-item--end-time-days"
+              bind:value={endRelatively.hours}
+              type="number"
+              min="0"
+              step="1"
+              class="bg-black p-1 text-white"
+              on:input="{updateEndTimeRelatively}"
+            >
+          </div>
+          <div class="form-field">
+            <label for="new-item--end-time-days ">Minutes</label>
+            <input
+              id="new-item--end-time-days"
+              bind:value={endRelatively.minutes}
+              type="number"
+              min="0"
+              step="1"
+              class="bg-black p-1 text-white"
+              on:input="{updateEndTimeRelatively}"
+            >
+          </div>
+        </div>
+      </div>
+      <div class="form-field my-2">
+        <div class="label-field grid gap-2">
+          <label for="new-item--category" class="block mb-1">Category</label>
+          <div class="label-field__panel">
+            <button type="button" on:click={() => {addingCategory = !addingCategory}}>
+              {#if addingCategory}
+                <Icon icon="clarity:minus-line" />
+              {:else}
+                <Icon icon="clarity:plus-line" />
+              {/if}
+            </button>
+          </div>
+        </div>
+        {#if addingCategory}
+          <div class="input-field grid gap-2">
+            <input
+              type="text"
+              name="new-category-name"
+              id="new-category-name"
+              class="bg-black p-2 text-white"
+              placeholder="Category Name"
+              bind:value="{newCategory}"
+              on:input="{checkNewCategoryValidity}"
+            >
+            <div class="input-field__panel">
+              <button type="button" class="btn" disabled="{!newCategoryValid}" on:click="{addNewCategory}">Add</button>
+            </div>
+          </div>
         {/if}
-        <div class="file-input-region">
-          <label for="new-item--file">Choose Image</label>
-          <input
-            bind:this={fileInput}
-            id="new-item--file"
-            type="file"
-            accept="image/*"
-            class="file-input"
-            capture
-            on:change="{analyzeFile}"
-          >
-        </div>
+        {#if categories && !addingCategory}
+          <select name="item-category" id="new-item--category" class="bg-black p-2 text-white w-full" bind:value="{newItem.category}">
+            {#each categories as category}
+              <option value="{category.id}">{category.name}</option>
+            {/each}
+          </select>
+        {/if}
       </div>
-    </div>
-    <div class="form-field my-2">
-      <label for="new-item--start-time">Start Time</label>
-      <div class="date-picker">
-        <input
-          bind:value={newItem.startTime}
-          type="datetime-local"
-          pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
-          required
-          style="background-color: white; color: black;"
-          class="px-2 py-1 w-full"
-        >
-      </div>
-    </div>
-    <div v-show="newItem.startTime" class="form-field my-2">
-      <label for="new-item--end-time">End Time</label>
-      <div class="date-picker">
-        <input
-          bind:value={newItem.endTime}
-          type="datetime-local"
-          pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
-          required
-          style="background-color: white; color: black;"
-          class="px-2 py-1 w-full"
-          on:change={updateEndTimeRelativity}
-        >
-      </div>
-      <div class="relative relativity-fields grid grid-cols-6 gap-2 my-4">
-        <div class="form-field">
-          <label for="new-item--end-time-years">Years</label>
-          <input
-            id="new-item--end-time-years"
-            bind:value={endRelatively.years}
-            type="number"
-            min="0"
-            step="1"
-            class="bg-black p-1 text-white"
-            on:input="{updateEndTimeRelatively}"
-          >
-        </div>
-        <div class="form-field">
-          <label for="new-item--end-time-months">Months</label>
-          <input
-            id="new-item--end-time-months"
-            bind:value={endRelatively.months}
-            type="number"
-            min="0"
-            step="1"
-            class="bg-black p-1 text-white"
-            on:input="{updateEndTimeRelatively}"
-          >
-        </div>
-        <div class="form-field">
-          <label for="new-item--end-time-weeks">Weeks</label>
-          <input
-            id="new-item--end-time-weeks"
-            bind:value={endRelatively.weeks}
-            type="number"
-            min="0"
-            step="1"
-            class="bg-black p-1 text-white"
-            on:input="{updateEndTimeRelatively}"
-          >
-        </div>
-        <div class="form-field">
-          <label for="new-item--end-time-days">Days</label>
-          <input
-            id="new-item--end-time-days"
-            bind:value={endRelatively.days}
-            type="number"
-            min="0"
-            step="1"
-            class="bg-black p-1 text-white"
-            on:input="{updateEndTimeRelatively}"
-          >
-        </div>
-        <div class="form-field">
-          <label for="new-item--end-time-days">Hours</label>
-          <input
-            id="new-item--end-time-days"
-            bind:value={endRelatively.hours}
-            type="number"
-            min="0"
-            step="1"
-            class="bg-black p-1 text-white"
-            on:input="{updateEndTimeRelatively}"
-          >
-        </div>
-        <div class="form-field">
-          <label for="new-item--end-time-days">Minutes</label>
-          <input
-            id="new-item--end-time-days"
-            bind:value={endRelatively.minutes}
-            type="number"
-            min="0"
-            step="1"
-            class="bg-black p-1 text-white"
-            on:input="{updateEndTimeRelatively}"
-          >
-        </div>
-      </div>
-    </div>
-    <!-- <div class="form-field my-2">
-      <label for="new-item--category">Item Category</label>
-      <input id="new-item--category" v-model="newItem.category" type="text" class="bg-black p-1 text-white">
-    </div> -->
-    <button type="submit" class="btn my-4" disabled={!newItemValid} on:click="{addNewItem}">
-      Add Item
-    </button>
-  </form>
-</div>
+      <button type="submit" class="btn my-4" disabled={!newItemValid} on:click="{addNewItem}">
+        Add Item
+      </button>
+    </form>
+  </div>
+{/if}
 
 <style>
+  .input-field {
+    align-items: center;
+    grid-template-columns: 1fr min-content;
+  }
+  .label-field {
+    grid-template-columns: 1fr min-content;
+  }
   .relativity-fields {
     grid-template-columns: repeat(auto-fit, minmax(1rem, 1fr));
   }
