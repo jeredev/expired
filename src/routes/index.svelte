@@ -17,6 +17,8 @@
   let allItems = []
   let items = []
 
+  let listings = []
+
   let time = getTime(new Date())
 
   let email;
@@ -65,7 +67,7 @@
   /* Sorting */
 
   // Level One
-  let categorized = false
+  let displayMode = 'list'
   // Level Two
   let timeStatusMode = 'all'
   // Level Three
@@ -80,7 +82,7 @@
   const filterAll = () => {
     timeStatusMode = 'all'
     items = allItems
-    sortItems()
+    generateListings()
   }
   const filterSafe = () => {
     timeStatusMode = 'safe'
@@ -90,7 +92,7 @@
       return timeElapsed < lifespan
     })
     items = safe
-    sortItems()
+    generateListings()
   }
   const filterExpired = () => {
     timeStatusMode = 'expired'
@@ -100,112 +102,58 @@
       return timeElapsed > lifespan
     })
     items = expired
-    sortItems()
+    generateListings()
   }
-  const sortAlphaAsc = () => {
-    sortingMode = 'alpha-ascending'
-    console.log(sortingMode)
-    if (categorized && categories) {
-      categories.forEach((category) => {
-        const sortedItems = [...category.items].sort((a, b) => a.name.localeCompare(b.name))
-        category.items = []
-        window.setTimeout(() => {
-          category.items = sortedItems
-          console.log('completed')
-        }, 400)
-      })
-      if (uncategorizedItems) {
-        uncategorizedItems = [...uncategorizedItems].sort((a, b) => a.name.localeCompare(b.name))
-      }
-    } else {
-      items = [...items].sort((a, b) => a.name.localeCompare(b.name))
-    }
+  const sortAlphaAsc = (payload) => {
+    return payload.sort((a, b) => a.name.localeCompare(b.name))
   }
-  const sortAlphaDesc = () => {
-    sortingMode = 'alpha-descending'
-    console.log(sortingMode)
-    if (categorized && categories) {
-      categories.forEach((category) => {
-        const sortedItems = [...category.items].sort((a, b) => b.name.localeCompare(a.name))
-        category.items = []
-        window.setTimeout(() => {
-          category.items = sortedItems
-          console.log('completed')
-        }, 400)
-      })
-      if (uncategorizedItems) {
-        uncategorizedItems = [...uncategorizedItems].sort((a, b) => b.name.localeCompare(a.name))
-      }
-    } else {
-      items = [...items].sort((a, b) => b.name.localeCompare(a.name))
-    }
+  const sortAlphaDesc = (payload) => {
+    return payload.sort((a, b) => b.name.localeCompare(a.name))
   }
-  const sortEndtimeAsc = () => {
-    sortingMode = 'endtime-ascending'
-    console.log(sortingMode)
-    if (categorized && categories) {
-      categories.forEach((category) => {
-        const sortedItems = [...category.items].sort((a, b) => {
-          return new Date(b.endTime) - new Date(a.endTime)
-        })
-        category.items = []
-        window.setTimeout(() => {
-          category.items = sortedItems
-          console.log('completed')
-        }, 400)
-      })
-      if (uncategorizedItems) {
-        uncategorizedItems = [...uncategorizedItems].sort((a, b) => {
-          return new Date(b.endTime) - new Date(a.endTime)
-        })
-      }
-    } else {
-      items = [...items].sort((a, b) => {
-        return new Date(b.endTime) - new Date(a.endTime)
-      })
-    }
+  const sortEndtimeAsc = (payload) => {
+    return payload.sort((a, b) => {
+      return new Date(b.endTime) - new Date(a.endTime)
+    })
   }
-  const sortEndtimeDesc = () => {
-    sortingMode = 'endtime-descending'
-    console.log(sortingMode)
-    if (categorized && categories) {
-      categories.forEach((category) => {
-        const sortedItems = [...category.items].sort((a, b) => {
-          return new Date(a.endTime) - new Date(b.endTime)
-        })
-        category.items = [...sortedItems]
-        // category.items = []
-        // window.setTimeout(() => {
-        //   category.items = [...sortedItems]
-        //   console.log('completed')
-        // }, 400)
-      })
-      if (uncategorizedItems) {
-        uncategorizedItems = [...uncategorizedItems].sort((a, b) => {
-          return new Date(a.endTime) - new Date(b.endTime)
-        })
-      }
-    } else {
-      items = [...items].sort((a, b) => {
-        return new Date(a.endTime) - new Date(b.endTime)
-      })
+  const sortEndtimeDesc = (payload) => {
+    return payload.sort((a, b) => {
+      return new Date(a.endTime) - new Date(b.endTime)
+    })
+  }
+
+  const sortItems = (payload) => {
+    switch (sortingMode) {
+      case 'alpha-ascending':
+        sortAlphaAsc(payload)
+        break
+      case 'alpha-descending':
+        sortAlphaDesc(payload)
+        break
+      case 'endtime-ascending':
+        sortEndtimeAsc(payload)
+        break
+      case 'endtime-descending':
+        sortEndtimeDesc(payload)
+        break
     }
   }
 
-  const sortItems = () => {
-    switch (sortingMode) {
-      case 'alpha-ascending':
-        sortAlphaAsc()
-        break
-      case 'alpha-descending':
-        sortAlphaDesc()
-        break
-      case 'endtime-ascending':
-        sortEndtimeAsc()
-        break
-      case 'endtime-descending':
-        sortEndtimeDesc()
-        break
+  const setDisplayMode = (mode) => {
+    displayMode = mode
+    generateListings()
+  }
+
+  const setSortingMode = (mode) => {
+    sortingMode = mode
+    generateListings()
+  }
+
+  const generateListings = () => {
+    if (displayMode === 'categories') {
+      categorizeItems()
+    }
+    else {
+      listItems()
     }
   }
 
@@ -217,10 +165,43 @@
     if (data) return data
   }
 
-  let uncategorizedItems
-  // const toggleCategories = () => {
-  //   categorized = !categorized
-  // }
+  const categorizeItems = () => {
+    let categorizedItems = []
+    if (categories) {
+      categories.forEach((category) => {
+        const found = categorizedItems.find(element => element.id === category.id)
+        if (!found) {
+          category.items = []
+          categorizedItems.push(category)
+        }
+      })
+    }
+    const uncategorizedCategory = {
+      id: null,
+      name: 'Uncategorized',
+      items: []
+    }
+    categorizedItems.push(uncategorizedCategory)
+    items.forEach((item) => {
+      if (item.category) {
+        const found = categorizedItems.find(element => element.id === item.category.id)
+        if (found) found.items.push(item)
+      }
+      else {
+        const found = categorizedItems.find(element => element.id === null)
+        found.items.push(item)
+      }
+    })
+    categorizedItems.forEach((category) => {
+      sortItems(category.items)
+    })
+    listings = categorizedItems
+  }
+
+  const listItems = () => {
+    sortItems(items)
+    listings = items
+  }
 
   onMount(async() => {
     clock = window.setInterval(runClock, 1000);
@@ -237,21 +218,10 @@
         ),
         imagePath
       `)
-    items = data
-    sortItems()
     allItems = data
+    items = allItems
     categories = await getCategories()
-    if (categories) {
-      categories.forEach((category) => {
-        category.items = items.filter((item) => {
-          if (item.category?.id === category.id) {
-            return true
-          }
-        })
-      })
-      uncategorizedItems = items.filter((item) => !item.category)
-    }
-    // sortItems()
+    generateListings()
   });
   onDestroy(() => {
     clearInterval(clock)
@@ -308,8 +278,8 @@
           Sorting
         </h2>
         <div class="grid grid-cols-2 gap-2 my-2">
-          <button class="btn" disabled="{ categorized === false }" on:click="{() => { categorized = false }}">List</button>
-          <button class="btn" disabled="{ categorized === true }" on:click="{() => { categorized = true }}">Categories</button>
+          <button class="btn" disabled="{ displayMode === 'list' }" on:click="{() => { setDisplayMode('list') }}">List</button>
+          <button class="btn" disabled="{ displayMode === 'categories' }" on:click="{() => { setDisplayMode('categories') }}">Categories</button>
         </div>
         <div class="grid grid-cols-3 gap-2 my-2">
           <button class="btn" disabled="{ timeStatusMode === 'all' }" on:click="{filterAll}">
@@ -323,17 +293,17 @@
           </button>
         </div>
         <div class="grid grid-cols-4 gap-2">
-          <button class="btn whitespace-nowrap" disabled="{ sortingMode === "alpha-ascending" }" on:click={sortAlphaAsc}>
+          <button class="btn whitespace-nowrap" disabled="{ sortingMode === "alpha-ascending" }" on:click={() => setSortingMode('alpha-ascending')}>
             A <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(90deg);" /> Z
           </button>
-          <button class="btn whitespace-nowrap" disabled="{ sortingMode === "alpha-descending" }" on:click={sortAlphaDesc}>
+          <button class="btn whitespace-nowrap" disabled="{ sortingMode === "alpha-descending" }" on:click={() => setSortingMode('alpha-descending')}>
             Z <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(90deg);" /> A
           </button>
-          <button class="btn whitespace-nowrap" disabled="{ sortingMode === "endtime-ascending" }" on:click={sortEndtimeAsc}>
+          <button class="btn whitespace-nowrap" disabled="{ sortingMode === "endtime-ascending" }" on:click={() => setSortingMode('endtime-ascending')}>
             <Icon icon="clarity:clock-line" inline={true} style="display: inline-block;" />
             <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block;" />
           </button>
-          <button class="btn whitespace-nowrap" disabled="{ sortingMode === "endtime-descending" }" on:click={sortEndtimeDesc}>
+          <button class="btn whitespace-nowrap" disabled="{ sortingMode === "endtime-descending" }" on:click={() => setSortingMode('endtime-descending')}>
             <Icon icon="clarity:clock-line" inline={true} style="display: inline-block;" />
             <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(180deg);" />
           </button>
@@ -341,18 +311,17 @@
       </div>
     </div>
     <div class="items">
-      {#if items.length}
+      {#if listings.length}
         <div class="items-listing">
-          {#if categorized}
-            {#each categories as category}
+          {#if displayMode === 'categories'}
+            <h1>Categories</h1>
+            {#each listings as category}
               <CategorizedItems categories={categories} category={category} time={time} items={category.items} />
             {/each}
-            {#if uncategorizedItems}
-              <CategorizedItems categories={categories} category=null time={time} items={uncategorizedItems} />
-            {/if}
           {:else}
-          {#each items as item}
-            <Item item={item} time={time} categories={categories} on:remove={removeItem} />
+          {#each listings as listing}
+            <h1>Items listing</h1>
+            <Item item={listing} time={time} categories={categories} on:remove={removeItem} />
           {/each}
         {/if}
         </div>
