@@ -15,4 +15,9 @@
     disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-red-600 disabled:hover:border-red-600
     focus:outline-none focus:ring-2 ring-red-600 ring-opacity-40;
   }
+  .btn.active {
+    background-color: rgba(220, 38, 38, var(--tw-border-opacity));
+    color: white;
+    border-color: rgba(220, 38, 38, var(--tw-border-opacity));
+  }
 </style>

@@ -1,6 +1,7 @@
 <script>
   import { supabase, user } from "$lib/db";
   import { onDestroy, onMount } from "svelte";
+  import { slide } from 'svelte/transition';
   import Icon from '@iconify/svelte'
   import {
     getTime,
@@ -17,7 +18,7 @@
   let allItems = []
   let items = []
 
-  let listings = []
+  let listings = null
 
   let time = getTime(new Date())
 
@@ -25,6 +26,7 @@
   let password;
 
   let addMenuActive = false
+  let sortingMenuActive = true
 
   const logIn = async () => {
     const { user, error } = await supabase.auth.signIn({
@@ -43,15 +45,43 @@
     const newItems = e.detail
     newItems.forEach(item => {
       item.time = time
+      // TO DO :: Surgically insert instead of just throwing it at the end
       items = [...items, item]
+      generateListings()
     });
   }
 
   const removeItem = (e) => {
-    const index = items.findIndex((x) => x.id === e.detail.id)
-    if (index !== -1) {
-      items = [...items.slice(0, index), ...items.slice(index + 1)]
+    const indexAllItems = items.findIndex((x) => x.id === e.detail.id)
+    if ( indexAllItems !== -1) {
+      items = [...items.slice(0, indexAllItems), ...items.slice(indexAllItems + 1)]
     }
+    const indexItems = items.findIndex((x) => x.id === e.detail.id)
+    if ( indexItems !== -1) {
+      items = [...items.slice(0, indexItems), ...items.slice(indexItems + 1)]
+    }
+    const indexListings = listings.findIndex((x) => x.id === e.detail.id)
+    if (indexListings !== -1) {
+      listings = [...listings.slice(0, indexListings), ...listings.slice(indexListings + 1)]
+    }
+    generateListings()
+  }
+
+  const updateItem = (e) => {
+    const updatedItem = e.detail
+    allItems.map(() => {
+      const item = allItems.find(({ id }) => id === updatedItem.id);
+      return item ? item : updatedItem;
+    });
+    items.map(() => {
+      const item = items.find(({ id }) => id === updatedItem.id);
+      return item ? item : updatedItem;
+    });
+    listings.map(() => {
+      const item = listings.find(({ id }) => id === updatedItem.id);
+      return item ? item : updatedItem;
+    });
+    generateListings()
   }
 
   const resetPwd = () => {
@@ -231,9 +261,7 @@
 <div class="decay mx-auto max-w-50rem p-4 text-white">
   <Messenger />
   <div class="header">
-    {#if $user}
-      <button on:click={logOut} class="btn">Log Out</button>
-    {:else}
+    {#if !$user}
       <form on:submit|preventDefault={logIn} class="form form--login">
         <div class="login-form-fields">
           <input
@@ -263,70 +291,130 @@
   </div>
   {#if $user}
     <div class="homebase">
-      <div class="panel">
-        <button class="btn">Search</button>
-        <button class="btn" on:click={() => { addMenuActive = !addMenuActive }}>Add Item</button>
+      <div class="panel flex justify-end">
+        <button class={ sortingMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { sortingMenuActive = !sortingMenuActive }}>
+          <Icon icon="clarity:sort-by-line" />
+        </button>
+        <button class="btn ml-2">
+          <Icon icon="clarity:search-line" />
+        </button>
+        <button class={ addMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { addMenuActive = !addMenuActive }}>
+          <Icon icon="clarity:add-line" />
+        </button>
+        <button on:click={logOut} class="btn ml-2">
+          <Icon icon="clarity:logout-solid" />
+        </button>
       </div>
       <div class="add-item-menu">
         <AddItem on:add={addItems} active={addMenuActive} />
       </div>
       <div class="search-menu">
-        
-      </div>
-      <div class="sector my-4">
         <h2 class="my-2">
-          Sorting
+          Search
         </h2>
-        <div class="grid grid-cols-2 gap-2 my-2">
-          <button class="btn" disabled="{ displayMode === 'list' }" on:click="{() => { setDisplayMode('list') }}">List</button>
-          <button class="btn" disabled="{ displayMode === 'categories' }" on:click="{() => { setDisplayMode('categories') }}">Categories</button>
-        </div>
-        <div class="grid grid-cols-3 gap-2 my-2">
-          <button class="btn" disabled="{ timeStatusMode === 'all' }" on:click="{filterAll}">
-            All
+        <form action="" class="search">
+          <h2 class="my-2">
+            Search Form
+          </h2>
+          <div class="form-field my-2">
+            <label for="search-items--text">Name</label>
+            <input id="search-items--text" class="bg-black p-1 text-white w-full" type="text"><br>
+          </div>
+          <div class="area area--end-time my-2">
+            <div class="form-field relative">
+              <label for="expiration-search">Expiration Time</label>
+              <input
+                type="datetime-local"
+                id="expiration-search"
+                pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
+                required
+                style="background-color: white; color: black; width: 100%;"
+              >
+            </div>
+            <div class="unit-form-fields mt-2">
+              <div class="form-field my-2">
+                <label for="search-items--years">Years</label>
+                <input id="search-items--years" class="bg-black p-1 text-white w-full" type="number" step="1">
+              </div>
+              <div class="form-field my-2">
+                <label for="search-items--months">Months</label>
+                <input id="search-items--months" class="bg-black p-1 text-white w-full" type="number" step="1">
+              </div>
+              <div class="form-field my-2">
+                <label for="search-items--weeks">Weeks</label>
+                <input id="search-items--weeks" class="bg-black p-1 text-white w-full" type="number" step="1">
+              </div>
+              <div class="form-field my-2">
+                <label for="search-items--days">Days</label>
+                <input id="search-items--days" class="bg-black p-1 text-white w-full" type="number" step="1">
+              </div>
+            </div>
+            <div class="form-field my-2">
+              <label for="search-items--category">Category</label>
+              <input id="search-items--category" class="bg-black p-1 text-white w-full" type="text">
+            </div>
+          </div>
+          <button type="submit" class="btn">
+            <Icon icon="clarity:search-line" />
           </button>
-          <button class="btn" disabled="{ timeStatusMode === 'safe' }" on:click="{filterSafe}">
-            Safe
-          </button>
-          <button class="btn" disabled="{ timeStatusMode === 'expired' }" on:click="{filterExpired}">
-            Expired
-          </button>
-        </div>
-        <div class="grid grid-cols-4 gap-2">
-          <button class="btn whitespace-nowrap" disabled="{ sortingMode === "alpha-ascending" }" on:click={() => setSortingMode('alpha-ascending')}>
-            A <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(90deg);" /> Z
-          </button>
-          <button class="btn whitespace-nowrap" disabled="{ sortingMode === "alpha-descending" }" on:click={() => setSortingMode('alpha-descending')}>
-            Z <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(90deg);" /> A
-          </button>
-          <button class="btn whitespace-nowrap" disabled="{ sortingMode === "endtime-ascending" }" on:click={() => setSortingMode('endtime-ascending')}>
-            <Icon icon="clarity:clock-line" inline={true} style="display: inline-block;" />
-            <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block;" />
-          </button>
-          <button class="btn whitespace-nowrap" disabled="{ sortingMode === "endtime-descending" }" on:click={() => setSortingMode('endtime-descending')}>
-            <Icon icon="clarity:clock-line" inline={true} style="display: inline-block;" />
-            <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(180deg);" />
-          </button>
-        </div>
+        </form>
       </div>
+      {#if sortingMenuActive}
+        <div transition:slide class="sector my-4">
+          <h2 class="my-2">
+            Sorting and Filtering
+          </h2>
+          <div class="grid grid-cols-2 gap-2 my-2">
+            <button class="btn" disabled="{ displayMode === 'list' }" on:click="{() => { setDisplayMode('list') }}">List</button>
+            <button class="btn" disabled="{ displayMode === 'categories' }" on:click="{() => { setDisplayMode('categories') }}">Categories</button>
+          </div>
+          <div class="grid grid-cols-3 gap-2 my-2">
+            <button class="btn" disabled="{ timeStatusMode === 'all' }" on:click="{filterAll}">
+              All
+            </button>
+            <button class="btn" disabled="{ timeStatusMode === 'safe' }" on:click="{filterSafe}">
+              Safe
+            </button>
+            <button class="btn" disabled="{ timeStatusMode === 'expired' }" on:click="{filterExpired}">
+              Expired
+            </button>
+          </div>
+          <div class="grid grid-cols-4 gap-2">
+            <button class="btn whitespace-nowrap" disabled="{ sortingMode === "alpha-ascending" }" on:click={() => setSortingMode('alpha-ascending')}>
+              A <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(90deg);" /> Z
+            </button>
+            <button class="btn whitespace-nowrap" disabled="{ sortingMode === "alpha-descending" }" on:click={() => setSortingMode('alpha-descending')}>
+              Z <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(90deg);" /> A
+            </button>
+            <button class="btn whitespace-nowrap" disabled="{ sortingMode === "endtime-ascending" }" on:click={() => setSortingMode('endtime-ascending')}>
+              <Icon icon="clarity:clock-line" inline={true} style="display: inline-block;" />
+              <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block;" />
+            </button>
+            <button class="btn whitespace-nowrap" disabled="{ sortingMode === "endtime-descending" }" on:click={() => setSortingMode('endtime-descending')}>
+              <Icon icon="clarity:clock-line" inline={true} style="display: inline-block;" />
+              <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(180deg);" />
+            </button>
+          </div>
+        </div>
+      {/if}
     </div>
     <div class="items">
-      {#if listings.length}
+      {#if listings && listings.length}
         <div class="items-listing">
           {#if displayMode === 'categories'}
-            <h1>Categories</h1>
             {#each listings as category}
-              <CategorizedItems categories={categories} category={category} time={time} items={category.items} />
+              <CategorizedItems categories={categories} category={category} time={time} items={category.items} on:remove={removeItem} on:update={updateItem} />
             {/each}
           {:else}
           {#each listings as listing}
-            <h1>Items listing</h1>
-            <Item item={listing} time={time} categories={categories} on:remove={removeItem} />
+            <Item item={listing} time={time} categories={categories} on:remove={removeItem} on:update={updateItem} />
           {/each}
         {/if}
         </div>
-      {:else}
+      {:else if listings && listings.length < 1}
         <p>No items found</p>
+      {:else}
+        <p>Loading...</p>
       {/if}
     </div>
   {:else}
@@ -351,5 +439,9 @@
     .login-form-fields input[type="password"] {
       margin: 0;
     }
+  }
+  .homebase .btn:disabled {
+    border-color: rgba(75, 85, 99, var(--tw-bg-opacity));
+    color: white;
   }
 </style>

@@ -83,6 +83,7 @@
           .from('Decay')
           .remove([fromPath])
       }
+      menuVisible = false
       dispatch('remove', item)
       message.set('Item successfully deleted.')
     }
@@ -214,6 +215,7 @@
       // editItem.category = data[0].category
       updateEndTimeRelativity()
       menuVisible = false
+      dispatch('update', item)
       message.set('Item updated.')
     }
   }

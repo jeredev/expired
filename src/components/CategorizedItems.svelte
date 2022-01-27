@@ -10,12 +10,6 @@
   export let category
   export let time
 
-  const removeItem = (e) => {
-    const index = items.findIndex((x) => x.id === e.detail.id)
-    if (index !== -1) {
-      items = [...items.slice(0, index), ...items.slice(index + 1)]
-    }
-  }
 </script>
 
 <div class="grouping">
@@ -38,7 +32,7 @@
   {#if itemsVisible}
     <div transition:slide class="items-list">
       {#each items as item}
-        <Item item={item} time={time} categories={categories} on:remove={removeItem} />
+        <Item item={item} time={time} categories={categories} on:remove on:update />
       {/each}
     </div>
   {/if}
