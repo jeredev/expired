@@ -4,7 +4,27 @@
   import { slide } from 'svelte/transition';
   import Icon from '@iconify/svelte'
   import {
+    addYears,
+    addMonths,
+    addWeeks,
+    addDays,
+    addMinutes,
+    addHours,
+    differenceInYears,
+    differenceInMonths,
+    differenceInWeeks,
+    differenceInDays,
+    differenceInHours,
+    differenceInMinutes,
+    format,
     getTime,
+    startOfDay,
+    subYears,
+    subMonths,
+    subWeeks,
+    subDays,
+    subHours,
+    subMinutes,
   } from 'date-fns'
 
   // import Layout from "./__layout.svelte";
@@ -26,7 +46,8 @@
   let password;
 
   let addMenuActive = false
-  let sortingMenuActive = true
+  let searchMenuActive = false
+  let sortingMenuActive = false
 
   const logIn = async () => {
     const { user, error } = await supabase.auth.signIn({
@@ -151,6 +172,81 @@
     })
   }
 
+  const search = {
+    name: '',
+    endTime: '',
+    endRelatively: {
+      years: null,
+      months: null,
+      weeks: null,
+      days: null,
+      hours: null,
+      minutes: null,
+    },
+    category: ''
+  }
+
+  let searchQueryValid = false
+
+  const checkSearchValidity = () => {
+    if (/([^\s])/.test(search.name) || /([^\s])/.test(search.endTime) || /([^\s])/.test(search.category)) {
+      searchQueryValid = true
+    }
+    else {
+      searchQueryValid = false
+    }
+  }
+
+  const updateEndTimeRelatively = () => {
+    let adjTime = new Date()
+    if (search.endRelatively.years)
+      adjTime = addYears(adjTime, search.endRelatively.years)
+    if (search.endRelatively.months)
+      adjTime = addMonths(adjTime, search.endRelatively.months)
+    if (search.endRelatively.weeks)
+      adjTime = addWeeks(adjTime, search.endRelatively.weeks)
+    if (search.endRelatively.days)
+      adjTime = addDays(adjTime, search.endRelatively.days)
+    if (search.endRelatively.hours)
+      adjTime = addHours(adjTime, search.endRelatively.hours)
+    if (search.endRelatively.minutes)
+      adjTime = addMinutes(adjTime, search.endRelatively.minutes)
+      search.endTime = format(new Date(adjTime), 'yyyy-MM-dd\'T\'HH:mm')
+    checkSearchValidity()
+  }
+
+  const updateEndTimeRelativity = () => {
+    const startTime = new Date()
+    if (search.endTime) {
+      let endTime = new Date(search.endTime)
+      search.endRelatively.years = differenceInYears(endTime, startTime)
+      endTime = subYears(new Date(endTime), search.endRelatively.years)
+      search.endRelatively.months = differenceInMonths(endTime, startTime)
+      endTime = subMonths(new Date(endTime), differenceInMonths(endTime, startTime))
+      search.endRelatively.weeks = differenceInWeeks(endTime, startTime)
+      endTime = subWeeks(new Date(endTime), differenceInWeeks(endTime, startTime))
+      search.endRelatively.days = differenceInDays(endTime, startTime)
+      endTime = subDays(new Date(endTime), differenceInDays(endTime, startTime))
+      search.endRelatively.hours = differenceInHours(endTime, startTime)
+      endTime = subHours(new Date(endTime), differenceInHours(endTime, startTime))
+      search.endRelatively.minutes = differenceInMinutes(endTime, startTime)
+      endTime = subMinutes(new Date(endTime), differenceInMinutes(endTime, startTime))
+    }
+    else {
+      search.endRelatively.years = 0
+      search.endRelatively.months = 0
+      search.endRelatively.weeks = 0
+      search.endRelatively.days = 0
+      search.endRelatively.hours = 0
+      search.endRelatively.minutes = 0
+    }
+    checkSearchValidity()
+  }
+
+  const searchItems = async() => {
+    console.log('searching items!')
+  }
+
   const sortItems = (payload) => {
     switch (sortingMode) {
       case 'alpha-ascending':
@@ -228,14 +324,10 @@
     listings = categorizedItems
   }
 
-  const listItems = () => {
-    sortItems(items)
-    listings = items
-  }
+  const getItems = async(query) => {
 
-  onMount(async() => {
-    clock = window.setInterval(runClock, 1000);
-    const { data, error } = await supabase
+    // https://supabase.com/docs/reference/javascript/using-filters
+    let fetch = supabase
       .from('items')
       .select(`
         id,
@@ -248,9 +340,53 @@
         ),
         imagePath
       `)
-    allItems = data
-    items = allItems
+
+    if (query.name && /([^\s])/.test(query.name)) {
+      console.log(`name query detected as ${query.name}`)
+      fetch = fetch.ilike('name', `%${query.name}%`)
+    }
+    if (query.end && /([^\s])/.test(query.end)) {
+      console.log(`end query detected as ${query.end}`)
+      const endDate = new Date(query.end).toISOString()
+      fetch = fetch.lte('endTime', endDate)
+    }
+    if (query.cat && /([^\s])/.test(query.cat)) {
+      console.log(`category query detected as ${query.cat}`)
+      const category = categories.find((category) => category.name === query.cat)
+      fetch = fetch.eq('category', `${category.id}`)
+    }
+
+    const { data, error } = await fetch
+    if (data) return data
+    if (error) console.log(error)
+
+  }
+
+  const listItems = () => {
+    sortItems(items)
+    listings = items
+  }
+
+  onMount(async() => {
     categories = await getCategories()
+    const params = new URLSearchParams(location.search)
+    const searchQuery = {}
+    // Query building
+    if (params.get('name')) {
+      searchQuery.name = params.get('name')
+      search.name = params.get('name')
+    }
+    if (params.get('end')) {
+      searchQuery.end = params.get('end')
+      search.endTime = params.get('end')
+    }
+    if (params.get('cat')) {
+      searchQuery.cat = params.get('cat')
+      search.category = params.get('cat')
+    }
+    clock = window.setInterval(runClock, 1000);
+    allItems = await getItems(searchQuery)
+    items = allItems
     generateListings()
   });
   onDestroy(() => {
@@ -291,11 +427,11 @@
   </div>
   {#if $user}
     <div class="homebase">
-      <div class="panel flex justify-end">
+      <div class="panel flex justify-end mb-4">
         <button class={ sortingMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { sortingMenuActive = !sortingMenuActive }}>
           <Icon icon="clarity:sort-by-line" />
         </button>
-        <button class="btn ml-2">
+        <button class={ addMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { searchMenuActive = !searchMenuActive }}>
           <Icon icon="clarity:search-line" />
         </button>
         <button class={ addMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { addMenuActive = !addMenuActive }}>
@@ -308,60 +444,109 @@
       <div class="add-item-menu">
         <AddItem on:add={addItems} active={addMenuActive} />
       </div>
-      <div class="search-menu">
-        <h2 class="my-2">
-          Search
-        </h2>
-        <form action="" class="search">
-          <h2 class="my-2">
-            Search Form
+      {#if searchMenuActive}
+        <div transition:slide class="search-menu">
+          <h2 class="py-2 mb-4 text-white" style="border-bottom: 2px solid red; border-top: 2px solid red;">
+            Search
           </h2>
-          <div class="form-field my-2">
-            <label for="search-items--text">Name</label>
-            <input id="search-items--text" class="bg-black p-1 text-white w-full" type="text"><br>
-          </div>
-          <div class="area area--end-time my-2">
-            <div class="form-field relative">
-              <label for="expiration-search">Expiration Time</label>
+          <form on:submit={searchItems} class="search">
+            <div class="form-field my-2">
+              <label for="search-items--text">Name</label>
               <input
-                type="datetime-local"
-                id="expiration-search"
-                pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
-                required
-                style="background-color: white; color: black; width: 100%;"
+                name="name"
+                id="search-items--text"
+                class="bg-black p-2 text-white w-full"
+                type="text"
+                bind:value={search.name}
+                on:input="{checkSearchValidity}"
               >
             </div>
-            <div class="unit-form-fields mt-2">
-              <div class="form-field my-2">
-                <label for="search-items--years">Years</label>
-                <input id="search-items--years" class="bg-black p-1 text-white w-full" type="number" step="1">
+            <div class="area area--end-time my-2">
+              <div class="form-field relative">
+                <label for="expiration-search">Expiration Time</label>
+                <input
+                  name="end"
+                  type="datetime-local"
+                  class="p-2"
+                  id="expiration-search"
+                  pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
+                  style="background-color: black; color: white; width: 100%;"
+                  bind:value={search.endTime}
+                  on:change={updateEndTimeRelativity}
+                >
               </div>
-              <div class="form-field my-2">
-                <label for="search-items--months">Months</label>
-                <input id="search-items--months" class="bg-black p-1 text-white w-full" type="number" step="1">
+              <div class="unit-form-fields mt-2">
+                <div class="form-field my-2">
+                  <label for="search-items--years">Years</label>
+                  <input
+                    id="search-items--years"
+                    class="bg-black p-2 text-white w-full"
+                    type="number"
+                    step="1"
+                    bind:value={search.endRelatively.years}
+                    on:input="{updateEndTimeRelatively}"
+                  >
+                </div>
+                <div class="form-field my-2">
+                  <label for="search-items--months">Months</label>
+                  <input
+                    id="search-items--months"
+                    class="bg-black p-2 text-white w-full"
+                    type="number"
+                    step="1"
+                    bind:value={search.endRelatively.months}
+                    on:input="{updateEndTimeRelatively}"
+                  >
+                </div>
+                <div class="form-field my-2">
+                  <label for="search-items--weeks">Weeks</label>
+                  <input
+                    id="search-items--weeks"
+                    class="bg-black p-2 text-white w-full"
+                    type="number"
+                    step="1"
+                    bind:value={search.endRelatively.weeks}
+                    on:input="{updateEndTimeRelatively}"
+                  >
+                </div>
+                <div class="form-field my-2">
+                  <label for="search-items--days">Days</label>
+                  <input
+                    id="search-items--days"
+                    class="bg-black p-2 text-white w-full"
+                    type="number"
+                    step="1"
+                    bind:value={search.endRelatively.days}
+                    on:input="{updateEndTimeRelatively}"
+                  >
+                </div>
               </div>
-              <div class="form-field my-2">
-                <label for="search-items--weeks">Weeks</label>
-                <input id="search-items--weeks" class="bg-black p-1 text-white w-full" type="number" step="1">
-              </div>
-              <div class="form-field my-2">
-                <label for="search-items--days">Days</label>
-                <input id="search-items--days" class="bg-black p-1 text-white w-full" type="number" step="1">
-              </div>
+              {#if categories}
+                <div class="form-field my-2">
+                  <label for="search-items--category">Category</label>
+                  <select
+                    name="cat"
+                    id="new-item--category"
+                    class="bg-black p-2 text-white w-full"
+                    bind:value="{search.category}"
+                    on:change="{checkSearchValidity}"
+                  >
+                    {#each categories as category}
+                      <option value="{category.name}">{category.name}</option>
+                    {/each}
+                  </select>
+                </div>
+              {/if}
             </div>
-            <div class="form-field my-2">
-              <label for="search-items--category">Category</label>
-              <input id="search-items--category" class="bg-black p-1 text-white w-full" type="text">
-            </div>
-          </div>
-          <button type="submit" class="btn">
-            <Icon icon="clarity:search-line" />
-          </button>
-        </form>
-      </div>
+            <button type="submit" class="btn my-2" disabled={!searchQueryValid}>
+              <Icon icon="clarity:search-line" />
+            </button>
+          </form>
+        </div>
+      {/if}
       {#if sortingMenuActive}
-        <div transition:slide class="sector my-4">
-          <h2 class="my-2">
+        <div transition:slide class="sector mb-4">
+          <h2 class="py-2 mb-4 text-white" style="border-bottom: 2px solid red; border-top: 2px solid red;">
             Sorting and Filtering
           </h2>
           <div class="grid grid-cols-2 gap-2 my-2">

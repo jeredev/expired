@@ -2,6 +2,7 @@
   import { supabase, user } from "$lib/db";
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { slide } from 'svelte/transition';
+  import Icon from '@iconify/svelte'
   import { message } from "../stores";
   import {
     formatDistanceToNowStrict,
@@ -345,8 +346,8 @@
             class="item-image"
           >
           {#if menuVisible}
-            <button class="btn leading-tight negative mt-4" on:click="{deleteImage}">
-              Delete image
+            <button class="btn leading-tight negative mt-4 flex justify-center w-full" on:click="{deleteImage}">
+              <Icon icon="clarity:trash-line" />
             </button>
           {/if}
         {:else}
@@ -417,7 +418,7 @@
                         type="datetime-local"
                         pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
                         required
-                        style="background-color: white; color: black;"
+                        style="background-color: black; color: white;"
                         class="px-2 py-1 w-full"
                         on:change="{updateEndTimeRelativity}"
                       >
@@ -432,7 +433,7 @@
                           type="datetime-local"
                           pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
                           required
-                          style="background-color: white; color: black;"
+                          style="background-color: black; color: white;"
                           class="px-2 py-1 w-full"
                           on:change="{updateEndTimeRelativity}"
                         >

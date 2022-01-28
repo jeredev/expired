@@ -245,6 +245,9 @@
 
 {#if active}
   <div transition:slide class="container" style="max-width: 60rem;">
+    <h2 class="py-2 mb-4 text-white" style="border-bottom: 2px solid red; border-top: 2px solid red;">
+      Add New Item
+    </h2>
     <form on:submit|preventDefault class="form form--add-item">
       <div class="form-field my-2">
         <label for="new-item--name block mb-1">Item Name</label>
@@ -278,7 +281,7 @@
             type="datetime-local"
             pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
             required
-            style="background-color: white; color: black;"
+            style="background-color: black; color: white;"
             class="px-2 py-1 w-full"
           >
         </div>
@@ -291,7 +294,7 @@
             type="datetime-local"
             pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
             required
-            style="background-color: white; color: black;"
+            style="background-color: black; color: white;"
             class="px-2 py-1 w-full"
             on:change={updateEndTimeRelativity}
           >

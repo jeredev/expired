@@ -7,6 +7,9 @@
   body {
     background-color: #181818;
   }
+  ::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
   .btn {
     @apply
     px-4 py-1 text-sm text-red-600 font-semibold
