@@ -45,7 +45,7 @@
   let email;
   let password;
 
-  let addMenuActive = false
+  let addMenuActive = true
   let searchMenuActive = false
   let sortingMenuActive = false
 
@@ -71,6 +71,14 @@
       generateListings()
     });
   }
+
+  // const barcodeDetector = new BarcodeDetector({
+  //   formats: [
+  //     'code_39',
+  //     'codabar',
+  //     'ean_13'
+  //   ]
+  // })
 
   const removeItem = (e) => {
     const indexAllItems = items.findIndex((x) => x.id === e.detail.id)
@@ -388,6 +396,7 @@
     allItems = await getItems(searchQuery)
     items = allItems
     generateListings()
+
   });
   onDestroy(() => {
     clearInterval(clock)
@@ -431,7 +440,7 @@
         <button class={ sortingMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { sortingMenuActive = !sortingMenuActive }}>
           <Icon icon="clarity:sort-by-line" />
         </button>
-        <button class={ addMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { searchMenuActive = !searchMenuActive }}>
+        <button class={ searchMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { searchMenuActive = !searchMenuActive }}>
           <Icon icon="clarity:search-line" />
         </button>
         <button class={ addMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { addMenuActive = !addMenuActive }}>

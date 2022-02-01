@@ -1,6 +1,6 @@
 <script lang="ts">
   import { supabase, user } from "$lib/db";
-  import { createEventDispatcher, onDestroy, onMount } from "svelte";
+  import { afterUpdate, createEventDispatcher, onDestroy, onMount } from "svelte";
   import { slide } from 'svelte/transition';
   import Icon from '@iconify/svelte'
   import { message } from "../stores";
@@ -31,6 +31,8 @@
   export let categories
   export let item
   export let time
+
+  item.image = null
 
   item.edits = {
     name: item.name,
@@ -132,9 +134,6 @@
   const buildItemImage = async (path) => {
     const imagePath = $user.id + "/" + item.imagePath
     item.image = await getItemImage(imagePath)
-  }
-  if (item.imagePath && !item.image) {
-    buildItemImage(item.imagePath)
   }
   const io = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
@@ -313,10 +312,18 @@
       item.edits.endRelatively.minutes = 0
     }
   }
-
+  afterUpdate(() => {
+    // alert('after update')
+    if (item.imagePath && !item.image) {
+      buildItemImage(item.imagePath)
+    }
+  })
   onMount(() => {
     updateEndTimeRelativity()
     checkUpdateValidity()
+    if (item.imagePath && !item.image) {
+      buildItemImage(item.imagePath)
+    }
     if (itemElement) {
       io.observe(itemElement)
     }

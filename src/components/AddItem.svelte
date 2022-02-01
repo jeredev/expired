@@ -26,6 +26,7 @@
     subMinutes,
   } from 'date-fns'
   import { createEventDispatcher } from "svelte";
+import { dataset_dev } from "svelte/internal";
 
   const dispatch = createEventDispatcher();
 
@@ -235,11 +236,110 @@
   }
   let categories
 
+  let barcodeEntry
+
+  let scanner
+  let capture
+  let detection
+  let barcodeDetector
+  let mediaStream
+  let scannedBarcode
+  let mount
+  let video
+
+  let itemsFound = []
+
+  const setupScanner = () => {
+    scanner = true
+    barcodeDetector = new BarcodeDetector({
+      formats: [
+        // 'ean_13',
+        'upc_a',
+      ]
+    })
+    capture = document.getElementById('capture')
+    mount = document.getElementById('scanner-results')
+  }
+
+  const activateScanner = async() => {
+    video = document.getElementById('barcode-capture')
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' }
+    })
+    video.srcObject = mediaStream
+    detect()
+  }
+
+  const deactivateScanner = () => {
+    mediaStream.getTracks().forEach(track => {
+      track.stop()
+    })
+    video.srcObject = null
+    scannedBarcode = null
+  }
+
+  const detect = async() => {
+    function render() {
+      barcodeDetector
+        .detect(video)
+        .then(barcodes => {
+          barcodes.forEach(async(barcode) => {
+            if (scannedBarcode) return
+            else {
+              scannedBarcode = barcode.rawValue
+              stopDetection()
+              const scannedItem = await barcodeLookup(scannedBarcode)
+              deactivateScanner()
+            }
+          });
+        })
+        .catch(console.error);
+        }
+
+    (function renderLoop() {
+      detection = requestAnimationFrame(renderLoop);
+      render()
+    })()
+  }
+
+  const stopDetection = () => {
+    cancelAnimationFrame(detection)
+  }
+
+  // API :: https://world.openfoodfacts.org/api/v0/product/652729101133.json
+  const barcodeLookup = async(barcode) => {
+    // console.log(`fetching ${barcode}`)
+    message.set('Fetching')
+    fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
+      .then(response => response.json())
+      .then(async(data) => {
+        if (data.product.product_name_en) newItem.name = data.product.product_name_en
+        if (data.product.image_url) {
+          newItemImagePreview = data.product.image_url
+          newItem.image = await fetch(data.product.image_url).then(r => r.blob())
+        }
+        message.set(`Data fetched for ${data.code}`)
+        // alert(`${data.product.product_name_en}`)
+        // console.log(data)
+        // return data
+        // data.image_front_url
+        // data.product_name_en
+        // data.product_name_en_imported
+        // data.brands
+      })
+      .catch(error => {
+        message.set(`Fetch error: ${error}`)
+        console.error('There has been a problem with your fetch operation:', error)
+      })
+    // const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`, )
+  }
+
   onMount(async() => {
     categories = await getCategories()
+    if (('BarcodeDetector' in window)) {
+      setupScanner()
+    }
   })
-
-  // console.log($user)
 
 </script>
 
@@ -248,6 +348,22 @@
     <h2 class="py-2 mb-4 text-white" style="border-bottom: 2px solid red; border-top: 2px solid red;">
       Add New Item
     </h2>
+    {#if scanner}
+      <div class="scanner-panel">
+        <button class="btn my-2" on:click="{activateScanner}">Add using barcode</button>
+        <div id="capture">
+          <video
+            autoplay
+            id="barcode-capture"
+            src=""
+          >
+            <track default
+              kind="captions" />
+            Sorry, your browser doesn't support embedded videos.
+          </video>
+        </div>
+      </div>
+    {/if}
     <form on:submit|preventDefault class="form form--add-item">
       <div class="form-field my-2">
         <label for="new-item--name block mb-1">Item Name</label>
