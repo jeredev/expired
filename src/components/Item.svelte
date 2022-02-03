@@ -28,11 +28,14 @@
     subMinutes,
   } from 'date-fns'
 
+  // let expired = null
+
   export let categories
   export let item
   export let time
 
-  item.image = null
+  item.expired = null
+  // item.image = null
 
   item.edits = {
     name: item.name,
@@ -60,6 +63,8 @@
   let itemElement
   let menuVisible = false
 
+  let statusProcessing = false
+
   const dispatch = createEventDispatcher();
 
   const getLifespan = (startTime, endTime) => {
@@ -68,13 +73,22 @@
   const getTimeElapsed = (startTime) => {
     return time - getTime(new Date(startTime))
   }
+  let statusRemoving = false
   const removeItem = async() => {
+    statusProcessing = true
+    statusRemoving = true
     const { data, error } = await supabase
       .from('items')
       .delete()
       .match({ id: item.id })
     if (error) {
-      // console.log('error', error)
+      statusProcessing = false
+      statusRemoving = false
+      message.set({
+          text: `Fetch error: ${error}`,
+          timed: true
+        })
+      console.error('There was a problem:', error)
       return
     }
     if (data) {
@@ -86,9 +100,14 @@
           .from('Decay')
           .remove([fromPath])
       }
+      statusProcessing = false
+      statusRemoving = false
       menuVisible = false
       dispatch('remove', item)
-      message.set('Item successfully deleted.')
+      message.set({
+        text: 'Item successfully deleted.',
+        timed: true
+      })
     }
   }
   const getTimeBar = () => {
@@ -104,23 +123,43 @@
       return percentLeftCSS
     }
   }
+  const getPrecursorBar = () => {
+    let timeElapsed = getTimeElapsed(item.startTime)
+    let lifespan = getLifespan(item.startTime, item.endTime)
+    let timeLeft = lifespan - timeElapsed
+    if (timeLeft < 0) {
+      // return 'transform: translateX(-100%)'
+    }
+    else {
+      // console.log(`${(timeElapsed / lifespan) * 100}`)
+      const percent = (timeElapsed / lifespan) * 100
+      let percentLost = -Math.abs(percent) + 100
+      let percentLeft = `${percentLost}%`
+      // let scale = `${(timeElapsed / lifespan)}`
+      let precursorWidth = `${(timeElapsed / lifespan) * 100}%`
+      // let percentLeft = `-${(lifespan * 100) / timeElapsed}%`
+      let percentLeftCSS = `width: ${precursorWidth};`
+      return percentLeftCSS
+    }
+  }
   const getTimeRemainder = () => {
     let timeElapsed = getTimeElapsed(item.startTime)
     let lifespan = getLifespan(item.startTime, item.endTime)
     if (timeElapsed > lifespan) {
-      return 'Expired'
+      item.expired = true
     }
     else {
-      // console.log(`running timeRemainder :: time is ${time}`)
+      item.expired = false
       let timeRemaining = lifespan - timeElapsed + time
       let timeReported = formatDistanceToNowStrict(timeRemaining)
       return timeReported
     }
   }
-  let timeBar = getTimeBar()
-  let timeRemainder = getTimeRemainder()
+  item.precursorBar = getPrecursorBar()
+  item.timeBar = getTimeBar()
+  item.timeRemaining = getTimeRemainder()
   const getItemImage = async (path) => {
-    // console.log('getItemImage :: fetching from supabase')
+    // console.log('getting image from supabase')
     const { data, error } = await supabase
       .storage
       .from('Decay')
@@ -137,7 +176,7 @@
   }
   const io = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
-      if (entry.intersectionRatio > 0) {
+      if (entry.isIntersecting) {
         entry.target.classList.remove('unset')
         io.unobserve(entry.target)
       }
@@ -182,12 +221,20 @@
           // console.log('error', error)
           return
         }
-        else message.set('Successfully deleted item image.')
+        else {
+          message.set({
+            text: 'Successfully deleted item image.',
+            timed: true 
+          })
+        }
       }
     }
   }
 
+  let statusUpdating = false
   const updateItem = async () => {
+    statusProcessing = true
+    statusUpdating = true
     const { data, error } = await supabase
       .from('items')
       .update({
@@ -198,7 +245,13 @@
       })
       .match({ id: item.id })
     if (error) {
-      // console.log('error', error)
+      statusProcessing = false
+      statusUpdating = false
+      message.set({
+          text: `Error: ${error}`,
+          timed: true
+        })
+      console.error('There was a problem:', error)
       return
     }
     if (data && data[0]) {
@@ -216,7 +269,12 @@
       updateEndTimeRelativity()
       menuVisible = false
       dispatch('update', item)
-      message.set('Item updated.')
+      statusProcessing = false
+      statusUpdating = false
+      message.set({
+        text: 'Item updated.',
+        timed: true
+      })
     }
   }
 
@@ -248,7 +306,10 @@
         fileInput = null
         itemImagePreview = null
         menuVisible = false
-        message.set('Successfully added image to item.')
+        message.set({
+          text: 'Successfully added image to item.',
+          timed: true
+        })
         item.imagePath = `${item.id}`
         buildItemImage(item.imagePath)
       }
@@ -313,15 +374,20 @@
     }
   }
   afterUpdate(() => {
+    // console.log(item)
     // alert('after update')
-    if (item.imagePath && !item.image) {
-      buildItemImage(item.imagePath)
-    }
+    // if (item.imagePath && !item.image) {
+    //   buildItemImage(item.imagePath)
+    // }
   })
   onMount(() => {
+    // console.log(item)
     updateEndTimeRelativity()
     checkUpdateValidity()
     if (item.imagePath && !item.image) {
+      // console.log('if')
+      // console.log(item.imagePath)
+      // console.log(item.image)
       buildItemImage(item.imagePath)
     }
     if (itemElement) {
@@ -336,8 +402,9 @@
   // Reactivity to Time
   $: {
     if (time) {
-      timeBar = getTimeBar()
-      timeRemainder = getTimeRemainder()
+      item.precursorBar = getPrecursorBar()
+      item.timeBar = getTimeBar()
+      item.timeRemaining = getTimeRemainder()
     }
   }
 </script>
@@ -350,10 +417,11 @@
           <img 
             src="{item.image}" 
             alt="{item.name}" 
-            class="item-image"
+            class="item-image block m-auto"
+            loading="lazy"
           >
           {#if menuVisible}
-            <button class="btn leading-tight negative mt-4 flex justify-center w-full" on:click="{deleteImage}">
+            <button class="btn leading-tight negative mt-4 flex justify-center w-full" on:click="{deleteImage}" disabled="{statusProcessing}">
               <Icon icon="clarity:trash-line" />
             </button>
           {/if}
@@ -391,7 +459,7 @@
           </div>
           <aside>
             <button class="btn" on:click="{() => menuVisible = !menuVisible}">
-              Menu
+              <Icon icon="clarity:menu-line" />
             </button>
           </aside>
         </div>
@@ -413,7 +481,6 @@
                         <option value="{category.id}">{category.name}</option>
                       {/each}
                     </select>
-                    <!-- <input type="text" id="edit-{item.id}--category" class="bg-black p-1 text-white" bind:value="{editedCategory.name}" /> -->
                   </div>
                 </div>
                 <div class="area area--start-time">
@@ -483,11 +550,19 @@
                     <div class="py-2">Invalid</div>
                   {/if}
                   <div class="area area--remove">
-                    <button type="button" class="btn edit-item" on:click="{updateItem}" disabled="{!updateValid}">
-                      Update Item
+                    <button type="button" class="btn edit-item" on:click="{updateItem}" disabled="{!updateValid || statusProcessing}">
+                      {#if statusUpdating}
+                        Updating...
+                      {:else}
+                        Update Item
+                      {/if}
                     </button>
-                    <button type="button" class="btn remove-item mx-2 negative" on:click={() => { confirmDelete = !confirmDelete }}>
-                      Delete Item
+                    <button type="button" class="btn remove-item mx-2 negative" on:click={() => { confirmDelete = !confirmDelete }} disabled="{statusProcessing}">
+                      {#if statusRemoving}
+                        Removing...
+                      {:else}
+                        Delete Item
+                      {/if}
                     </button>
                     {#if confirmDelete}
                       <div transition:slide class="mt-4">
@@ -509,9 +584,20 @@
       </div>
       <div class="timer">
         <div class="timer__bar">
-          <div class="measure" style="{ timeBar }"></div>
+          <div class="precursor">
+            <div class="precursor-meter-veil" style="{ item.precursorBar }">
+              <div class="precursor-meter"></div>
+            </div>
+          </div>
+          <div class="measure">
+            <div class="meter" style="{ item.timeBar }"></div>
+          </div>
           <div class="timer__remainder">
-            { timeRemainder }
+            {#if item.timeRemaining}
+              { item.timeRemaining }
+            {:else}
+              Expired
+            {/if}
           </div>
         </div>
       </div>
@@ -520,21 +606,64 @@
 </div>
 
 <style>
+  .precursor {
+    /* background-color: white; */
+    /* display: none; */
+    /* filter: drop-shadow(0 0 0.5rem white); */
+    height: 100%;
+    position: absolute;
+    left: 0;
+    /* right: 0; */
+    top: 0;
+    width: 100%;
+  }
+  .precursor-meter-veil {
+    filter: drop-shadow(0 0 0.5rem white);
+    height: 100%;
+    position: absolute;
+    /* left: 0; */
+    right: 0;
+    top: 0;
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: 400ms;
+    width: 100%;
+  }
+  .precursor-meter {
+    background-color: white;
+    /* clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 1rem 100%); */
+    height: 100%;
+    left: 0;
+    /* right: 0; */
+    position: absolute;
+    top: 0;
+    width: 100%;
+  }
   .item {
     border-top: 2px solid var(--gray);
   }
+  /* .item.expired .timer__remainder {
+    color: var(--red);
+  } */
   .item-internal {
     grid-template-columns: 100px 1fr;
   }
   .item-title-area {
     grid-template-columns: 1fr max-content;
   }
+  .item-title {
+    line-height: 1.2;
+    /* font-size: 110%; */
+  }
   .form-field {
     grid-template-columns: max-content 1fr;
   }
   .item-image {
+    flex: 1;
     opacity: 1;
     transition: 400ms opacity;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
   }
   .unset .item-image {
     opacity: 0;
@@ -546,27 +675,41 @@
     justify-content: space-between;
   }
   .timer {
-    margin-top: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 2rem;
     position: relative;
   }
   .timer__bar {
+    /* border: 2px solid purple; */
     font-size: 90%;
-    overflow: hidden;
+    /* overflow: hidden; */
     padding: 0.125rem 0.25rem;
     position: relative;
     width: 100%;
   }
-  .timer__bar .measure {
+  .measure {
+    /* background: red; */
+    overflow: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+  /* .timer__bar .measure {
     background-color: #f8feff;
     clip-path: polygon(0% 0%, calc(100% - 1rem) 0%, 100% 100%, 0 100%);
     height: 1rem;
     transform-origin: left;
     position: relative;
     transition: transform 400ms;
-    width: 100%;
-  }
-  .unset .timer__bar .measure {
+    width: calc(100% + 1rem);
+  } */
+  /* .unset .timer__bar .meter {
     transform: translateX(0) !important;
+  } */
+  .unset .timer__bar .precursor-meter-veil {
+    transform: scaleX(1) !important;
   }
   .timer__bar:before {
     border: 1px solid white;
@@ -576,19 +719,25 @@
     pointer-events: none;
     position: absolute;
   }
-  .timer__bar .measure {
+  /* .item.expired .timer__bar:before {
+    border-color: var(--red);
+  } */
+  .timer__bar .meter {
     background-color: #f8feff;
-    clip-path: polygon(0% 0%, calc(100% - 1rem) 0%, 100% 100%, 0 100%);
+    /* clip-path: polygon(0% 0%, calc(100% - 1rem) 0%, 100% 100%, 0 100%); */
+    /* filter: drop-shadow(1rem 0rem 1rem white); */
     height: calc(100% + 2px);
+    /* height: 100%; */
     transform-origin: left;
     position: absolute;
-    top: -1px;
+    top: 0;
     left: 0;
-    transition: transform 400ms;
+    /* transition: transform 400ms; */
+    /* width: calc(100% + 1rem); */
     width: 100%;
   }
-  .unset .timer__bar .measure {
-    transform: translateX(0) !important;
+  .unset .timer__bar .meter {
+    /* transform: translateX(0) !important; */
   }
   .timer__remainder {
     line-height: 1.2;
@@ -599,6 +748,11 @@
   }
 
   /*  Item Image  */
+
+  .image-block {
+    display: flex;
+    overflow: hidden;
+  }
 
   /* .item-image {
     object-fit: cover;

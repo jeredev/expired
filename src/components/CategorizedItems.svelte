@@ -24,7 +24,11 @@
     <div class="category__panel">
       {#if items.length}
         <button on:click={() => { itemsVisible = !itemsVisible }}>
-          <Icon icon="clarity:plus-line" />
+          {#if itemsVisible}
+          <Icon icon="clarity:minus-line" />
+          {:else}
+            <Icon icon="clarity:plus-line" />
+          {/if}
         </button>
       {/if}
     </div>

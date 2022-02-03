@@ -33,7 +33,7 @@
   import CategorizedItems from "../components/CategorizedItems.svelte"
   import Item from "../components/Item.svelte"
   import Messenger from "../components/Messenger.svelte"
-  import { message } from "../stores";
+  import { displayMode, sortingMode, timeStatusMode, message } from "../stores";
 
   let allItems = []
   let items = []
@@ -45,40 +45,90 @@
   let email;
   let password;
 
-  let addMenuActive = true
+  let addMenuActive = false
   let searchMenuActive = false
   let sortingMenuActive = false
 
+  // const sendMsg = () => {
+  //   message.set({
+  //     text: 'Message',
+  //     timed: true
+  //   })
+  // }
+
+  let statusProcessing = false
+
   const logIn = async () => {
+    statusProcessing = true
     const { user, error } = await supabase.auth.signIn({
       email: email,
       password: password,
     });
-    message.set('Successfully logged in.')
+    if (user) {
+      statusProcessing = false
+      message.set({
+      text: 'Successfully logged in.',
+      timed: true
+      })
+    }
+    if (error) {
+      statusProcessing = false
+      message.set({
+        text: `Error: ${error}`,
+        timed: true
+      })
+      console.error('There was a problem:', error)
+      return
+    }
   };
 
   const logOut = async () => {
+    statusProcessing = true
     const { error } = await supabase.auth.signOut();
-    message.set('Successfully logged out.')
+    statusProcessing = false
+    if (error) {
+      message.set({
+        text: `Error: ${error}`,
+        timed: true
+      })
+      console.error('There was a problem:', error)
+      return
+    }
+    else {
+      message.set({
+        text: 'Successfully logged out.',
+        timed: true
+      })
+    }
   };
 
-  const addItems = (e) => {
+  const addItems = async(e) => {
+    console.log('dispatch addItems()')
+    console.log(e.detail)
     const newItems = e.detail
-    newItems.forEach(item => {
+    categories = await getCategories()
+    newItems.forEach(async(item) => {
+      // Find appropriate category
+      const found = categories.find(element => element.id === item.category)
+      console.log('found variable below')
+      console.log(found)
+      if (!found) {
+        item.category = {}
+        item.edits.category.id = null
+      } else {
+        item.category = found
+      }
+      console.log('item after assignment')
+      console.log(item)
+      if (item.imagePath) {
+        const imagePath = $user.id + "/" + item.imagePath
+        item.image = await getItemImage(imagePath)
+      }
       item.time = time
-      // TO DO :: Surgically insert instead of just throwing it at the end
       items = [...items, item]
       generateListings()
     });
   }
-
-  // const barcodeDetector = new BarcodeDetector({
-  //   formats: [
-  //     'code_39',
-  //     'codabar',
-  //     'ean_13'
-  //   ]
-  // })
 
   const removeItem = (e) => {
     const indexAllItems = items.findIndex((x) => x.id === e.detail.id)
@@ -125,13 +175,6 @@
 
   /* Sorting */
 
-  // Level One
-  let displayMode = 'list'
-  // Level Two
-  let timeStatusMode = 'all'
-  // Level Three
-  let sortingMode = 'alpha-ascending'
-
   const getLifespan = (startTime, endTime) => {
     return getTime(new Date(endTime)) - getTime(new Date(startTime))
   }
@@ -139,29 +182,23 @@
     return time - getTime(new Date(startTime))
   }
   const filterAll = () => {
-    timeStatusMode = 'all'
     items = allItems
-    generateListings()
   }
   const filterSafe = () => {
-    timeStatusMode = 'safe'
     const safe = allItems.filter(item => {
       let timeElapsed = getTimeElapsed(item.startTime)
       let lifespan = getLifespan(item.startTime, item.endTime)
       return timeElapsed < lifespan
     })
     items = safe
-    generateListings()
   }
   const filterExpired = () => {
-    timeStatusMode = 'expired'
     const expired = allItems.filter(item => {
       let timeElapsed = getTimeElapsed(item.startTime)
       let lifespan = getLifespan(item.startTime, item.endTime)
       return timeElapsed > lifespan
     })
     items = expired
-    generateListings()
   }
   const sortAlphaAsc = (payload) => {
     return payload.sort((a, b) => a.name.localeCompare(b.name))
@@ -252,11 +289,11 @@
   }
 
   const searchItems = async() => {
-    console.log('searching items!')
+    // console.log('searching items!')
   }
 
   const sortItems = (payload) => {
-    switch (sortingMode) {
+    switch ($sortingMode) {
       case 'alpha-ascending':
         sortAlphaAsc(payload)
         break
@@ -272,23 +309,33 @@
     }
   }
 
+  const sortByTimeStatus = () => {
+    switch ($timeStatusMode) {
+      case 'all':
+        filterAll()
+        break
+      case 'safe':
+        filterSafe()
+        break
+      case 'expired':
+        filterExpired()
+        break
+    }
+  }
+
   const setDisplayMode = (mode) => {
-    displayMode = mode
+    displayMode.set(mode)
     generateListings()
   }
 
   const setSortingMode = (mode) => {
-    sortingMode = mode
+    sortingMode.set(mode)
     generateListings()
   }
 
-  const generateListings = () => {
-    if (displayMode === 'categories') {
-      categorizeItems()
-    }
-    else {
-      listItems()
-    }
+  const setTimeStatusMode = (mode) => {
+    timeStatusMode.set(mode)
+    generateListings()
   }
 
   let categories = []
@@ -297,6 +344,15 @@
       .from('categories')
       .select()
     if (data) return data
+  }
+
+  const generateListings = () => {
+    if ($displayMode === 'categories') {
+      categorizeItems()
+    }
+    else {
+      listItems()
+    }
   }
 
   const categorizeItems = () => {
@@ -316,6 +372,7 @@
       items: []
     }
     categorizedItems.push(uncategorizedCategory)
+    sortByTimeStatus()
     items.forEach((item) => {
       if (item.category) {
         const found = categorizedItems.find(element => element.id === item.category.id)
@@ -332,8 +389,13 @@
     listings = categorizedItems
   }
 
-  const getItems = async(query) => {
+  const listItems = () => {
+    sortByTimeStatus()
+    sortItems(items)
+    listings = items
+  }
 
+  const getItems = async(query) => {
     // https://supabase.com/docs/reference/javascript/using-filters
     let fetch = supabase
       .from('items')
@@ -370,9 +432,16 @@
 
   }
 
-  const listItems = () => {
-    sortItems(items)
-    listings = items
+  const getItemImage = async (path) => {
+    const { data, error } = await supabase
+      .storage
+      .from('Decay')
+      .download(path)
+    if (data) return URL.createObjectURL(data)
+    if (error) {
+      console.log(error)
+      // console.log(path)
+    }
   }
 
   onMount(async() => {
@@ -394,6 +463,12 @@
     }
     clock = window.setInterval(runClock, 1000);
     allItems = await getItems(searchQuery)
+    allItems.forEach(async(item) => {
+      if (item.imagePath) {
+        const imagePath = $user.id + "/" + item.imagePath
+        item.image = await getItemImage(imagePath)
+      }
+    })
     items = allItems
     generateListings()
 
@@ -406,6 +481,7 @@
 <div class="decay mx-auto max-w-50rem p-4 text-white">
   <Messenger />
   <div class="header">
+    <!-- <button type="button" class="btn" on:click="{sendMsg}">Message</button> -->
     {#if !$user}
       <form on:submit|preventDefault={logIn} class="form form--login">
         <div class="login-form-fields">
@@ -424,7 +500,7 @@
             placeholder="Password"
             class="bg-black text-white my-2 p-2 w-full"
           > 
-          <button type="submit" class="btn">
+          <button type="submit" class="btn" disabled="{statusProcessing}">
             Login
           </button>
           <!-- <button on:click={resetPwd} type="button" class="btn">
@@ -446,13 +522,48 @@
         <button class={ addMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { addMenuActive = !addMenuActive }}>
           <Icon icon="clarity:add-line" />
         </button>
-        <button on:click={logOut} class="btn ml-2">
+        <button on:click={logOut} class="btn ml-2" disabled="{statusProcessing}">
           <Icon icon="clarity:logout-solid" />
         </button>
       </div>
-      <div class="add-item-menu">
-        <AddItem on:add={addItems} active={addMenuActive} />
-      </div>
+      {#if sortingMenuActive}
+        <div transition:slide class="sector mb-4">
+          <h2 class="py-2 mb-4 text-white" style="border-bottom: 2px solid red; border-top: 2px solid red;">
+            Sorting and Filtering
+          </h2>
+          <div class="grid grid-cols-2 gap-2 my-2">
+            <button class="btn" disabled="{ $displayMode === 'list' }" on:click="{() => { setDisplayMode('list') }}">List</button>
+            <button class="btn" disabled="{ $displayMode === 'categories' }" on:click="{() => { setDisplayMode('categories') }}">Categories</button>
+          </div>
+          <div class="grid grid-cols-3 gap-2 my-2">
+            <button class="btn" disabled="{ $timeStatusMode === 'all' }" on:click="{() => setTimeStatusMode('all')}">
+              All
+            </button>
+            <button class="btn" disabled="{ $timeStatusMode === 'safe' }" on:click="{() => setTimeStatusMode('safe')}">
+              Safe
+            </button>
+            <button class="btn" disabled="{ $timeStatusMode === 'expired' }" on:click="{() => setTimeStatusMode('expired')}">
+              Expired
+            </button>
+          </div>
+          <div class="grid grid-cols-4 gap-2">
+            <button class="btn whitespace-nowrap" disabled="{ $sortingMode === "alpha-ascending" }" on:click={() => setSortingMode('alpha-ascending')}>
+              A <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(90deg);" /> Z
+            </button>
+            <button class="btn whitespace-nowrap" disabled="{ $sortingMode === "alpha-descending" }" on:click={() => setSortingMode('alpha-descending')}>
+              Z <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(90deg);" /> A
+            </button>
+            <button class="btn whitespace-nowrap" disabled="{ $sortingMode === "endtime-ascending" }" on:click={() => setSortingMode('endtime-ascending')}>
+              <Icon icon="clarity:clock-line" inline={true} style="display: inline-block;" />
+              <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block;" />
+            </button>
+            <button class="btn whitespace-nowrap" disabled="{ $sortingMode === "endtime-descending" }" on:click={() => setSortingMode('endtime-descending')}>
+              <Icon icon="clarity:clock-line" inline={true} style="display: inline-block;" />
+              <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(180deg);" />
+            </button>
+          </div>
+        </div>
+      {/if}
       {#if searchMenuActive}
         <div transition:slide class="search-menu">
           <h2 class="py-2 mb-4 text-white" style="border-bottom: 2px solid red; border-top: 2px solid red;">
@@ -553,49 +664,14 @@
           </form>
         </div>
       {/if}
-      {#if sortingMenuActive}
-        <div transition:slide class="sector mb-4">
-          <h2 class="py-2 mb-4 text-white" style="border-bottom: 2px solid red; border-top: 2px solid red;">
-            Sorting and Filtering
-          </h2>
-          <div class="grid grid-cols-2 gap-2 my-2">
-            <button class="btn" disabled="{ displayMode === 'list' }" on:click="{() => { setDisplayMode('list') }}">List</button>
-            <button class="btn" disabled="{ displayMode === 'categories' }" on:click="{() => { setDisplayMode('categories') }}">Categories</button>
-          </div>
-          <div class="grid grid-cols-3 gap-2 my-2">
-            <button class="btn" disabled="{ timeStatusMode === 'all' }" on:click="{filterAll}">
-              All
-            </button>
-            <button class="btn" disabled="{ timeStatusMode === 'safe' }" on:click="{filterSafe}">
-              Safe
-            </button>
-            <button class="btn" disabled="{ timeStatusMode === 'expired' }" on:click="{filterExpired}">
-              Expired
-            </button>
-          </div>
-          <div class="grid grid-cols-4 gap-2">
-            <button class="btn whitespace-nowrap" disabled="{ sortingMode === "alpha-ascending" }" on:click={() => setSortingMode('alpha-ascending')}>
-              A <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(90deg);" /> Z
-            </button>
-            <button class="btn whitespace-nowrap" disabled="{ sortingMode === "alpha-descending" }" on:click={() => setSortingMode('alpha-descending')}>
-              Z <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(90deg);" /> A
-            </button>
-            <button class="btn whitespace-nowrap" disabled="{ sortingMode === "endtime-ascending" }" on:click={() => setSortingMode('endtime-ascending')}>
-              <Icon icon="clarity:clock-line" inline={true} style="display: inline-block;" />
-              <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block;" />
-            </button>
-            <button class="btn whitespace-nowrap" disabled="{ sortingMode === "endtime-descending" }" on:click={() => setSortingMode('endtime-descending')}>
-              <Icon icon="clarity:clock-line" inline={true} style="display: inline-block;" />
-              <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(180deg);" />
-            </button>
-          </div>
-        </div>
-      {/if}
+      <div class="add-item-menu">
+        <AddItem on:add={addItems} active={addMenuActive} />
+      </div>
     </div>
     <div class="items">
       {#if listings && listings.length}
         <div class="items-listing">
-          {#if displayMode === 'categories'}
+          {#if $displayMode === 'categories'}
             {#each listings as category}
               <CategorizedItems categories={categories} category={category} time={time} items={category.items} on:remove={removeItem} on:update={updateItem} />
             {/each}
@@ -617,13 +693,13 @@
 </div>
 
 <style>
-  .category {
+  /* .category {
     align-items: center;
     grid-template-columns: 1fr max-content;
     position: sticky;
     top: 0;
     z-index: 2;
-  }
+  } */
   @media only all and (min-width: 40em) {
     .login-form-fields {
       display: grid;

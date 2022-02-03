@@ -26,7 +26,8 @@
     subMinutes,
   } from 'date-fns'
   import { createEventDispatcher } from "svelte";
-import { dataset_dev } from "svelte/internal";
+  import { dataset_dev } from "svelte/internal";
+import Item from "./Item.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -125,11 +126,13 @@ import { dataset_dev } from "svelte/internal";
       return
     }
     if (data) {
+      console.log('data from new item addition below:')
+      console.log(data)
       let newItemWithImg
       if (newItem.image) {
         newItemWithImg = await addNewItemImage(data)
+        data[0].imagePath = newItemWithImg[0].imagePath
       }
-      data[0].imagePath = newItemWithImg[0].imagePath
       // Reset New Item Form
       newItem = {
         name: null,
@@ -147,10 +150,40 @@ import { dataset_dev } from "svelte/internal";
       fileInput = null
       newItemImagePreview = null
       dispatch('add', data)
-      message.set('Successfully added new item.')
-      // fileInput.value = null // Doesn't work
+      message.set({
+        text: 'Successfully added new item.',
+        timed: true
+      })
+      // const newItemLookup = await lookupItem(data[0].id)
+      // if (newItemLookup) {
+      //   console.log('newItemLookup')
+      //   console.log(newItemLookup)
+      //   dispatch('add', newItemLookup)
+      //   message.set('Successfully added new item.')
+      // }
     }
   }
+
+  // const lookupItem = async(itemId) => {
+  //   // Lookup new item with the appropriate join
+  //   const { data, error } = await supabase
+  //     .from('items')
+  //     .select(`
+  //       id,
+  //       name,
+  //       startTime,
+  //       endTime,
+  //       category (
+  //         id,
+  //         name
+  //       ),
+  //       imagePath
+  //     `)
+  //     .match({ id: itemId })
+  //   if (data) {
+  //     return data
+  //   }
+  // }
 
   const addNewItemImage = async(item) => {
     const { data, error } = await supabase
@@ -239,12 +272,11 @@ import { dataset_dev } from "svelte/internal";
   let barcodeEntry
 
   let scanner
-  let capture
+  let scannerActive
   let detection
   let barcodeDetector
   let mediaStream
   let scannedBarcode
-  let mount
   let video
 
   let itemsFound = []
@@ -257,8 +289,6 @@ import { dataset_dev } from "svelte/internal";
         'upc_a',
       ]
     })
-    capture = document.getElementById('capture')
-    mount = document.getElementById('scanner-results')
   }
 
   const activateScanner = async() => {
@@ -276,6 +306,7 @@ import { dataset_dev } from "svelte/internal";
     })
     video.srcObject = null
     scannedBarcode = null
+    scannerActive = false
   }
 
   const detect = async() => {
@@ -308,8 +339,10 @@ import { dataset_dev } from "svelte/internal";
 
   // API :: https://world.openfoodfacts.org/api/v0/product/652729101133.json
   const barcodeLookup = async(barcode) => {
-    // console.log(`fetching ${barcode}`)
-    message.set('Fetching')
+    message.set({
+      text: 'Fetching item',
+      timed: false
+    })
     fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
       .then(response => response.json())
       .then(async(data) => {
@@ -318,20 +351,20 @@ import { dataset_dev } from "svelte/internal";
           newItemImagePreview = data.product.image_url
           newItem.image = await fetch(data.product.image_url).then(r => r.blob())
         }
-        message.set(`Data fetched for ${data.code}`)
-        // alert(`${data.product.product_name_en}`)
-        // console.log(data)
-        // return data
-        // data.image_front_url
-        // data.product_name_en
-        // data.product_name_en_imported
-        // data.brands
+        // message.set(null)
+        message.set({
+          text: `Item successfully fetched!`,
+          timed: true
+        })
       })
       .catch(error => {
-        message.set(`Fetch error: ${error}`)
+        message.set({
+          text: `Fetch error: ${error}`,
+          timed: true
+        })
         console.error('There has been a problem with your fetch operation:', error)
+        deactivateScanner()
       })
-    // const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`, )
   }
 
   onMount(async() => {
@@ -345,23 +378,29 @@ import { dataset_dev } from "svelte/internal";
 
 {#if active}
   <div transition:slide class="container" style="max-width: 60rem;">
-    <h2 class="py-2 mb-4 text-white" style="border-bottom: 2px solid red; border-top: 2px solid red;">
+    <h2 class="py-2 mb-4 text-white" style="border-bottom: 2px solid var(--red); border-top: 2px solid var(--red);">
       Add New Item
     </h2>
     {#if scanner}
       <div class="scanner-panel">
-        <button class="btn my-2" on:click="{activateScanner}">Add using barcode</button>
-        <div id="capture">
-          <video
-            autoplay
-            id="barcode-capture"
-            src=""
-          >
-            <track default
-              kind="captions" />
-            Sorry, your browser doesn't support embedded videos.
-          </video>
-        </div>
+        {#if scannerActive}
+          <button class="btn my-2" on:click="{deactivateScanner}">Cancel</button>
+        {:else}
+          <button class="btn my-2" on:click="{() => { scannerActive = true }}">Add using barcode</button>
+        {/if}
+        {#if scannerActive}
+          <div transition:slide on:introstart="{activateScanner}">
+            <video
+              autoplay
+              id="barcode-capture"
+              src=""
+            >
+              <track default
+                kind="captions" />
+              Sorry, your browser doesn't support embedded videos.
+            </video>
+          </div>
+        {/if}
       </div>
     {/if}
     <form on:submit|preventDefault class="form form--add-item">
@@ -376,7 +415,7 @@ import { dataset_dev } from "svelte/internal";
             <img src="{newItemImagePreview}" alt="">
           {/if}
           <div class="file-input-region">
-            <label for="new-item--file">Choose Image</label>
+            <label for="new-item--file" class="block">Item Image</label>
             <input
               bind:this={fileInput}
               id="new-item--file"
@@ -403,7 +442,7 @@ import { dataset_dev } from "svelte/internal";
         </div>
       </div>
       <div v-show="newItem.startTime" class="form-field my-2">
-        <label for="new-item--end-time block mb-1">End Time</label>
+        <label for="new-item--end-time block mb-1">Expiration Time</label>
         <div class="date-picker">
           <input
             bind:value={newItem.endTime}
@@ -415,9 +454,9 @@ import { dataset_dev } from "svelte/internal";
             on:change={updateEndTimeRelativity}
           >
         </div>
-        <div class="relative relativity-fields grid grid-cols-6 gap-2 my-4">
+        <div class="relative relativity-fields grid gap-2 my-4">
           <div class="form-field">
-            <label for="new-item--end-time-years">Years</label>
+            <label for="new-item--end-time-years" class="block">Years</label>
             <input
               id="new-item--end-time-years"
               bind:value={endRelatively.years}
@@ -429,7 +468,7 @@ import { dataset_dev } from "svelte/internal";
             >
           </div>
           <div class="form-field">
-            <label for="new-item--end-time-months">Months</label>
+            <label for="new-item--end-time-months" class="block">Months</label>
             <input
               id="new-item--end-time-months"
               bind:value={endRelatively.months}
@@ -441,7 +480,7 @@ import { dataset_dev } from "svelte/internal";
             >
           </div>
           <div class="form-field">
-            <label for="new-item--end-time-weeks">Weeks</label>
+            <label for="new-item--end-time-weeks" class="block">Weeks</label>
             <input
               id="new-item--end-time-weeks"
               bind:value={endRelatively.weeks}
@@ -453,7 +492,7 @@ import { dataset_dev } from "svelte/internal";
             >
           </div>
           <div class="form-field">
-            <label for="new-item--end-time-days">Days</label>
+            <label for="new-item--end-time-days" class="block">Days</label>
             <input
               id="new-item--end-time-days"
               bind:value={endRelatively.days}
@@ -465,7 +504,7 @@ import { dataset_dev } from "svelte/internal";
             >
           </div>
           <div class="form-field">
-            <label for="new-item--end-time-days">Hours</label>
+            <label for="new-item--end-time-days" class="block">Hours</label>
             <input
               id="new-item--end-time-days"
               bind:value={endRelatively.hours}
@@ -477,7 +516,7 @@ import { dataset_dev } from "svelte/internal";
             >
           </div>
           <div class="form-field">
-            <label for="new-item--end-time-days ">Minutes</label>
+            <label for="new-item--end-time-days" class="block">Minutes</label>
             <input
               id="new-item--end-time-days"
               bind:value={endRelatively.minutes}
@@ -535,6 +574,12 @@ import { dataset_dev } from "svelte/internal";
 {/if}
 
 <style>
+  .form-field label {
+    font-size: 90%;
+  }
+  .form-field input, .form-field select {
+    transition: 400ms;
+  }
   .input-field {
     align-items: center;
     grid-template-columns: 1fr min-content;
@@ -543,9 +588,15 @@ import { dataset_dev } from "svelte/internal";
     grid-template-columns: 1fr min-content;
   }
   .relativity-fields {
-    grid-template-columns: repeat(auto-fit, minmax(1rem, 1fr));
+    grid-template-columns: repeat(6, 1fr);
+    /* grid-template-columns: repeat(auto-fit, minmax(1rem, 1fr)); */
+  }
+  .relativity-fields label {
+    font-size: 80%;
   }
   .relativity-fields .form-field input {
-    width: 4rem;
+    /* display: none; */
+    /* width: 4rem; */
+    width: 100%;
   }
 </style>
