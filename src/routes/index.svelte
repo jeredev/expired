@@ -18,7 +18,6 @@
     differenceInMinutes,
     format,
     getTime,
-    startOfDay,
     subYears,
     subMonths,
     subWeeks,
@@ -67,9 +66,35 @@
     if (user) {
       statusProcessing = false
       message.set({
-      text: 'Successfully logged in.',
-      timed: true
+        text: 'Successfully logged in.',
+        timed: true
       })
+      // Perform mount operations
+      categories = await getCategories()
+      const params = new URLSearchParams(location.search)
+      // const searchQuery = {}
+      if (params.get('name')) {
+        searchQuery.name = params.get('name')
+        search.name = params.get('name')
+      }
+      if (params.get('end')) {
+        searchQuery.end = params.get('end')
+        search.endTime = params.get('end')
+      }
+      if (params.get('cat')) {
+        searchQuery.cat = params.get('cat')
+        search.category = params.get('cat')
+      }
+      clock = window.setInterval(runClock, 1000);
+      allItems = await getItems(searchQuery)
+      allItems.forEach(async(item) => {
+        if (item.imagePath) {
+          const imagePath = user.id + "/" + item.imagePath
+          item.image = await getItemImage(imagePath)
+        }
+      })
+      items = allItems
+      generateListings()
     }
     if (error) {
       statusProcessing = false
@@ -103,33 +128,13 @@
   };
 
   const addItems = async(e) => {
-    // console.log('dispatch addItems()')
-    // console.log(e.detail)
     const newItems = e.detail
     categories = await getCategories()
     newItems.forEach(async(item) => {
-      // item.edits = {
-      //   name: item.name,
-      //   category: {},
-      //   startTime: format(new Date(item.startTime), 'yyyy-MM-dd\'T\'HH:mm'),
-      //   endTime: format(new Date(item.endTime), 'yyyy-MM-dd\'T\'HH:mm'), 
-      //   endRelatively: {
-      //     years: null,
-      //     months: null,
-      //     weeks: null,
-      //     days: null,
-      //     hours: null,
-      //     minutes: null,
-      //   }
-      // }
       // Find appropriate category
       const found = categories.find(element => element.id === item.category)
-      // console.log('found variable below')
-      // console.log(found)
       if (!found) {
         item.category = {}
-        // item.edits.category = {}
-        // item.edits.category.id = null
       } else {
         item.category = {}
         item.category.id = found.id
@@ -138,8 +143,6 @@
         item.edits.category.id = found.id
         item.edits.category.name = found.name
       }
-      // console.log('item after assignment')
-      // console.log(item)
       if (item.imagePath) {
         const imagePath = $user.id + "/" + item.imagePath
         item.image = await getItemImage(imagePath)
@@ -152,8 +155,6 @@
   }
 
   const removeItem = (e) => {
-    // console.log('removingItem')
-    // console.log(e.detail)
     const indexAllItems = allItems.findIndex((x) => x.id === e.detail.id)
     // console.log(`indexAllItems = ${indexAllItems}`)
     if ( indexAllItems !== -1) {
@@ -370,6 +371,7 @@
     const { data, error } = await supabase
       .from('categories')
       .select()
+      .order('name', {ascending: true})
     if (data) return data
   }
 
@@ -469,10 +471,12 @@
     }
   }
 
+  const searchQuery = {}
+
   onMount(async() => {
     categories = await getCategories()
     const params = new URLSearchParams(location.search)
-    const searchQuery = {}
+    // const searchQuery = {}
     if (params.get('name')) {
       searchQuery.name = params.get('name')
       search.name = params.get('name')
@@ -536,6 +540,11 @@
   </div>
   {#if $user}
     <div class="homebase">
+      {#if Object.keys(searchQuery).length}
+        <a href="/" class="btn">
+          <Icon icon="clarity:arrow-line" style="display: inline; transform: rotate(-90deg);" />
+        </a>
+      {/if}
       <div class="panel flex justify-end mb-4">
         <button class={ sortingMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { sortingMenuActive = !sortingMenuActive }}>
           <Icon icon="clarity:sort-by-line" />
