@@ -126,13 +126,53 @@ import Item from "./Item.svelte";
       return
     }
     if (data) {
-      console.log('data from new item addition below:')
-      console.log(data)
+      // console.log('data from new item addition below:')
+      // console.log(data)
       let newItemWithImg
       if (newItem.image) {
         newItemWithImg = await addNewItemImage(data)
         data[0].imagePath = newItemWithImg[0].imagePath
       }
+      data.forEach((item) => {
+        item.edits = {
+          name: item.name,
+          category: {},
+          startTime: format(new Date(item.startTime), 'yyyy-MM-dd\'T\'HH:mm'),
+          endTime: format(new Date(item.endTime), 'yyyy-MM-dd\'T\'HH:mm'), 
+          endRelatively: {
+            years: null,
+            months: null,
+            weeks: null,
+            days: null,
+            hours: null,
+            minutes: null,
+          }
+        }
+        const startTime = new Date(item.startTime)
+        if (item.endTime) {
+          let endTime = new Date(item.endTime)
+          item.edits.endRelatively.years = differenceInYears(endTime, startTime)
+          endTime = subYears(new Date(endTime), endRelatively.years)
+          item.edits.endRelatively.months = differenceInMonths(endTime, startTime)
+          endTime = subMonths(new Date(endTime), differenceInMonths(endTime, startTime))
+          item.edits.endRelatively.weeks = differenceInWeeks(endTime, startTime)
+          endTime = subWeeks(new Date(endTime), differenceInWeeks(endTime, startTime))
+          item.edits.endRelatively.days = differenceInDays(endTime, startTime)
+          endTime = subDays(new Date(endTime), differenceInDays(endTime, startTime))
+          item.edits.endRelatively.hours = differenceInHours(endTime, startTime)
+          endTime = subHours(new Date(endTime), differenceInHours(endTime, startTime))
+          item.edits.endRelatively.minutes = differenceInMinutes(endTime, startTime)
+          endTime = subMinutes(new Date(endTime), differenceInMinutes(endTime, startTime))
+        }
+        else {
+          item.edits.endRelatively.years = 0
+          item.edits.endRelatively.months = 0
+          item.edits.endRelatively.weeks = 0
+          item.edits.endRelatively.days = 0
+          item.edits.endRelatively.hours = 0
+          item.edits.endRelatively.minutes = 0
+        }
+      })
       // Reset New Item Form
       newItem = {
         name: null,
@@ -154,13 +194,6 @@ import Item from "./Item.svelte";
         text: 'Successfully added new item.',
         timed: true
       })
-      // const newItemLookup = await lookupItem(data[0].id)
-      // if (newItemLookup) {
-      //   console.log('newItemLookup')
-      //   console.log(newItemLookup)
-      //   dispatch('add', newItemLookup)
-      //   message.set('Successfully added new item.')
-      // }
     }
   }
 

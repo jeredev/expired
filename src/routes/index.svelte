@@ -103,51 +103,93 @@
   };
 
   const addItems = async(e) => {
-    console.log('dispatch addItems()')
-    console.log(e.detail)
+    // console.log('dispatch addItems()')
+    // console.log(e.detail)
     const newItems = e.detail
     categories = await getCategories()
     newItems.forEach(async(item) => {
+      // item.edits = {
+      //   name: item.name,
+      //   category: {},
+      //   startTime: format(new Date(item.startTime), 'yyyy-MM-dd\'T\'HH:mm'),
+      //   endTime: format(new Date(item.endTime), 'yyyy-MM-dd\'T\'HH:mm'), 
+      //   endRelatively: {
+      //     years: null,
+      //     months: null,
+      //     weeks: null,
+      //     days: null,
+      //     hours: null,
+      //     minutes: null,
+      //   }
+      // }
       // Find appropriate category
       const found = categories.find(element => element.id === item.category)
-      console.log('found variable below')
-      console.log(found)
+      // console.log('found variable below')
+      // console.log(found)
       if (!found) {
         item.category = {}
-        item.edits.category.id = null
+        // item.edits.category = {}
+        // item.edits.category.id = null
       } else {
-        item.category = found
+        item.category = {}
+        item.category.id = found.id
+        item.category.name = found.name
+        // item.edits.category = {}
+        item.edits.category.id = found.id
+        item.edits.category.name = found.name
       }
-      console.log('item after assignment')
-      console.log(item)
+      // console.log('item after assignment')
+      // console.log(item)
       if (item.imagePath) {
         const imagePath = $user.id + "/" + item.imagePath
         item.image = await getItemImage(imagePath)
       }
       item.time = time
-      items = [...items, item]
+      allItems.push(item)
+      // items = [...items, item]
       generateListings()
     });
   }
 
   const removeItem = (e) => {
-    const indexAllItems = items.findIndex((x) => x.id === e.detail.id)
+    // console.log('removingItem')
+    // console.log(e.detail)
+    const indexAllItems = allItems.findIndex((x) => x.id === e.detail.id)
+    // console.log(`indexAllItems = ${indexAllItems}`)
     if ( indexAllItems !== -1) {
-      items = [...items.slice(0, indexAllItems), ...items.slice(indexAllItems + 1)]
+      allItems = [...allItems.slice(0, indexAllItems), ...allItems.slice(indexAllItems + 1)]
     }
     const indexItems = items.findIndex((x) => x.id === e.detail.id)
+    // console.log(`indexItems = ${indexItems}`)
     if ( indexItems !== -1) {
       items = [...items.slice(0, indexItems), ...items.slice(indexItems + 1)]
     }
-    const indexListings = listings.findIndex((x) => x.id === e.detail.id)
-    if (indexListings !== -1) {
-      listings = [...listings.slice(0, indexListings), ...listings.slice(indexListings + 1)]
-    }
+    // Is this part even needed?
+    // const indexListings = listings.findIndex((x) => x.id === e.detail.id)
+    // console.log(`indexListings = ${indexListings}`)
+    // if (indexListings !== -1) {
+    //   listings = [...listings.slice(0, indexListings), ...listings.slice(indexListings + 1)]
+    // }
     generateListings()
   }
 
   const updateItem = (e) => {
     const updatedItem = e.detail
+    console.log(updatedItem)
+    // // Find and link category
+    // const found = categories.find(element => element.id === updatedItem.category.id)
+    // if (!found) {
+    //   updatedItem.category = {}
+    //   // item.edits.category = {}
+    //   // item.edits.category.id = null
+    // } else {
+    //   updatedItem.category = {}
+    //   updatedItem.category.id = found.id
+    //   updatedItem.category.name = found.name
+    //   // item.edits.category = {}
+    //   updatedItem.edits.category.id = found.id
+    //   updatedItem.edits.category.name = found.name
+    // }
     allItems.map(() => {
       const item = allItems.find(({ id }) => id === updatedItem.id);
       return item ? item : updatedItem;
@@ -410,18 +452,16 @@
         ),
         imagePath
       `)
+    // .limit(1)
 
     if (query.name && /([^\s])/.test(query.name)) {
-      console.log(`name query detected as ${query.name}`)
       fetch = fetch.ilike('name', `%${query.name}%`)
     }
     if (query.end && /([^\s])/.test(query.end)) {
-      console.log(`end query detected as ${query.end}`)
       const endDate = new Date(query.end).toISOString()
       fetch = fetch.lte('endTime', endDate)
     }
     if (query.cat && /([^\s])/.test(query.cat)) {
-      console.log(`category query detected as ${query.cat}`)
       const category = categories.find((category) => category.name === query.cat)
       fetch = fetch.eq('category', `${category.id}`)
     }
@@ -435,7 +475,7 @@
   const getItemImage = async (path) => {
     const { data, error } = await supabase
       .storage
-      .from('Decay')
+      .from('expired')
       .download(path)
     if (data) return URL.createObjectURL(data)
     if (error) {
@@ -673,12 +713,16 @@
         <div class="items-listing">
           {#if $displayMode === 'categories'}
             {#each listings as category}
-              <CategorizedItems categories={categories} category={category} time={time} items={category.items} on:remove={removeItem} on:update={updateItem} />
+              {#if category.items.length > 0}
+                <CategorizedItems categories={categories} category={category} time={time} items={category.items} on:remove={removeItem} on:update={updateItem} />
+              {/if}
             {/each}
           {:else}
-          {#each listings as listing}
-            <Item item={listing} time={time} categories={categories} on:remove={removeItem} on:update={updateItem} />
-          {/each}
+          <div class="items-list">
+            {#each listings as listing}
+              <Item item={listing} time={time} categories={categories} on:remove={removeItem} on:update={updateItem} />
+            {/each}
+          </div>
         {/if}
         </div>
       {:else if listings && listings.length < 1}
@@ -713,5 +757,8 @@
   .homebase .btn:disabled {
     border-color: rgba(75, 85, 99, var(--tw-bg-opacity));
     color: white;
+  }
+  .items-list {
+    border-top: 2px solid var(--gray);
   }
 </style>

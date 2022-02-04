@@ -1,6 +1,6 @@
 <script lang="ts">
   import { supabase, user } from "$lib/db";
-  import { afterUpdate, createEventDispatcher, onDestroy, onMount } from "svelte";
+  import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { slide } from 'svelte/transition';
   import Icon from '@iconify/svelte'
   import { message } from "../stores";
@@ -28,14 +28,11 @@
     subMinutes,
   } from 'date-fns'
 
-  // let expired = null
-
   export let categories
   export let item
   export let time
 
   item.expired = null
-  // item.image = null
 
   item.edits = {
     name: item.name,
@@ -97,7 +94,7 @@
         // Ideally, this should be done behind the scenes or in a housekeeping like fashion // Worked
         await supabase
           .storage
-          .from('Decay')
+          .from('expired')
           .remove([fromPath])
       }
       statusProcessing = false
@@ -131,13 +128,10 @@
       // return 'transform: translateX(-100%)'
     }
     else {
-      // console.log(`${(timeElapsed / lifespan) * 100}`)
       const percent = (timeElapsed / lifespan) * 100
       let percentLost = -Math.abs(percent) + 100
       let percentLeft = `${percentLost}%`
-      // let scale = `${(timeElapsed / lifespan)}`
       let precursorWidth = `${(timeElapsed / lifespan) * 100}%`
-      // let percentLeft = `-${(lifespan * 100) / timeElapsed}%`
       let percentLeftCSS = `width: ${precursorWidth};`
       return percentLeftCSS
     }
@@ -162,7 +156,7 @@
     // console.log('getting image from supabase')
     const { data, error } = await supabase
       .storage
-      .from('Decay')
+      .from('expired')
       .download(path)
     if (data) return URL.createObjectURL(data)
     if (error) {
@@ -204,10 +198,13 @@
       const fromPath = `${$user.id}/${item.imagePath}`
       const { data, error } = await supabase
         .storage
-        .from('Decay')
+        .from('expired')
         .remove([fromPath])
       if (error) {
-        // console.log(error)
+        message.set({
+          text: `Error: ${error}`,
+          timed: true
+        })
       }
       if (data && data.length > 0) {
         // Edit item to remove imagePath
@@ -248,9 +245,9 @@
       statusProcessing = false
       statusUpdating = false
       message.set({
-          text: `Error: ${error}`,
-          timed: true
-        })
+        text: `Error: ${error}`,
+        timed: true
+      })
       console.error('There was a problem:', error)
       return
     }
@@ -259,13 +256,19 @@
       item.startTime = data[0].startTime
       item.endTime = data[0].endTime
       item.edits.name = data[0].name
-      item.edits.category.id = data[0].category
-      // Find category name
-      const categoryName = categories.find((category) => category.id === item.edits.category.id)
-      item.edits.category.name = categoryName
+      // Find category name / Assign category
+      const found = categories.find(element => element.id === data[0].category)
+      if (!found) {
+        item.category = {}
+      } else {
+        item.category = {}
+        item.category.id = found.id
+        item.category.name = found.name
+        item.edits.category.id = found.id
+        item.edits.category.name = found.name
+      }
       item.edits.startTime = format(new Date(data[0].startTime), 'yyyy-MM-dd\'T\'HH:mm')
       item.edits.endTime = format(new Date(data[0].endTime), 'yyyy-MM-dd\'T\'HH:mm')
-      // editItem.category = data[0].category
       updateEndTimeRelativity()
       menuVisible = false
       dispatch('update', item)
@@ -287,7 +290,7 @@
     if (file) {
       const { data, error } = await supabase
         .storage
-        .from('Decay')
+        .from('expired')
         .upload(`${$user.id}/${item.id}`, file)
       if (error) {
         console.log('error below:')
@@ -373,21 +376,10 @@
       item.edits.endRelatively.minutes = 0
     }
   }
-  afterUpdate(() => {
-    // console.log(item)
-    // alert('after update')
-    // if (item.imagePath && !item.image) {
-    //   buildItemImage(item.imagePath)
-    // }
-  })
   onMount(() => {
-    // console.log(item)
     updateEndTimeRelativity()
     checkUpdateValidity()
     if (item.imagePath && !item.image) {
-      // console.log('if')
-      // console.log(item.imagePath)
-      // console.log(item.image)
       buildItemImage(item.imagePath)
     }
     if (itemElement) {
@@ -409,47 +401,46 @@
   }
 </script>
 
-<div bind:this="{itemElement}" class="item unset">
+<div bind:this="{itemElement}" class="item unset" class:expired = {item.expired}>
   <div class="item-internal grid gap-4 py-4">
     <div class="item__aside">
-      <div class="image-block">
-        {#if item.image}
+      {#if item.image}
+        <div class="image-block">
           <img 
             src="{item.image}" 
             alt="{item.name}" 
             class="item-image block m-auto"
             loading="lazy"
           >
-          {#if menuVisible}
-            <button class="btn leading-tight negative mt-4 flex justify-center w-full" on:click="{deleteImage}" disabled="{statusProcessing}">
-              <Icon icon="clarity:trash-line" />
+        </div>
+        {#if menuVisible}
+          <button class="btn leading-tight negative mt-4 flex justify-center w-full" on:click="{deleteImage}" disabled="{statusProcessing}">
+            <Icon icon="clarity:trash-line" />
+          </button>
+        {/if}
+      {:else}
+        <div class="image-upload-region">
+          {#if itemImagePreview}
+            <img v-if="uploadReady === true" src="{itemImagePreview}" alt="" />
+            <button class="btn my-4 w-full" on:click="{addImage}">
+              Save
             </button>
           {/if}
-        {:else}
-          <div class="image-upload-region">
-            {#if itemImagePreview}
-              <img v-if="uploadReady === true" src="{itemImagePreview}" alt="" />
-              <button class="btn my-4 w-full" on:click="{addImage}">
-                Save
-              </button>
-            {/if}
-            <div class="file-input-region overflow-hidden">
-              <div class="form-field">
-                <input
-                  bind:this={fileInput}
-                  id="new-item--file"
-                  type="file"
-                  accept="image/*"
-                  class="file-input"
-                  capture
-                  on:change="{analyzeFile}"
-                >
-              </div>
+          <div class="file-input-region overflow-hidden">
+            <div class="form-field">
+              <input
+                bind:this={fileInput}
+                id="new-item--file"
+                type="file"
+                accept="image/*"
+                class="file-input"
+                capture
+                on:change="{analyzeFile}"
+              >
             </div>
-
           </div>
-        {/if}
-      </div>
+        </div>
+      {/if}
     </div>
     <div class="item__main">
       <div class="item__main-wrapper">
@@ -480,6 +471,7 @@
                       {#each categories as category}
                         <option value="{category.id}">{category.name}</option>
                       {/each}
+                      <option value="{null}">Uncategorized</option>
                     </select>
                   </div>
                 </div>
@@ -606,14 +598,16 @@
 </div>
 
 <style>
+  .menu-area {
+    border-bottom: 1px solid var(--gray);
+    border-top: 1px solid var(--gray);
+    font-size: 85%;
+    padding: 1rem 0;
+  }
   .precursor {
-    /* background-color: white; */
-    /* display: none; */
-    /* filter: drop-shadow(0 0 0.5rem white); */
     height: 100%;
     position: absolute;
     left: 0;
-    /* right: 0; */
     top: 0;
     width: 100%;
   }
@@ -621,7 +615,6 @@
     filter: drop-shadow(0 0 0.5rem white);
     height: 100%;
     position: absolute;
-    /* left: 0; */
     right: 0;
     top: 0;
     transform-origin: left;
@@ -631,20 +624,18 @@
   }
   .precursor-meter {
     background-color: white;
-    /* clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 1rem 100%); */
     height: 100%;
     left: 0;
-    /* right: 0; */
     position: absolute;
     top: 0;
     width: 100%;
   }
-  .item {
+  .item:not(:first-child) {
     border-top: 2px solid var(--gray);
   }
-  /* .item.expired .timer__remainder {
+  .item.expired .timer__remainder {
     color: var(--red);
-  } */
+  }
   .item-internal {
     grid-template-columns: 100px 1fr;
   }
@@ -653,7 +644,6 @@
   }
   .item-title {
     line-height: 1.2;
-    /* font-size: 110%; */
   }
   .form-field {
     grid-template-columns: max-content 1fr;
@@ -680,15 +670,12 @@
     position: relative;
   }
   .timer__bar {
-    /* border: 2px solid purple; */
     font-size: 90%;
-    /* overflow: hidden; */
     padding: 0.125rem 0.25rem;
     position: relative;
     width: 100%;
   }
   .measure {
-    /* background: red; */
     overflow: hidden;
     position: absolute;
     top: 0;
@@ -696,18 +683,6 @@
     width: 100%;
     height: 100%;
   }
-  /* .timer__bar .measure {
-    background-color: #f8feff;
-    clip-path: polygon(0% 0%, calc(100% - 1rem) 0%, 100% 100%, 0 100%);
-    height: 1rem;
-    transform-origin: left;
-    position: relative;
-    transition: transform 400ms;
-    width: calc(100% + 1rem);
-  } */
-  /* .unset .timer__bar .meter {
-    transform: translateX(0) !important;
-  } */
   .unset .timer__bar .precursor-meter-veil {
     transform: scaleX(1) !important;
   }
@@ -719,25 +694,14 @@
     pointer-events: none;
     position: absolute;
   }
-  /* .item.expired .timer__bar:before {
-    border-color: var(--red);
-  } */
   .timer__bar .meter {
     background-color: #f8feff;
-    /* clip-path: polygon(0% 0%, calc(100% - 1rem) 0%, 100% 100%, 0 100%); */
-    /* filter: drop-shadow(1rem 0rem 1rem white); */
     height: calc(100% + 2px);
-    /* height: 100%; */
     transform-origin: left;
     position: absolute;
     top: 0;
     left: 0;
-    /* transition: transform 400ms; */
-    /* width: calc(100% + 1rem); */
     width: 100%;
-  }
-  .unset .timer__bar .meter {
-    /* transform: translateX(0) !important; */
   }
   .timer__remainder {
     line-height: 1.2;
@@ -745,12 +709,14 @@
     text-align: right;
     white-space: nowrap;
     z-index: 2;
+    transition: color 400ms;
   }
 
   /*  Item Image  */
 
   .image-block {
     display: flex;
+    /* flex-direction: column; */
     overflow: hidden;
   }
 

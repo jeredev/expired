@@ -21,13 +21,13 @@
         Uncategorized
       {/if}
     </div>
-    <div class="category__panel">
+    <div class="category__panel flex">
       {#if items.length}
         <button on:click={() => { itemsVisible = !itemsVisible }}>
           {#if itemsVisible}
-          <Icon icon="clarity:minus-line" />
+          <Icon icon="clarity:minus-line" style="font-size: 1.5rem;" />
           {:else}
-            <Icon icon="clarity:plus-line" />
+            <Icon icon="clarity:plus-line" style="font-size: 1.5rem;" />
           {/if}
         </button>
       {/if}
