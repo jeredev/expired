@@ -33,6 +33,7 @@
   export let time
 
   item.expired = null
+  item.imminent = false
 
   item.edits = {
     name: item.name,
@@ -115,6 +116,9 @@
       return 'transform: translateX(-100%)'
     }
     else {
+      if (timeElapsed / lifespan >= 0.85) {
+        item.imminent = true;
+      }
       let percentLeft = `-${(timeElapsed / lifespan) * 100}%`
       let percentLeftCSS = `transform: translateX(${percentLeft})`
       return percentLeftCSS
@@ -401,7 +405,7 @@
   }
 </script>
 
-<div bind:this="{itemElement}" class="item unset" class:expired = {item.expired}>
+<div bind:this="{itemElement}" class="item unset" class:expired = {item.expired} class:imminent = {item.imminent}>
   <div class="item-internal grid gap-4 py-4">
     <div class="item__aside">
       {#if item.image}
@@ -738,4 +742,25 @@
   } */
 
   /* End Refactor Todo Block */
+
+  .imminent .timer__remainder {
+    animation: 5000ms imminent linear infinite;
+  }
+
+  @keyframes imminent {
+    15% {
+      color: #fff;
+    }
+    25% {
+      color: #fff;
+      text-shadow: 0 0 5px #fff;
+    }
+    35% {
+      color: #fff;
+    }
+    50% {
+      color: var(--red);
+      text-shadow: 0 0 5px var(--red);
+    }
+  }
 </style>

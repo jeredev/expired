@@ -488,7 +488,6 @@
     categories = await getCategories()
     const params = new URLSearchParams(location.search)
     const searchQuery = {}
-    // Query building
     if (params.get('name')) {
       searchQuery.name = params.get('name')
       search.name = params.get('name')
@@ -737,13 +736,6 @@
 </div>
 
 <style>
-  /* .category {
-    align-items: center;
-    grid-template-columns: 1fr max-content;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-  } */
   @media only all and (min-width: 40em) {
     .login-form-fields {
       display: grid;
