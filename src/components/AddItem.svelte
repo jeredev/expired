@@ -197,47 +197,32 @@ import Item from "./Item.svelte";
     }
   }
 
-  // const lookupItem = async(itemId) => {
-  //   // Lookup new item with the appropriate join
-  //   const { data, error } = await supabase
-  //     .from('items')
-  //     .select(`
-  //       id,
-  //       name,
-  //       startTime,
-  //       endTime,
-  //       category (
-  //         id,
-  //         name
-  //       ),
-  //       imagePath
-  //     `)
-  //     .match({ id: itemId })
-  //   if (data) {
-  //     return data
-  //   }
-  // }
-
   const addNewItemImage = async(item) => {
     const { data, error } = await supabase
       .storage
       .from('Decay')
       .upload(`${$user.id}/${item[0].id}`, newItem.image)
     if (error) {
-      // console.log('error from addNewItemImage() below:')
-      // console.log(error)
+      message.set({
+        text: `Error: ${error}`,
+        timed: true
+      })
+      console.error('Error:', error)
+      return
     }
-    // console.log(`data below after uploading image:`)
-    // console.log(data)
     if (data && data.Key) {
       const {data, error} = await supabase
         .from('items')
         .update({ imagePath: `${item[0].id}` })
         .match({ id: item[0].id })
-      // getItemImage(`${userSession.value.user.id}/${props.item.id}`)
-      // console.log('returned image data below:')
-      // console.log(data) // The item, so data[0].imagePath
       if (data) return data
+      if (error) {
+        message.set({
+          text: `Error: ${error}`,
+          timed: true
+        })
+        console.error('Error:', error)
+      }
     }
   }
 
@@ -282,6 +267,10 @@ import Item from "./Item.svelte";
         },
       ])
     if (error) {
+      message.set({
+        text: `Error: ${error}`,
+        timed: true
+      })
       console.log('error adding new category:', error)
       return
     }
@@ -299,10 +288,15 @@ import Item from "./Item.svelte";
       .select()
       .order('name', { ascending: true })
     if (data) return data
+    if (error) {
+      message.set({
+        text: `Error: ${error}`,
+        timed: true
+      })
+      console.error('Error:', error)
+    }
   }
   let categories
-
-  let barcodeEntry
 
   let scanner
   let scannerActive
@@ -311,8 +305,6 @@ import Item from "./Item.svelte";
   let mediaStream
   let scannedBarcode
   let video
-
-  let itemsFound = []
 
   const setupScanner = () => {
     scanner = true

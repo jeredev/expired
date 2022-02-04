@@ -373,6 +373,14 @@
       .select()
       .order('name', {ascending: true})
     if (data) return data
+    if (error) {
+      message.set({
+        text: `Error: ${error}`,
+        timed: true
+      })
+      console.error('Error:', error)
+      return
+    }
   }
 
   const generateListings = () => {
@@ -455,7 +463,14 @@
 
     const { data, error } = await fetch
     if (data) return data
-    if (error) console.log(error)
+    if (error) {
+      message.set({
+        text: `Error: ${error}`,
+        timed: true
+      })
+      console.error('Error:', error)
+      return
+    }
 
   }
 
@@ -466,8 +481,12 @@
       .download(path)
     if (data) return URL.createObjectURL(data)
     if (error) {
-      console.log(error)
-      // console.log(path)
+      message.set({
+        text: `Error: ${error}`,
+        timed: true
+      })
+      console.error('Error:', error)
+      return
     }
   }
 

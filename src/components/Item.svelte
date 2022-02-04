@@ -83,9 +83,9 @@
       statusProcessing = false
       statusRemoving = false
       message.set({
-          text: `Fetch error: ${error}`,
-          timed: true
-        })
+        text: `Error: ${error}`,
+        timed: true
+      })
       console.error('There was a problem:', error)
       return
     }
@@ -164,8 +164,12 @@
       .download(path)
     if (data) return URL.createObjectURL(data)
     if (error) {
-      console.log(error)
-      console.log(path)
+      message.set({
+        text: `Error: ${error}`,
+        timed: true
+      })
+      console.error('Error:', error)
+      return
     }
   }
   const buildItemImage = async (path) => {
@@ -209,6 +213,8 @@
           text: `Error: ${error}`,
           timed: true
         })
+        console.error('Error:', error)
+        return
       }
       if (data && data.length > 0) {
         // Edit item to remove imagePath
@@ -219,7 +225,11 @@
         item.imagePath = null
         item.image = null
         if (error) {
-          // console.log('error', error)
+          message.set({
+            text: `Error: ${error}`,
+            timed: true
+          })
+          console.error('Error:', error)
           return
         }
         else {
@@ -350,8 +360,12 @@
         .from('expired')
         .upload(`${$user.id}/${item.id}`, file)
       if (error) {
-        console.log('error below:')
-        console.log(error)
+        message.set({
+          text: `Error: ${error}`,
+          timed: true
+        })
+        console.error('Error:', error)
+        return
       }
       if (data.Key) {
         const { error } = await supabase
@@ -359,7 +373,11 @@
           .update({ imagePath: item.id })
           .match({ id : item.id })
         if (error) {
-          console.log('error', error)
+          message.set({
+            text: `Error: ${error}`,
+            timed: true
+          })
+          console.error('Error:', error)
           return
         }
         file = null
