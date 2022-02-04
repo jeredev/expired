@@ -175,21 +175,6 @@
 
   const updateItem = (e) => {
     const updatedItem = e.detail
-    console.log(updatedItem)
-    // // Find and link category
-    // const found = categories.find(element => element.id === updatedItem.category.id)
-    // if (!found) {
-    //   updatedItem.category = {}
-    //   // item.edits.category = {}
-    //   // item.edits.category.id = null
-    // } else {
-    //   updatedItem.category = {}
-    //   updatedItem.category.id = found.id
-    //   updatedItem.category.name = found.name
-    //   // item.edits.category = {}
-    //   updatedItem.edits.category.id = found.id
-    //   updatedItem.edits.category.name = found.name
-    // }
     allItems.map(() => {
       const item = allItems.find(({ id }) => id === updatedItem.id);
       return item ? item : updatedItem;

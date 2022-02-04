@@ -232,6 +232,59 @@
     }
   }
 
+  let statusRenewing = false
+  const renewItem = async () => {
+    statusRenewing = true
+    statusProcessing = true
+    // Calculate new endTime
+    let renewedEndTime = updateEndTimeRelativelyForRenewal()
+    const { data, error } = await supabase
+      .from('items')
+      .update({
+        startTime: new Date(),
+        endTime: new Date(renewedEndTime),
+      })
+      .match({ id: item.id })
+    if (error) {
+      statusProcessing = false
+      statusUpdating = false
+      message.set({
+        text: `Error: ${error}`,
+        timed: true
+      })
+      console.error('There was a problem:', error)
+      return
+    }
+    if (data && data[0]) {
+      item.name = data[0].name
+      item.startTime = data[0].startTime
+      item.endTime = data[0].endTime
+      item.edits.name = data[0].name
+      // Find category name / Assign category
+      const found = categories.find(element => element.id === data[0].category)
+      if (!found) {
+        item.category = {}
+      } else {
+        item.category = {}
+        item.category.id = found.id
+        item.category.name = found.name
+        item.edits.category.id = found.id
+        item.edits.category.name = found.name
+      }
+      item.edits.startTime = format(new Date(data[0].startTime), 'yyyy-MM-dd\'T\'HH:mm')
+      item.edits.endTime = format(new Date(data[0].endTime), 'yyyy-MM-dd\'T\'HH:mm')
+      updateEndTimeRelativity()
+      menuVisible = false
+      dispatch('update', item)
+      statusProcessing = false
+      statusUpdating = false
+      message.set({
+        text: 'Item renewed.',
+        timed: true
+      })
+    }
+  }
+
   let statusUpdating = false
   const updateItem = async () => {
     statusProcessing = true
@@ -331,6 +384,23 @@
     else {
       itemImagePreview = null
     }
+  }
+
+  const updateEndTimeRelativelyForRenewal = () => {
+    let adjTime = new Date()
+    if (item.edits.endRelatively.years)
+      adjTime = addYears(adjTime, item.edits.endRelatively.years)
+    if (item.edits.endRelatively.months)
+      adjTime = addMonths(adjTime, item.edits.endRelatively.months)
+    if (item.edits.endRelatively.weeks)
+      adjTime = addWeeks(adjTime, item.edits.endRelatively.weeks)
+    if (item.edits.endRelatively.days)
+      adjTime = addDays(adjTime, item.edits.endRelatively.days)
+    if (item.edits.endRelatively.hours)
+      adjTime = addHours(adjTime, item.edits.endRelatively.hours)
+    if (item.edits.endRelatively.minutes)
+      adjTime = addMinutes(adjTime, item.edits.endRelatively.minutes)
+    return adjTime
   }
 
   const updateEndTimeRelatively = () => {
@@ -553,7 +623,14 @@
                         Update Item
                       {/if}
                     </button>
-                    <button type="button" class="btn remove-item mx-2 negative" on:click={() => { confirmDelete = !confirmDelete }} disabled="{statusProcessing}">
+                    <button type="button" class="btn mx-2 edit-item" on:click="{renewItem}" disabled="{statusProcessing}">
+                      {#if statusRenewing}
+                        Renewing...
+                      {:else}
+                        Renew Item
+                      {/if}
+                    </button>
+                    <button type="button" class="btn remove-item negative" on:click={() => { confirmDelete = !confirmDelete }} disabled="{statusProcessing}">
                       {#if statusRemoving}
                         Removing...
                       {:else}
