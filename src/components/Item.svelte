@@ -34,6 +34,7 @@
 
   item.expired = null
   item.imminent = false
+  item.imageLoaded = true
 
   item.edits = {
     name: item.name,
@@ -162,7 +163,10 @@
       .storage
       .from('expired')
       .download(path)
-    if (data) return URL.createObjectURL(data)
+    if (data) {
+      item.imageLoaded = false
+      return URL.createObjectURL(data)
+    }
     if (error) {
       console.log(`error from ${path}`)
       message.set({
@@ -473,6 +477,7 @@
     updateEndTimeRelativity()
     checkUpdateValidity()
     if (item.imagePath && !item.image) {
+      item.imageLoaded = false
       buildItemImage(item.imagePath)
     }
     if (itemElement) {
@@ -499,6 +504,12 @@
     <div class="item__aside">
       {#if item.image}
         <div class="image-block">
+          {#if !item.imageLoaded}
+            <div class="elapser">
+              <div class="indication"><div class="node"></div>
+              </div>
+            </div>
+          {/if}
           <img 
             src="{item.image}" 
             alt="{item.name}" 
@@ -816,8 +827,11 @@
 
   .image-block {
     display: flex;
-    /* flex-direction: column; */
+    flex-direction: column;
     overflow: hidden;
+    position: relative;
+    align-items: center;
+    justify-content: center;
   }
 
   /* .item-image {
@@ -857,6 +871,50 @@
     50% {
       color: var(--red);
       text-shadow: 0 0 5px var(--red);
+    }
+  }
+  .item-block.loaded .elapser {
+    display: none;
+  }
+  .elapser {
+    background-color: var(--gray);
+    /* border: 1px solid var(--blue); */
+    height: 2px;
+    margin: 0.7rem 0 0;
+    /* overflow: hidden; */
+    /* position: relative; */
+    position: absolute;
+    width: 100%;
+    z-index: -1;
+  }
+  .elapser .indication {
+    
+    height: 100%;
+    transform-origin: left;
+    position: relative;
+    width: 100%;
+  }
+  .elapser .indication .node {
+    width: 100%;
+    /* background-color: red; */
+    position: absolute;
+    height: 100%;
+    animation: looped-elapser 1.5s linear infinite;
+    transform-origin: left;
+  }
+  .elapser .indication .node::before {
+    background-color: #fff;
+    content: '';
+    display: block;
+    filter: drop-shadow(0 0 0.5rem white);
+    width: 20%;
+    position: absolute;
+    right: 0;
+    height: 100%;
+  }
+  @keyframes looped-elapser {
+    50%, 100% {
+      transform: scaleX(0);
     }
   }
 </style>
