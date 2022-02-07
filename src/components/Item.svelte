@@ -164,7 +164,7 @@
       .from('expired')
       .download(path)
     if (data) {
-      item.imageLoaded = false
+      item.imageLoaded = true
       return URL.createObjectURL(data)
     }
     if (error) {
@@ -178,6 +178,7 @@
     }
   }
   const buildItemImage = async (path) => {
+    // console.log('building')
     const imagePath = $user.id + "/" + item.imagePath
     item.image = await getItemImage(imagePath)
   }
@@ -504,7 +505,7 @@
     <div class="item__aside">
       {#if item.image}
         <div class="image-block">
-          {#if !item.imageLoaded}
+          {#if item.imageLoaded === false}
             <div class="elapser">
               <div class="indication"><div class="node"></div>
               </div>
