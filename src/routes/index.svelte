@@ -495,7 +495,6 @@
   onMount(async() => {
     categories = await getCategories()
     const params = new URLSearchParams(location.search)
-    // const searchQuery = {}
     if (params.get('name')) {
       searchQuery.name = params.get('name')
       search.name = params.get('name')
@@ -617,7 +616,7 @@
         </div>
       {/if}
       {#if searchMenuActive}
-        <div transition:slide class="search-menu">
+        <div transition:slide class="search-menu pb-4">
           <h2 class="py-2 mb-4 text-white" style="border-bottom: 2px solid red; border-top: 2px solid red;">
             Search
           </h2>

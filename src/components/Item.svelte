@@ -875,9 +875,6 @@
       text-shadow: 0 0 5px var(--red);
     }
   }
-  .item-block.loaded .elapser {
-    display: none;
-  }
   .elapser {
     background-color: var(--gray);
     /* border: 1px solid var(--blue); */
