@@ -503,20 +503,21 @@
 <div bind:this="{itemElement}" class="item unset" class:expired = {item.expired} class:imminent = {item.imminent}>
   <div class="item-internal grid gap-4 py-4">
     <div class="item__aside">
-      {#if item.image}
+      {#if item.imagePath}
         <div class="image-block">
           {#if item.imageLoaded === false}
             <div class="elapser">
               <div class="indication"><div class="node"></div>
               </div>
             </div>
+          {:else}
+            <img 
+              src="{item.image}" 
+              alt="{item.name}" 
+              class="item-image block m-auto"
+              loading="lazy"
+            >
           {/if}
-          <img 
-            src="{item.image}" 
-            alt="{item.name}" 
-            class="item-image block m-auto"
-            loading="lazy"
-          >
         </div>
         {#if menuVisible}
           <button class="btn leading-tight negative mt-4 flex justify-center w-full" on:click="{deleteImage}" disabled="{statusProcessing}">
