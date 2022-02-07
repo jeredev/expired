@@ -117,21 +117,22 @@ import Item from "./Item.svelte";
           name: newItem.name.trim(),
           startTime: new Date(newItem.startTime),
           endTime: new Date(newItem.endTime),
-          imagePath: newItem.image,
+          // imagePath: newItem.image,
           category: newItem.category,
         },
       ])
     if (error) {
-      // console.log('error adding new item:', error)
+      message.set({
+        text: `Error: ${error.message}`,
+        timed: true
+      })
+      console.error('Error:', error)
       return
     }
     if (data) {
-      // console.log('data from new item addition below:')
-      // console.log(data)
-      let newItemWithImg
       if (newItem.image) {
-        newItemWithImg = await addNewItemImage(data)
-        data[0].imagePath = newItemWithImg[0].imagePath
+        const newItemWithImg = await addNewItemImage(data)
+        if (newItemWithImg) data[0].imagePath = newItemWithImg[0].imagePath
       }
       data.forEach((item) => {
         item.edits = {
@@ -200,11 +201,11 @@ import Item from "./Item.svelte";
   const addNewItemImage = async(item) => {
     const { data, error } = await supabase
       .storage
-      .from('Decay')
+      .from('expired')
       .upload(`${$user.id}/${item[0].id}`, newItem.image)
     if (error) {
       message.set({
-        text: `Error: ${error}`,
+        text: `Error: ${error.message}`,
         timed: true
       })
       console.error('Error:', error)
@@ -218,7 +219,7 @@ import Item from "./Item.svelte";
       if (data) return data
       if (error) {
         message.set({
-          text: `Error: ${error}`,
+          text: `Error: ${error.message}`,
           timed: true
         })
         console.error('Error:', error)
@@ -268,7 +269,7 @@ import Item from "./Item.svelte";
       ])
     if (error) {
       message.set({
-        text: `Error: ${error}`,
+        text: `Error: ${error.message}`,
         timed: true
       })
       console.log('error adding new category:', error)
@@ -290,7 +291,7 @@ import Item from "./Item.svelte";
     if (data) return data
     if (error) {
       message.set({
-        text: `Error: ${error}`,
+        text: `Error: ${error.message}`,
         timed: true
       })
       console.error('Error:', error)

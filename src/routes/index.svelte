@@ -99,7 +99,7 @@
     if (error) {
       statusProcessing = false
       message.set({
-        text: `Error: ${error}`,
+        text: `Error: ${error.message}`,
         timed: true
       })
       console.error('There was a problem:', error)
@@ -113,7 +113,7 @@
     statusProcessing = false
     if (error) {
       message.set({
-        text: `Error: ${error}`,
+        text: `Error: ${error.message}`,
         timed: true
       })
       console.error('There was a problem:', error)
@@ -375,7 +375,7 @@
     if (data) return data
     if (error) {
       message.set({
-        text: `Error: ${error}`,
+        text: `Error: ${error.message}`,
         timed: true
       })
       console.error('Error:', error)
@@ -465,7 +465,7 @@
     if (data) return data
     if (error) {
       message.set({
-        text: `Error: ${error}`,
+        text: `Error: ${error.message}`,
         timed: true
       })
       console.error('Error:', error)
@@ -482,7 +482,7 @@
     if (data) return URL.createObjectURL(data)
     if (error) {
       message.set({
-        text: `Error: ${error}`,
+        text: `Error: ${error.message}`,
         timed: true
       })
       console.error('Error:', error)

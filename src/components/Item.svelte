@@ -83,7 +83,7 @@
       statusProcessing = false
       statusRemoving = false
       message.set({
-        text: `Error: ${error}`,
+        text: `Error: ${error.message}`,
         timed: true
       })
       console.error('There was a problem:', error)
@@ -164,8 +164,9 @@
       .download(path)
     if (data) return URL.createObjectURL(data)
     if (error) {
+      console.log(`error from ${path}`)
       message.set({
-        text: `Error: ${error}`,
+        text: `Error: ${error.message}`,
         timed: true
       })
       console.error('Error:', error)
@@ -210,7 +211,7 @@
         .remove([fromPath])
       if (error) {
         message.set({
-          text: `Error: ${error}`,
+          text: `Error: ${error.message}`,
           timed: true
         })
         console.error('Error:', error)
@@ -226,7 +227,7 @@
         item.image = null
         if (error) {
           message.set({
-            text: `Error: ${error}`,
+            text: `Error: ${error.message}`,
             timed: true
           })
           console.error('Error:', error)
@@ -259,7 +260,7 @@
       statusProcessing = false
       statusUpdating = false
       message.set({
-        text: `Error: ${error}`,
+        text: `Error: ${error.message}`,
         timed: true
       })
       console.error('There was a problem:', error)
@@ -312,7 +313,7 @@
       statusProcessing = false
       statusUpdating = false
       message.set({
-        text: `Error: ${error}`,
+        text: `Error: ${error.message}`,
         timed: true
       })
       console.error('There was a problem:', error)
@@ -361,7 +362,7 @@
         .upload(`${$user.id}/${item.id}`, file)
       if (error) {
         message.set({
-          text: `Error: ${error}`,
+          text: `Error: ${error.message}`,
           timed: true
         })
         console.error('Error:', error)
@@ -374,7 +375,7 @@
           .match({ id : item.id })
         if (error) {
           message.set({
-            text: `Error: ${error}`,
+            text: `Error: ${error.message}`,
             timed: true
           })
           console.error('Error:', error)
