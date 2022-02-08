@@ -30,6 +30,7 @@
 
   import AddItem from "../components/AddItem.svelte"
   import CategorizedItems from "../components/CategorizedItems.svelte"
+  import Category from "../components/CategoryBar.svelte"
   import Item from "../components/Item.svelte"
   import Messenger from "../components/Messenger.svelte"
   import { displayMode, sortingMode, timeStatusMode, message } from "../stores";
@@ -45,6 +46,7 @@
   let password;
 
   let addMenuActive = false
+  let categoriesMenuActive = true
   let searchMenuActive = false
   let sortingMenuActive = false
 
@@ -370,7 +372,10 @@
   const getCategories = async() => {
     const { data, error } = await supabase
       .from('categories')
-      .select()
+      .select(`
+        id,
+        name
+      `)
       .order('name', {ascending: true})
     if (data) return data
     if (error) {
@@ -492,6 +497,60 @@
 
   const searchQuery = {}
 
+  let addingCategory = false
+  let newCategory
+  let newCategoryValid = false
+  const checkNewCategoryValidity = () => {
+    if (newCategory && /([^\s])/.test(newCategory)) {
+      newCategoryValid = true
+      return true
+    }
+    else {
+      newCategoryValid = false
+      return false
+    }
+  }
+  const addNewCategory = async() => {
+    addingCategory = true
+    const { data, error } = await supabase
+      .from('categories')
+      .insert([
+        {
+          name: newCategory.trim(),
+        },
+      ])
+    if (error) {
+      message.set({
+        text: `Error: ${error.message}`,
+        timed: true
+      })
+      console.log('error adding new category:', error)
+      return
+    }
+    if (data) {
+      categories = await getCategories()
+      generateListings()
+      newCategory = null
+      addingCategory = false
+    }
+  }
+
+  const removeCategory = (e) => {
+    const indexCategories = categories.findIndex((x) => x.id === e.detail.id)
+    if ( indexCategories !== -1) {
+      categories = [...categories.slice(0, indexCategories), ...categories.slice(indexCategories + 1)]
+    }
+    generateListings()
+  }
+
+  const updateCategory = (e) => {
+    const indexCategories = categories.findIndex((x) => x.id === e.detail.id)
+    if ( indexCategories !== -1) {
+      categories[indexCategories].name = e.detail.name
+    }
+    generateListings()
+  }
+
   onMount(async() => {
     categories = await getCategories()
     const params = new URLSearchParams(location.search)
@@ -564,6 +623,9 @@
         </a>
       {/if}
       <div class="panel flex justify-end mb-4">
+        <button class={ categoriesMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { categoriesMenuActive = !categoriesMenuActive }}>
+          <Icon icon="clarity:blocks-group-line" />
+        </button>
         <button class={ sortingMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { sortingMenuActive = !sortingMenuActive }}>
           <Icon icon="clarity:sort-by-line" />
         </button>
@@ -577,6 +639,34 @@
           <Icon icon="clarity:logout-solid" />
         </button>
       </div>
+      {#if categoriesMenuActive}
+        <div transition:slide class="sector mb-4">
+          <h2 class="py-2 mb-4 text-white" style="border-bottom: 2px solid red; border-top: 2px solid red;">
+            Categories
+          </h2>
+          <div>
+            <div class="form-field">
+              <label for="new-category-name" style="font-size: 80%;">Add New Category</label>
+              <div class="entry flex">
+                <input
+                  type="text"
+                  id="new-category-name"
+                  class="bg-black p-1 text-white w-full"
+                  placeholder="Category Name"
+                  bind:value="{newCategory}"
+                  on:input="{checkNewCategoryValidity}"
+                >
+                <button type="button" class="btn ml-2" disabled="{!newCategoryValid || addingCategory}" on:click="{addNewCategory}">Add</button>
+              </div>   
+            </div>
+          </div>
+          <div class="categories-list mt-2">
+            {#each categories as category}
+              <Category category="{category}" on:updateCategory={updateCategory} on:removeCategory={removeCategory} />
+            {/each}
+          </div>
+        </div>
+      {/if}
       {#if sortingMenuActive}
         <div transition:slide class="sector mb-4">
           <h2 class="py-2 mb-4 text-white" style="border-bottom: 2px solid red; border-top: 2px solid red;">
