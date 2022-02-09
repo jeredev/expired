@@ -1,3 +1,18 @@
+
+<script>
+  import { supabase } from "$lib/db";
+  import { session } from "$app/stores";
+  import { browser } from "$app/env"
+
+  if (browser) {
+    $session = supabase.auth.session()
+    supabase.auth.onAuthStateChange((event, sesh) => {
+      $session = sesh
+    })
+  }
+  
+</script>
+
 <slot />
 
 <style global windi:global windi:preflights:global windi:safelist:global>

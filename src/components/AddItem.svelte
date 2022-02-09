@@ -1,5 +1,6 @@
 <script>
-  import { supabase, user } from "$lib/db";
+  import { supabase } from "$lib/db";
+  import { session } from "$app/stores";
   import { message } from "../stores";
   import { onMount } from "svelte";
   import { slide } from 'svelte/transition';
@@ -202,7 +203,7 @@ import Item from "./Item.svelte";
     const { data, error } = await supabase
       .storage
       .from('expired')
-      .upload(`${$user.id}/${item[0].id}`, newItem.image)
+      .upload(`${$session.user.id}/${item[0].id}`, newItem.image)
     if (error) {
       message.set({
         text: `Error: ${error.message}`,

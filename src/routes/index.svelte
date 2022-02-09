@@ -1,5 +1,6 @@
 <script>
-  import { supabase, user } from "$lib/db";
+  import { supabase } from "$lib/db";
+  import { session } from "$app/stores";
   import { onDestroy, onMount } from "svelte";
   import { slide } from 'svelte/transition';
   import Icon from '@iconify/svelte'
@@ -146,7 +147,7 @@
         item.edits.category.name = found.name
       }
       if (item.imagePath) {
-        const imagePath = $user.id + "/" + item.imagePath
+        const imagePath = $session.user.id + "/" + item.imagePath
         item.image = await getItemImage(imagePath)
       }
       item.time = time
@@ -570,7 +571,7 @@
     allItems = await getItems(searchQuery)
     allItems.forEach(async(item) => {
       if (item.imagePath) {
-        const imagePath = $user.id + "/" + item.imagePath
+        const imagePath = $session.user.id + "/" + item.imagePath
         item.image = await getItemImage(imagePath)
       }
     })
@@ -587,7 +588,7 @@
   <Messenger />
   <div class="header">
     <!-- <button type="button" class="btn" on:click="{sendMsg}">Message</button> -->
-    {#if !$user}
+    {#if !$session}
       <form on:submit|preventDefault={logIn} class="form form--login">
         <div class="login-form-fields">
           <input
@@ -615,7 +616,7 @@
       </form>
     {/if}
   </div>
-  {#if $user}
+  {#if $session}
     <div class="homebase">
       {#if Object.keys(searchQuery).length}
         <a href="/" class="btn">

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { supabase, user } from "$lib/db";
+  import { supabase } from "$lib/db";
+  import { session } from "$app/stores";
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { slide } from 'svelte/transition';
   import Icon from '@iconify/svelte'
@@ -92,7 +93,7 @@
     }
     if (data) {
       if (data[0] && data[0].imagePath) {
-        const fromPath = `${$user.id}/${data[0].imagePath}`
+        const fromPath = `${$session.user.id}/${data[0].imagePath}`
         // Ideally, this should be done behind the scenes or in a housekeeping like fashion // Worked
         await supabase
           .storage
@@ -179,7 +180,7 @@
   }
   const buildItemImage = async (path) => {
     // console.log('building')
-    const imagePath = $user.id + "/" + item.imagePath
+    const imagePath = $session.user.id + "/" + item.imagePath
     item.image = await getItemImage(imagePath)
   }
   const io = new IntersectionObserver((entries) => {
@@ -208,8 +209,8 @@
   }
 
   const deleteImage = async() => {
-    if (item.imagePath && $user.id) {
-      const fromPath = `${$user.id}/${item.imagePath}`
+    if (item.imagePath && $session.user.id) {
+      const fromPath = `${$session.user.id}/${item.imagePath}`
       const { data, error } = await supabase
         .storage
         .from('expired')
@@ -364,7 +365,7 @@
       const { data, error } = await supabase
         .storage
         .from('expired')
-        .upload(`${$user.id}/${item.id}`, file)
+        .upload(`${$session.user.id}/${item.id}`, file)
       if (error) {
         message.set({
           text: `Error: ${error.message}`,
