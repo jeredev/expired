@@ -7,8 +7,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "mysql"
+  url = "mysql://t3dgc0ohfdak:************@uzona5pk697e.us-east-2.psdb.cloud/expired?sslaccept=strict"
 }
 
 model User {
@@ -40,4 +40,22 @@ model Invite {
   accountId String?
   isValid   Boolean  @default(true)
   account   Account? @relation(fields: [accountId], references: [id])
+}
+
+model Item {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String
+  startTime DateTime
+  endTime   DateTime
+  imagePath String
+  category  Category?
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String
 }
