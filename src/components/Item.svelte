@@ -831,10 +831,11 @@
   .image-block {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    height: 100%;
+    /* overflow: hidden; */
     position: relative;
-    align-items: center;
-    justify-content: center;
+    /* align-items: center; */
+    /* justify-content: center; */
   }
 
   /* .item-image {
@@ -880,12 +881,15 @@
     background-color: var(--gray);
     /* border: 1px solid var(--blue); */
     height: 2px;
-    margin: 0.7rem 0 0;
+    /* margin: 0.7rem 0 0; */
     /* overflow: hidden; */
     /* position: relative; */
     position: absolute;
-    width: 100%;
+    width: 40%;
     z-index: -1;
+    left: 30%;
+    top: 50%;
+    transform: translateY(-50%);
   }
   .elapser .indication {
     
