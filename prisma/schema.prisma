@@ -50,7 +50,6 @@ model Item {
   startTime DateTime
   endTime   DateTime
   imagePath String
-  category  Category?
 }
 
 model Category {
