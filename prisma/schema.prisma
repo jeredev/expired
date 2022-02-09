@@ -8,7 +8,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url = "mysql://t3dgc0ohfdak:************@uzona5pk697e.us-east-2.psdb.cloud/expired?sslaccept=strict"
+  url = "mysql://1eaycpl7jx2r:pscale_pw_pyNhLQlH-PXpajARN2dN36bVDZbIsXfKqN8qKiJHMiU@uzona5pk697e.us-east-2.psdb.cloud/expired?sslaccept=strict"
 }
 
 model User {
