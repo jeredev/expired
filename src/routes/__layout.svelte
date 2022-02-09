@@ -4,7 +4,8 @@
   /* @import url('https://fonts.googleapis.com/css2?family=Encode+Sans&family=JetBrains+Mono&display=swap'); */
   :root {
     --gray: #666;
-    --red: rgba(220, 38, 38, 1);
+    /* --red: rgba(220, 38, 38, 1); */
+    --red: #b22020;
   }
   body {
     background-color: #181818;

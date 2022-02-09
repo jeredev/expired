@@ -46,7 +46,7 @@
   let password;
 
   let addMenuActive = false
-  let categoriesMenuActive = true
+  let categoriesMenuActive = false
   let searchMenuActive = false
   let sortingMenuActive = false
 
