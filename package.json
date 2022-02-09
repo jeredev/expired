@@ -22,7 +22,7 @@
     "@sentry/tracing": "^6.17.6",
     "@supabase/supabase-js": "^1.30.0",
     "@sveltejs/adapter-auto": "latest",
-    "@sveltejs/kit": "latest",
+    "@sveltejs/kit": "next",
     "@typescript-eslint/eslint-plugin": "^4.31.1",
     "@typescript-eslint/parser": "^4.31.1",
     "cypress": "^9.4.1",
