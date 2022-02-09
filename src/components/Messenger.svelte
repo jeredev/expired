@@ -1,5 +1,5 @@
 <script>
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy } from "svelte";
   import { message } from '../stores';
 
   let active = false
@@ -36,15 +36,9 @@
       active = false
     }
   })
-  
-  onMount(() => {
-    
-  });
   onDestroy(() => {
     if (timeBomb) window.clearTimeout(timeBomb)
   });
-  
-  
 </script>
 
 <div class="message" class:active class:timed>
