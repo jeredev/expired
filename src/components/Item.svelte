@@ -451,19 +451,39 @@
   const updateEndTimeRelativity = () => {
     const startTime = new Date(item.edits.startTime)
     if (item.edits.endTime) {
+      
       let endTime = new Date(item.edits.endTime)
-      item.edits.endRelatively.years = differenceInYears(endTime, startTime)
-      endTime = subYears(new Date(endTime), item.edits.endRelatively.years)
-      item.edits.endRelatively.months = differenceInMonths(endTime, startTime)
-      endTime = subMonths(new Date(endTime), differenceInMonths(endTime, startTime))
-      item.edits.endRelatively.weeks = differenceInWeeks(endTime, startTime)
-      endTime = subWeeks(new Date(endTime), differenceInWeeks(endTime, startTime))
+      if (subYears(new Date(endTime), differenceInYears(endTime, startTime)) < startTime) {
+        item.edits.endRelatively.years = 0
+      }
+      else {
+        item.edits.endRelatively.years = differenceInYears(endTime, startTime)
+        endTime = subYears(new Date(endTime), differenceInYears(endTime, startTime))
+      }
+
+      if (subMonths(new Date(endTime), differenceInMonths(endTime, startTime)) < startTime) {
+        item.edits.endRelatively.months = 0
+      }
+      else {
+        item.edits.endRelatively.months = differenceInMonths(endTime, startTime)
+        endTime = subMonths(new Date(endTime), differenceInMonths(endTime, startTime))
+      }
+
+      if (subWeeks(new Date(endTime), differenceInWeeks(endTime, startTime)) < startTime) {
+        item.edits.endRelatively.weeks = 0
+      }
+      else {
+        item.edits.endRelatively.weeks = differenceInWeeks(endTime, startTime)
+        endTime = subWeeks(new Date(endTime), differenceInWeeks(endTime, startTime))
+      }
+
       item.edits.endRelatively.days = differenceInDays(endTime, startTime)
       endTime = subDays(new Date(endTime), differenceInDays(endTime, startTime))
       item.edits.endRelatively.hours = differenceInHours(endTime, startTime)
       endTime = subHours(new Date(endTime), differenceInHours(endTime, startTime))
       item.edits.endRelatively.minutes = differenceInMinutes(endTime, startTime)
       endTime = subMinutes(new Date(endTime), differenceInMinutes(endTime, startTime))
+      
       checkUpdateValidity()
     }
     else {
@@ -567,7 +587,7 @@
               <div class="menu-area">
                 <div class="area area--name">
                   <div class="form-field mb-2">
-                    <label for="edit-{item.id}--name" class="block">Change Item Name</label>
+                    <label for="edit-{item.id}--name" class="block">Name</label>
                     <input type="text" id="edit-{item.id}--name" class="bg-black p-2 text-white w-full" bind:value="{item.edits.name}" on:input="{checkUpdateValidity}" />
                   </div>
                 </div>
@@ -831,6 +851,7 @@
   .image-block {
     display: flex;
     flex-direction: column;
+    min-height: 100px;
     /* height: 100%; */
     /* overflow: hidden; */
     position: relative;
