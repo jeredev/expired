@@ -251,56 +251,55 @@
 
   let statusRenewing = false
   const renewItem = async () => {
-    myUndefinedFunction()
-    // statusRenewing = true
-    // statusProcessing = true
-    // // Calculate new endTime
-    // let renewedEndTime = updateEndTimeRelativelyForRenewal()
-    // const { data, error } = await supabase
-    //   .from('items')
-    //   .update({
-    //     startTime: new Date(),
-    //     endTime: new Date(renewedEndTime),
-    //   })
-    //   .match({ id: item.id })
-    // if (error) {
-    //   statusProcessing = false
-    //   statusUpdating = false
-    //   message.set({
-    //     text: `Error: ${error.message}`,
-    //     timed: true
-    //   })
-    //   console.error('There was a problem:', error)
-    //   return
-    // }
-    // if (data && data[0]) {
-    //   item.name = data[0].name
-    //   item.startTime = data[0].startTime
-    //   item.endTime = data[0].endTime
-    //   item.edits.name = data[0].name
-    //   // Find category name / Assign category
-    //   const found = categories.find(element => element.id === data[0].category)
-    //   if (!found) {
-    //     item.category = {}
-    //   } else {
-    //     item.category = {}
-    //     item.category.id = found.id
-    //     item.category.name = found.name
-    //     item.edits.category.id = found.id
-    //     item.edits.category.name = found.name
-    //   }
-    //   item.edits.startTime = format(new Date(data[0].startTime), 'yyyy-MM-dd\'T\'HH:mm')
-    //   item.edits.endTime = format(new Date(data[0].endTime), 'yyyy-MM-dd\'T\'HH:mm')
-    //   updateEndTimeRelativity()
-    //   menuVisible = false
-    //   dispatch('update', item)
-    //   statusProcessing = false
-    //   statusUpdating = false
-    //   message.set({
-    //     text: 'Item renewed.',
-    //     timed: true
-    //   })
-    // }
+    statusRenewing = true
+    statusProcessing = true
+    // Calculate new endTime
+    let renewedEndTime = updateEndTimeRelativelyForRenewal()
+    const { data, error } = await supabase
+      .from('items')
+      .update({
+        startTime: new Date(),
+        endTime: new Date(renewedEndTime),
+      })
+      .match({ id: item.id })
+    if (error) {
+      statusProcessing = false
+      statusUpdating = false
+      message.set({
+        text: `Error: ${error.message}`,
+        timed: true
+      })
+      console.error('There was a problem:', error)
+      return
+    }
+    if (data && data[0]) {
+      item.name = data[0].name
+      item.startTime = data[0].startTime
+      item.endTime = data[0].endTime
+      item.edits.name = data[0].name
+      // Find category name / Assign category
+      const found = categories.find(element => element.id === data[0].category)
+      if (!found) {
+        item.category = {}
+      } else {
+        item.category = {}
+        item.category.id = found.id
+        item.category.name = found.name
+        item.edits.category.id = found.id
+        item.edits.category.name = found.name
+      }
+      item.edits.startTime = format(new Date(data[0].startTime), 'yyyy-MM-dd\'T\'HH:mm')
+      item.edits.endTime = format(new Date(data[0].endTime), 'yyyy-MM-dd\'T\'HH:mm')
+      updateEndTimeRelativity()
+      menuVisible = false
+      dispatch('update', item)
+      statusProcessing = false
+      statusUpdating = false
+      message.set({
+        text: 'Item renewed.',
+        timed: true
+      })
+    }
   }
 
   let statusUpdating = false
