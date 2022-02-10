@@ -251,55 +251,56 @@
 
   let statusRenewing = false
   const renewItem = async () => {
-    statusRenewing = true
-    statusProcessing = true
-    // Calculate new endTime
-    let renewedEndTime = updateEndTimeRelativelyForRenewal()
-    const { data, error } = await supabase
-      .from('items')
-      .update({
-        startTime: new Date(),
-        endTime: new Date(renewedEndTime),
-      })
-      .match({ id: item.id })
-    if (error) {
-      statusProcessing = false
-      statusUpdating = false
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('There was a problem:', error)
-      return
-    }
-    if (data && data[0]) {
-      item.name = data[0].name
-      item.startTime = data[0].startTime
-      item.endTime = data[0].endTime
-      item.edits.name = data[0].name
-      // Find category name / Assign category
-      const found = categories.find(element => element.id === data[0].category)
-      if (!found) {
-        item.category = {}
-      } else {
-        item.category = {}
-        item.category.id = found.id
-        item.category.name = found.name
-        item.edits.category.id = found.id
-        item.edits.category.name = found.name
-      }
-      item.edits.startTime = format(new Date(data[0].startTime), 'yyyy-MM-dd\'T\'HH:mm')
-      item.edits.endTime = format(new Date(data[0].endTime), 'yyyy-MM-dd\'T\'HH:mm')
-      updateEndTimeRelativity()
-      menuVisible = false
-      dispatch('update', item)
-      statusProcessing = false
-      statusUpdating = false
-      message.set({
-        text: 'Item renewed.',
-        timed: true
-      })
-    }
+    myUndefinedFunction()
+    // statusRenewing = true
+    // statusProcessing = true
+    // // Calculate new endTime
+    // let renewedEndTime = updateEndTimeRelativelyForRenewal()
+    // const { data, error } = await supabase
+    //   .from('items')
+    //   .update({
+    //     startTime: new Date(),
+    //     endTime: new Date(renewedEndTime),
+    //   })
+    //   .match({ id: item.id })
+    // if (error) {
+    //   statusProcessing = false
+    //   statusUpdating = false
+    //   message.set({
+    //     text: `Error: ${error.message}`,
+    //     timed: true
+    //   })
+    //   console.error('There was a problem:', error)
+    //   return
+    // }
+    // if (data && data[0]) {
+    //   item.name = data[0].name
+    //   item.startTime = data[0].startTime
+    //   item.endTime = data[0].endTime
+    //   item.edits.name = data[0].name
+    //   // Find category name / Assign category
+    //   const found = categories.find(element => element.id === data[0].category)
+    //   if (!found) {
+    //     item.category = {}
+    //   } else {
+    //     item.category = {}
+    //     item.category.id = found.id
+    //     item.category.name = found.name
+    //     item.edits.category.id = found.id
+    //     item.edits.category.name = found.name
+    //   }
+    //   item.edits.startTime = format(new Date(data[0].startTime), 'yyyy-MM-dd\'T\'HH:mm')
+    //   item.edits.endTime = format(new Date(data[0].endTime), 'yyyy-MM-dd\'T\'HH:mm')
+    //   updateEndTimeRelativity()
+    //   menuVisible = false
+    //   dispatch('update', item)
+    //   statusProcessing = false
+    //   statusUpdating = false
+    //   message.set({
+    //     text: 'Item renewed.',
+    //     timed: true
+    //   })
+    // }
   }
 
   let statusUpdating = false
@@ -852,29 +853,8 @@
     display: flex;
     flex-direction: column;
     min-height: 100px;
-    /* height: 100%; */
-    /* overflow: hidden; */
     position: relative;
-    /* align-items: center; */
-    /* justify-content: center; */
   }
-
-  /* .item-image {
-    object-fit: cover;
-    object-position: center;
-    opacity: 0;
-    transition: 400ms opacity ease-in;
-    width: 100%;
-  }
-  .item-image.loaded {
-    opacity: 1;
-  }
-  .image-block {
-    aspect-ratio: 1 / 1;
-    // aspect-ratio: 3 / 4;
-    display: flex;
-    overflow: hidden;
-  } */
 
   /* End Refactor Todo Block */
 
@@ -900,11 +880,7 @@
   }
   .elapser {
     background-color: var(--gray);
-    /* border: 1px solid var(--blue); */
     height: 2px;
-    /* margin: 0.7rem 0 0; */
-    /* overflow: hidden; */
-    /* position: relative; */
     position: absolute;
     width: 40%;
     z-index: -1;

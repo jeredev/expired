@@ -2,7 +2,9 @@
 <script>
   import { supabase } from "$lib/db";
   import { session } from "$app/stores";
-  import { browser } from "$app/env"
+  import { browser } from "$app/env";
+  import * as Sentry from "@sentry/browser";
+  import { BrowserTracing } from "@sentry/tracing";
 
   if (browser) {
     $session = supabase.auth.session()
@@ -10,6 +12,16 @@
       $session = sesh
     })
   }
+
+  Sentry.init({
+    dsn: "https://6bc5561aeb964cc69945653710add9a2@o998740.ingest.sentry.io/6198797",
+    integrations: [new BrowserTracing()],
+
+    // Set tracesSampleRate to 1.0 to capture 100%
+    // of transactions for performance monitoring.
+    // We recommend adjusting this value in production
+    tracesSampleRate: 1.0,
+  });
   
 </script>
 
