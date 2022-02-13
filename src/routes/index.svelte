@@ -610,7 +610,7 @@
   // }
 
   onMount(async() => {
-    // categories = await getCategories()
+    categories = await getCategories()
     clock = window.setInterval(runClock, 1000);
     allItems = await getItems(searchQuery)
     allItems.forEach(async(item) => {
