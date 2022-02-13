@@ -1,5 +1,5 @@
 <script>
-  import { supabase } from "$lib/db";
+  import { supabase } from "$lib/supabase";
   import { session } from "$app/stores";
   import { message } from "../stores";
   import { onMount } from "svelte";
@@ -232,8 +232,9 @@ import Item from "./Item.svelte";
   let newItemImagePreview = null
 
   const analyzeFile = () => {
-    const file = fileInput.files[0]
-    if (file) {
+    // const file = fileInput.files[0]
+    if (fileInput.files[0]) {
+      const file = fileInput.files[0]
       newItemImagePreview = URL.createObjectURL(file)
       newItem.image = file
       // newItemImagePreview = URL.createObjectURL(file)

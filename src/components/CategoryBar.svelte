@@ -1,5 +1,5 @@
 <script>
-  import { supabase } from "$lib/db";
+  import { supabase } from "$lib/supabase";
   import Icon from '@iconify/svelte'
   import { message } from "../stores";
   import { createEventDispatcher, onMount } from "svelte";

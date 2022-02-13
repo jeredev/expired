@@ -1,6 +1,6 @@
 
 <script>
-  import { supabase } from "$lib/db";
+  import { supabase } from "$lib/supabase";
   import { session } from "$app/stores";
   import { browser } from "$app/env";
   import * as Sentry from "@sentry/browser";
@@ -9,19 +9,37 @@
   if (browser) {
     $session = supabase.auth.session()
     supabase.auth.onAuthStateChange((event, sesh) => {
+      handleAuthChange(event, sesh)
       $session = sesh
     })
+    // const user = supabase.auth.user()
+    // console.log(user)
   }
 
-  Sentry.init({
-    dsn: "https://6bc5561aeb964cc69945653710add9a2@o998740.ingest.sentry.io/6198797",
-    integrations: [new BrowserTracing()],
+  const handleAuthChange = async(event, session) => {
+    // console.log('handleAuthChange')
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: new Headers({ 'Content-Type': 'application/json' }),
+      credentials: 'same-origin',
+      body: JSON.stringify({ event, session })
+    })
+    // if (!response.ok) {
+    //   throw new Error(`HTTP error! status: ${response.status}`);
+    // }
+  }
 
-    // Set tracesSampleRate to 1.0 to capture 100%
-    // of transactions for performance monitoring.
-    // We recommend adjusting this value in production
-    tracesSampleRate: 1.0,
-  });
+  // console.log(supabase.auth.session())
+
+  // Sentry.init({
+  //   dsn: "https://6bc5561aeb964cc69945653710add9a2@o998740.ingest.sentry.io/6198797",
+  //   integrations: [new BrowserTracing()],
+
+  //   // Set tracesSampleRate to 1.0 to capture 100%
+  //   // of transactions for performance monitoring.
+  //   // We recommend adjusting this value in production
+  //   tracesSampleRate: 1.0,
+  // });
   
 </script>
 

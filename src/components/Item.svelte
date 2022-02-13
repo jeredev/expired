@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { supabase } from "$lib/db";
+  import { supabase } from "$lib/supabase";
   import { session } from "$app/stores";
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { slide } from 'svelte/transition';
@@ -787,7 +787,8 @@
     opacity: 1;
     transition: 400ms opacity;
     aspect-ratio: 1 / 1;
-    object-fit: cover;
+    /* object-fit: cover; */
+    object-fit: contain;
   }
   .unset .item-image {
     opacity: 0;
@@ -849,6 +850,7 @@
   /*  Item Image  */
 
   .image-block {
+    aspect-ratio: 1 / 1;
     display: flex;
     flex-direction: column;
     min-height: 100px;

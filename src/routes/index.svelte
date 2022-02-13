@@ -1,8 +1,33 @@
+<script context="module">
+  // export async function load({ session }) {
+  //   const { user } = session
+  //   return {
+  //     props: {
+  //       user
+  //     }
+  //   };
+  // }
+  export async function load({fetch}) {
+    // console.log('load')
+    const responseCategories = await fetch('/api/categories')
+    // const responseItems = await fetch('/api/items')
+    // console.log(response)
+    // const data = await response.json()
+    // console.log(data)
+    return {
+      // status: response.status,
+      props: {
+        categories: responseCategories.ok && (await responseCategories.json())
+      }
+    }
+  }
+</script>
 <script>
-  import { supabase } from "$lib/db";
-  import { session } from "$app/stores";
+  import { supabase } from "$lib/supabase";
+  import { page, session } from "$app/stores";
   import { onDestroy, onMount } from "svelte";
   import { slide } from 'svelte/transition';
+  // import { beforeNavigate } from "$app/navigation";
   import Icon from '@iconify/svelte'
   import {
     addYears,
@@ -27,14 +52,14 @@
     subMinutes,
   } from 'date-fns'
 
-  // import Layout from "./__layout.svelte";
-
   import AddItem from "../components/AddItem.svelte"
   import CategorizedItems from "../components/CategorizedItems.svelte"
   import Category from "../components/CategoryBar.svelte"
   import Item from "../components/Item.svelte"
   import Messenger from "../components/Messenger.svelte"
   import { displayMode, sortingMode, timeStatusMode, message } from "../stores";
+
+  export let categories
 
   let allItems = []
   let items = []
@@ -369,7 +394,7 @@
     generateListings()
   }
 
-  let categories = []
+  // let categories = []
   const getCategories = async() => {
     const { data, error } = await supabase
       .from('categories')
@@ -460,6 +485,7 @@
     }
     if (query.end && /([^\s])/.test(query.end)) {
       const endDate = new Date(query.end).toISOString()
+      console.log(typeof endDate)
       fetch = fetch.lte('endTime', endDate)
     }
     if (query.cat && /([^\s])/.test(query.cat)) {
@@ -552,21 +578,39 @@
     generateListings()
   }
 
+  if ($page.url.searchParams.get('name')) {
+    searchQuery.name = $page.url.searchParams.get('name')
+    search.name = $page.url.searchParams.get('name')
+  }
+  if ($page.url.searchParams.get('end')) {
+    searchQuery.end = $page.url.searchParams.get('end')
+    search.endTime = $page.url.searchParams.get('end')
+  }
+  if ($page.url.searchParams.get('cat')) {
+    searchQuery.cat = $page.url.searchParams.get('cat')
+    search.category = $page.url.searchParams.get('cat')
+  }
+
+  // Invitation :: New Users
+  // https://juvelylevqqyyokxzkkq.supabase.co/auth/v1/verify?token=CAspA-OBu4inFJdKu30D-g&type=invite&redirect_to=http://localhost:3000
+  // http://localhost:3000/#error_code=410&error_description=Confirmation+token+expired
+  // const type = $page.url.searchParams.get('type')
+  // beforeNavigate(() => {
+  //   const type = $page.url.searchParams.get('type')
+  //   console.log(`type is ${type}`)
+  // })
+
+  // export async function load({ session }) {
+  //   const { user } = session
+  //   return {
+  //     props: {
+  //       user
+  //     }
+  //   };
+  // }
+
   onMount(async() => {
-    categories = await getCategories()
-    const params = new URLSearchParams(location.search)
-    if (params.get('name')) {
-      searchQuery.name = params.get('name')
-      search.name = params.get('name')
-    }
-    if (params.get('end')) {
-      searchQuery.end = params.get('end')
-      search.endTime = params.get('end')
-    }
-    if (params.get('cat')) {
-      searchQuery.cat = params.get('cat')
-      search.category = params.get('cat')
-    }
+    // categories = await getCategories()
     clock = window.setInterval(runClock, 1000);
     allItems = await getItems(searchQuery)
     allItems.forEach(async(item) => {
