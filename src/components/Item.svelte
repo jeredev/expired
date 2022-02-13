@@ -594,7 +594,7 @@
                 <div class="area area--category">
                   <div class="form-field mb-2">
                     <label for="edit-{item.id}--category" class="block">Category</label>
-                    <select name="" id="" class="bg-black p-2 text-white w-full" bind:value="{item.edits.category.id}">
+                    <select name="" id="" class="bg-black px-1 py-2 text-white w-full" bind:value="{item.edits.category.id}">
                       {#each categories as category}
                         <option value="{category.id}">{category.name}</option>
                       {/each}
@@ -673,21 +673,21 @@
                       {#if statusUpdating}
                         Updating...
                       {:else}
-                        Update Item
+                        Update
                       {/if}
                     </button>
                     <button type="button" class="btn mx-2 edit-item" on:click="{renewItem}" disabled="{statusProcessing}">
                       {#if statusRenewing}
                         Renewing...
                       {:else}
-                        Renew Item
+                        Renew
                       {/if}
                     </button>
                     <button type="button" class="btn remove-item negative" on:click={() => { confirmDelete = !confirmDelete }} disabled="{statusProcessing}">
                       {#if statusRemoving}
                         Removing...
                       {:else}
-                        Delete Item
+                        Delete
                       {/if}
                     </button>
                     {#if confirmDelete}
