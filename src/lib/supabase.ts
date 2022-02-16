@@ -26,21 +26,3 @@ export const supabase = createClient(
   * @returns
   */
  export const fromBucket = (bucket: SupaStorageBucket) => supabase.storage.from(bucket)
-
- /**
- * Logging In
- *
- */
-export const handleLogin = async(email: string, password: string) => {
-  const { user, session, error } = await supabase.auth.signIn({
-    email,
-    password
-  });
-  if (user) return user
-  if (error) return error
-}
-
-export const handleLogout = async(jwt?) => {
-  const { error } = await supabase.auth.signOut();
-  if (error) return error
-}

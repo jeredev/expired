@@ -1,40 +1,37 @@
 import { supabase } from "$lib/supabase";
-import type { RequestEvent } from '@sveltejs/kit'
 
-// Detect user.id???
-export async function get(event: RequestEvent) {
+export async function get() {
   try {
-    if (event.locals.user) {
-      const { data, error } = await supabase
-        .from('categories')
-        .select(`
-          id,
-          name
-        `)
-        .order('name', {ascending: true})
-      if (data) {
-        return {
-          status: 200,
-          body: JSON.stringify(data)
-        }
+    const fetch = supabase
+      .from('categories')
+      .select(`
+        id,
+        name
+      `)
+    const { data, error } = await fetch
+    if (data) {
+      return {
+        status: 200,
+        body: JSON.stringify(data)
       }
-      if (error) {
-        console.error('Error:', error)
-        return {
-          status: 400,
-          body: JSON.stringify(error)
-        }
+    }
+    if (error) {
+      console.error('Error:', error)
+      return {
+        status: 400,
+        body: JSON.stringify({error})
       }
-      return
     }
-    else {
-      throw 'No user detected'
-    }
+    return
+    // return {
+    //   status: 200,
+    //   body: JSON.stringify({data, error})
+    // }
   }
   catch (e) {
-    console.log(e);
+    console.log({e});
     return { 
-      body: JSON.stringify(e)
+      body: JSON.stringify({e})
     };
   }
 }
