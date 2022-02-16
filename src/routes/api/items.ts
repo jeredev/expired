@@ -1,13 +1,17 @@
 import { supabase } from "$lib/supabase";
+import { parse } from 'cookie'
 import type { RequestEvent } from '@sveltejs/kit'
 
 // Detect user.id???
 export async function get(event: RequestEvent) {
   // console.log('get')
+  // console.log(event.request.headers)
   try {
-    if (event.locals.user) {
+    const sbToken = parse(event.request.headers.get('Cookie'))['sb:token']
+    if (sbToken) {
       // console.log(supabase.auth.session()) // null
       // console.log(event.locals)
+      await supabase.auth.setAuth(sbToken)
       const params = event.url.searchParams
       let lookup = supabase
         .from('items')

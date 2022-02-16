@@ -3,6 +3,8 @@ import type { RequestEvent } from '@sveltejs/kit'
 
 // Detect user.id???
 export async function get(event: RequestEvent) {
+  // console.log('below')
+  // console.log(event.locals.user)
   try {
     if (event.locals.user) {
       const { data, error } = await supabase
