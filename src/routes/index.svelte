@@ -68,10 +68,8 @@
 
   let time = getTime(new Date())
 
-  let email
-  email = 'jeremy@jeremywynn.com'
-  let password
-  password = 'BBBnhtkm1!!!'
+  let email;
+  let password;
 
   let addMenuActive = false
   let categoriesMenuActive = false
