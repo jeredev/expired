@@ -1,27 +1,3 @@
-<script context="module">
-  // export async function load({ session }) {
-  //   const { user } = session
-  //   return {
-  //     props: {
-  //       user
-  //     }
-  //   };
-  // }
-  export async function load({fetch}) {
-    // console.log('load')
-    const responseCategories = await fetch('/api/categories')
-    // const responseItems = await fetch('/api/items')
-    // console.log(response)
-    // const data = await response.json()
-    // console.log(data)
-    return {
-      // status: response.status,
-      props: {
-        categories: responseCategories.ok && (await responseCategories.json())
-      }
-    }
-  }
-</script>
 <script>
   import { supabase } from "$lib/supabase";
   import { page, session } from "$app/stores";
