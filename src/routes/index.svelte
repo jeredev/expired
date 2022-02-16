@@ -27,7 +27,6 @@
   import { page, session } from "$app/stores";
   import { onDestroy, onMount } from "svelte";
   import { slide } from 'svelte/transition';
-  // import { beforeNavigate } from "$app/navigation";
   import Icon from '@iconify/svelte'
   import {
     addYears,
