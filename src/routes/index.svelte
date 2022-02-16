@@ -395,8 +395,24 @@
 
   // let categories = []
   const getCategories = async() => {
-    const res = await fetch('/api/categories')
-    return await res.json()
+    const { data, error } = await supabase
+      .from('categories')
+      .select(`
+        id,
+        name
+      `)
+      .order('name', {ascending: true})
+    if (data) return data
+    if (error) {
+      message.set({
+        text: `Error: ${error.message}`,
+        timed: true
+      })
+      console.error('Error:', error)
+      return
+    }
+    // const res = await fetch('/api/categories')
+    // return await res.json()
   }
 
   const generateListings = () => {
@@ -449,7 +465,44 @@
   }
 
   const getItems = async(query) => {
-
+    // https://supabase.com/docs/reference/javascript/using-filters
+    let fetch = supabase
+      .from('items')
+      .select(`
+        id,
+        name,
+        startTime,
+        endTime,
+        category (
+          id,
+          name
+        ),
+        imagePath
+      `)
+    // .limit(1)
+    if (query.name && /([^\s])/.test(query.name)) {
+      fetch = fetch.ilike('name', `%${query.name}%`)
+    }
+    if (query.end && /([^\s])/.test(query.end)) {
+      const endDate = new Date(query.end).toISOString()
+      console.log(typeof endDate)
+      fetch = fetch.lte('endTime', endDate)
+    }
+    if (query.cat && /([^\s])/.test(query.cat)) {
+      const category = categories.find((category) => category.name === query.cat)
+      fetch = fetch.eq('category', `${category.id}`)
+    }
+    const { data, error } = await fetch
+    if (data) return data
+    if (error) {
+      message.set({
+        text: `Error: ${error.message}`,
+        timed: true
+      })
+      console.error('Error:', error)
+      return
+    }
+    /*
     let appendage = ''
     if (query) {
       appendage = '?' + new URLSearchParams(query)
@@ -466,7 +519,7 @@
     //   console.error('Error:', error)
     //   return
     // }
-
+    */
   }
 
   const getItemImage = async (path) => {
