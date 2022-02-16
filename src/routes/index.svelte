@@ -44,8 +44,10 @@
 
   let time = getTime(new Date())
 
-  let email;
-  let password;
+  let email
+  email = 'jeremy@jeremywynn.com'
+  let password
+  password = 'BBBnhtkm1!!!'
 
   let addMenuActive = false
   let categoriesMenuActive = false
@@ -605,7 +607,7 @@
       </form>
     {/if}
   </div>
-  {#if $session && $session.user}
+  {#if $session}
     <div class="homebase">
       {#if Object.keys(searchQuery).length}
         <a href="/" class="btn">
