@@ -1,29 +1,5 @@
-<script context="module">
-  // export async function load({ session }) {
-  //   const { user } = session
-  //   return {
-  //     props: {
-  //       user
-  //     }
-  //   };
-  // }
-  export async function load({fetch}) {
-    // console.log('load')
-    const responseCategories = await fetch('/api/categories')
-    // const responseItems = await fetch('/api/items')
-    // console.log(response)
-    // const data = await response.json()
-    // console.log(data)
-    return {
-      // status: response.status,
-      props: {
-        categories: responseCategories.ok && (await responseCategories.json())
-      }
-    }
-  }
-</script>
 <script>
-  import { supabase } from "$lib/supabase";
+  import { handleLogin, handleLogout, supabase } from "$lib/supabase";
   import { page, session } from "$app/stores";
   import { onDestroy, onMount } from "svelte";
   import { slide } from 'svelte/transition';
@@ -59,10 +35,10 @@
   import Messenger from "../components/Messenger.svelte"
   import { displayMode, sortingMode, timeStatusMode, message } from "../stores";
 
-  export let categories
-
-  let allItems = []
+  let allItems
   let items = []
+
+  let categories
 
   let listings = null
 
@@ -76,22 +52,27 @@
   let searchMenuActive = false
   let sortingMenuActive = false
 
-  // const sendMsg = () => {
-  //   message.set({
-  //     text: 'Message',
-  //     timed: true
-  //   })
-  // }
-
   let statusProcessing = false
 
   const logIn = async () => {
     statusProcessing = true
-    const { user, error } = await supabase.auth.signIn({
-      email: email,
-      password: password,
-    });
-    if (user) {
+    // const { user, error } = await supabase.auth.signIn({
+    //   email: email,
+    //   password: password,
+    // });
+    const response = await handleLogin(email, password)
+    // console.log(response)
+    if (response.status === 400) {
+      statusProcessing = false
+      message.set({
+        text: `Error: ${response.message}`,
+        timed: true
+      })
+      console.error('There was a problem:', response)
+      return
+    }
+    if (response) {
+      // console.log(user) // WorksF!
       statusProcessing = false
       message.set({
         text: 'Successfully logged in.',
@@ -117,42 +98,47 @@
       allItems = await getItems(searchQuery)
       allItems.forEach(async(item) => {
         if (item.imagePath) {
-          const imagePath = user.id + "/" + item.imagePath
+          const imagePath = response.id + "/" + item.imagePath
           item.image = await getItemImage(imagePath)
         }
       })
       items = allItems
       generateListings()
     }
-    if (error) {
-      statusProcessing = false
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('There was a problem:', error)
-      return
-    }
+    // if (error) {
+    //   statusProcessing = false
+    //   message.set({
+    //     text: `Error: ${error.message}`,
+    //     timed: true
+    //   })
+    //   console.error('There was a problem:', error)
+    //   return
+    // }
   };
 
   const logOut = async () => {
     statusProcessing = true
-    const { error } = await supabase.auth.signOut();
+    await handleLogout()
     statusProcessing = false
-    if (error) {
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('There was a problem:', error)
-      return
-    }
-    else {
-      message.set({
-        text: 'Successfully logged out.',
-        timed: true
-      })
-    }
+    // TODO :: Better status handling
+    message.set({
+      text: 'Successfully logged out.',
+      timed: true
+    })
+    // if (error) {
+    //   message.set({
+    //     text: `Error: ${error.message}`,
+    //     timed: true
+    //   })
+    //   console.error('There was a problem:', error)
+    //   return
+    // }
+    // else {
+    //   message.set({
+    //     text: 'Successfully logged out.',
+    //     timed: true
+    //   })
+    // }
   };
 
   const addItems = async(e) => {
@@ -394,24 +380,9 @@
     generateListings()
   }
 
-  // let categories = []
   const getCategories = async() => {
-    const { data, error } = await supabase
-      .from('categories')
-      .select(`
-        id,
-        name
-      `)
-      .order('name', {ascending: true})
-    if (data) return data
-    if (error) {
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('Error:', error)
-      return
-    }
+    const res = await fetch('/api/categories')
+    return await res.json()
   }
 
   const generateListings = () => {
@@ -464,46 +435,24 @@
   }
 
   const getItems = async(query) => {
-    // https://supabase.com/docs/reference/javascript/using-filters
-    let fetch = supabase
-      .from('items')
-      .select(`
-        id,
-        name,
-        startTime,
-        endTime,
-        category (
-          id,
-          name
-        ),
-        imagePath
-      `)
-    // .limit(1)
+    let appendage = ''
+    if (query) {
+      appendage = '?' + new URLSearchParams(query)
+    }
+    const res = await fetch('/api/items' + appendage)
+    return await res.json()
 
-    if (query.name && /([^\s])/.test(query.name)) {
-      fetch = fetch.ilike('name', `%${query.name}%`)
-    }
-    if (query.end && /([^\s])/.test(query.end)) {
-      const endDate = new Date(query.end).toISOString()
-      console.log(typeof endDate)
-      fetch = fetch.lte('endTime', endDate)
-    }
-    if (query.cat && /([^\s])/.test(query.cat)) {
-      const category = categories.find((category) => category.name === query.cat)
-      fetch = fetch.eq('category', `${category.id}`)
-    }
+    // Error handling needed here
 
-    const { data, error } = await fetch
-    if (data) return data
-    if (error) {
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('Error:', error)
-      return
-    }
-
+    // if (data) return data
+    // if (error) {
+    //   message.set({
+    //     text: `Error: ${error.message}`,
+    //     timed: true
+    //   })
+    //   console.error('Error:', error)
+    //   return
+    // }
   }
 
   const getItemImage = async (path) => {
@@ -600,28 +549,25 @@
   //   console.log(`type is ${type}`)
   // })
 
-  // export async function load({ session }) {
-  //   const { user } = session
-  //   return {
-  //     props: {
-  //       user
-  //     }
-  //   };
-  // }
+  // Reset Password
+  // https://juvelylevqqyyokxzkkq.supabase.co/auth/v1/verify?token=Ly-R1xeCtr5jfQjzkXSw1g&type=recovery&redirect_to=http://localhost:3000
+  // Acceptance
+  // https://localhost:3000/#access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNjQ0OTQ3MzUzLCJzdWIiOiJmZGU0YmIxOS0zYzk4LTRkNzEtOGI5Mi01ZjVlMjYxOWMyOTgiLCJlbWFpbCI6ImplcmVteUBqZXJlZGV2LmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnt9LCJyb2xlIjoiYXV0aGVudGljYXRlZCJ9.zySGn9tHMJj92NasymGFd5gUgEJfBTCHUGNoXDDuPDw&expires_in=3600&refresh_token=RkCOaTN-sVlTJSLxOpJlJQ&token_type=bearer&type=recovery
 
   onMount(async() => {
-    // categories = await getCategories()
-    clock = window.setInterval(runClock, 1000);
-    allItems = await getItems(searchQuery)
-    allItems.forEach(async(item) => {
-      if (item.imagePath) {
-        const imagePath = $session.user.id + "/" + item.imagePath
-        item.image = await getItemImage(imagePath)
-      }
-    })
-    items = allItems
-    generateListings()
-
+    if ($session && $session.user) {
+      categories = await getCategories()
+      clock = window.setInterval(runClock, 1000);
+      allItems = await getItems(searchQuery)
+      allItems.forEach(async(item) => {
+        if (item.imagePath) {
+          const imagePath = $session.user.id + "/" + item.imagePath
+          item.image = await getItemImage(imagePath)
+        }
+      })
+      items = allItems
+      generateListings()
+    }
   });
   onDestroy(() => {
     clearInterval(clock)
@@ -631,7 +577,6 @@
 <div class="decay mx-auto max-w-50rem p-4 text-white">
   <Messenger />
   <div class="header">
-    <!-- <button type="button" class="btn" on:click="{sendMsg}">Message</button> -->
     {#if !$session}
       <form on:submit|preventDefault={logIn} class="form form--login">
         <div class="login-form-fields">
@@ -660,7 +605,7 @@
       </form>
     {/if}
   </div>
-  {#if $session}
+  {#if $session && $session.user}
     <div class="homebase">
       {#if Object.keys(searchQuery).length}
         <a href="/" class="btn">

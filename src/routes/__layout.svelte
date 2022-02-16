@@ -12,8 +12,6 @@
       handleAuthChange(event, sesh)
       $session = sesh
     })
-    // const user = supabase.auth.user()
-    // console.log(user)
   }
 
   const handleAuthChange = async(event, session) => {
@@ -29,17 +27,15 @@
     // }
   }
 
-  // console.log(supabase.auth.session())
+  Sentry.init({
+    dsn: "https://6bc5561aeb964cc69945653710add9a2@o998740.ingest.sentry.io/6198797",
+    integrations: [new BrowserTracing()],
 
-  // Sentry.init({
-  //   dsn: "https://6bc5561aeb964cc69945653710add9a2@o998740.ingest.sentry.io/6198797",
-  //   integrations: [new BrowserTracing()],
-
-  //   // Set tracesSampleRate to 1.0 to capture 100%
-  //   // of transactions for performance monitoring.
-  //   // We recommend adjusting this value in production
-  //   tracesSampleRate: 1.0,
-  // });
+    // Set tracesSampleRate to 1.0 to capture 100%
+    // of transactions for performance monitoring.
+    // We recommend adjusting this value in production
+    tracesSampleRate: 1.0,
+  });
   
 </script>
 
@@ -54,6 +50,7 @@
   }
   body {
     background-color: #181818;
+    /* background-color: rgb(6, 17, 33); */
     font-family: 'Inter', sans-serif;
   }
   ::-webkit-calendar-picker-indicator {
