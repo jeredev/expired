@@ -898,7 +898,6 @@
   }
   .elapser .indication .node {
     width: 100%;
-    /* background-color: red; */
     position: absolute;
     height: 100%;
     animation: looped-elapser 1.5s linear infinite;
