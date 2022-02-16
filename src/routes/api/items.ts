@@ -5,7 +5,7 @@ import type { RequestEvent } from '@sveltejs/kit'
 export async function get(event: RequestEvent) {
   // console.log('get')
   try {
-    if (event.locals.user) {
+    // if (event.locals.user) {
       // console.log(supabase.auth.session()) // null
       // console.log(event.locals)
       const params = event.url.searchParams
@@ -59,14 +59,15 @@ export async function get(event: RequestEvent) {
         }
       }
       return
-    }
-    else {
-      throw 'No user detected'
-    }
+    // }
+    // else {
+    //   throw 'No user detected'
+    // }
   }
   catch (e) {
     console.log(e);
     return { 
+      status: 400,
       body: JSON.stringify(e)
     };
   }

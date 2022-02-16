@@ -4,7 +4,7 @@ import type { RequestEvent } from '@sveltejs/kit'
 // Detect user.id???
 export async function get(event: RequestEvent) {
   try {
-    if (event.locals.user) {
+    // if (event.locals.user) {
       const { data, error } = await supabase
         .from('categories')
         .select(`
@@ -26,14 +26,15 @@ export async function get(event: RequestEvent) {
         }
       }
       return
-    }
-    else {
-      throw 'No user detected'
-    }
+    // }
+    // else {
+    //   throw 'No user detected'
+    // }
   }
   catch (e) {
     console.log(e);
     return { 
+      status: 400,
       body: JSON.stringify(e)
     };
   }
