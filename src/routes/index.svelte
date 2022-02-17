@@ -34,7 +34,8 @@
   import Messenger from "../components/Messenger.svelte"
   import { displayMode, sortingMode, timeStatusMode, message } from "../stores";
 
-  export let categories
+  // export let categories
+  let categories
 
   let allItems = []
   let items = []
@@ -652,7 +653,7 @@
       </form>
     {/if}
   </div>
-  {#if $session}
+  {#if $session && $session.user}
     <div class="homebase">
       {#if Object.keys(searchQuery).length}
         <a href="/" class="btn">
