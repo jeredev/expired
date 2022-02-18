@@ -1,10 +1,11 @@
 import type { Handle, GetSession, RequestEvent } from '@sveltejs/kit'
 import type { AuthChangeEvent, AuthSession } from '@supabase/supabase-js'
 import { serialize, parse } from 'cookie'
-import { API_AUTH, RESP_USER_GUEST, COOKIE_NAME, COOKIE_OPTIONS } from '$lib/constants'
+import { API_AUTH, COOKIE_NAME, COOKIE_OPTIONS } from '$lib/constants'
 import { auth } from '$lib/supabase'
 
 export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, resolve: (request: RequestEvent) => Promise<Response> }) => {
+  
   const sbToken = event.request.headers.get('Cookie') ? parse(event.request.headers.get('Cookie'))[COOKIE_NAME] : ''
   if (sbToken) {
     const { user, error } = await auth.api.getUser(sbToken)

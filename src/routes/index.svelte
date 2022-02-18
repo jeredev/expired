@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { supabase } from "$lib/supabase";
   import { page, session } from "$app/stores";
   import { onDestroy, onMount } from "svelte";
@@ -18,7 +18,6 @@
     differenceInHours,
     differenceInMinutes,
     format,
-    getTime,
     subYears,
     subMonths,
     subWeeks,
@@ -29,23 +28,22 @@
 
   import AddItem from "../components/AddItem.svelte"
   import CategorizedItems from "../components/CategorizedItems.svelte"
-  import Category from "../components/CategoryBar.svelte"
+  import CategoryBar from "../components/CategoryBar.svelte"
   import Item from "../components/Item.svelte"
   import Messenger from "../components/Messenger.svelte"
   import { displayMode, sortingMode, timeStatusMode, message } from "../stores";
 
   // export let categories
-  let categories
+  let categories = null
 
-  let allItems = []
-  let items = []
+  let allItems: Array<ItemProps> | null = null
+  let items: Array<ItemProps> | null = null
 
   let listings = null
+  let time = new Date().getTime()
 
-  let time = getTime(new Date())
-
-  let email;
-  let password;
+  let email: string;
+  let password: string;
 
   let addMenuActive = false
   let categoriesMenuActive = false
@@ -76,7 +74,6 @@
       // Perform mount operations
       categories = await getCategories()
       const params = new URLSearchParams(location.search)
-      // const searchQuery = {}
       if (params.get('name')) {
         searchQuery.name = params.get('name')
         search.name = params.get('name')
@@ -91,7 +88,7 @@
       }
       clock = window.setInterval(runClock, 1000);
       allItems = await getItems(searchQuery)
-      allItems.forEach(async(item) => {
+      allItems.forEach(async(item: ItemProps) => {
         if (item.imagePath) {
           const imagePath = user.id + "/" + item.imagePath
           item.image = await getItemImage(imagePath)
@@ -131,19 +128,17 @@
     }
   };
 
-  const addItems = async(e) => {
+  const addItems = async(e: CustomEvent) => {
     const newItems = e.detail
     categories = await getCategories()
     newItems.forEach(async(item) => {
-      // Find appropriate category
-      const found = categories.find(element => element.id === item.category)
+      const found = categories.find((element: CategoryProps) => element.id === item.category)
       if (!found) {
         item.category = {}
       } else {
         item.category = {}
         item.category.id = found.id
         item.category.name = found.name
-        // item.edits.category = {}
         item.edits.category.id = found.id
         item.edits.category.name = found.name
       }
@@ -158,7 +153,7 @@
     });
   }
 
-  const removeItem = (e) => {
+  const removeItem = (e: CustomEvent) => {
     const indexAllItems = allItems.findIndex((x) => x.id === e.detail.id)
     // console.log(`indexAllItems = ${indexAllItems}`)
     if ( indexAllItems !== -1) {
@@ -178,7 +173,7 @@
     generateListings()
   }
 
-  const updateItem = (e) => {
+  const updateItem = (e: CustomEvent) => {
     const updatedItem = e.detail
     allItems.map(() => {
       const item = allItems.find(({ id }) => id === updatedItem.id);
@@ -202,22 +197,22 @@
   let clock;
 
   const runClock = () => {
-    time = getTime(new Date())
+    time = new Date().getTime()
   };
 
   /* Sorting */
 
-  const getLifespan = (startTime, endTime) => {
-    return getTime(new Date(endTime)) - getTime(new Date(startTime))
+  const getLifespan = (startTime: Date, endTime: Date) => {
+    return new Date(endTime).getTime() - new Date(startTime).getTime()
   }
-  const getTimeElapsed = (startTime) => {
-    return time - getTime(new Date(startTime))
+  const getTimeElapsed = (startTime: Date) => {
+    return time - new Date(startTime).getTime()
   }
   const filterAll = () => {
     items = allItems
   }
   const filterSafe = () => {
-    const safe = allItems.filter(item => {
+    const safe = allItems.filter((item: ItemProps) => {
       let timeElapsed = getTimeElapsed(item.startTime)
       let lifespan = getLifespan(item.startTime, item.endTime)
       return timeElapsed < lifespan
@@ -225,27 +220,27 @@
     items = safe
   }
   const filterExpired = () => {
-    const expired = allItems.filter(item => {
+    const expired = allItems.filter((item: ItemProps) => {
       let timeElapsed = getTimeElapsed(item.startTime)
       let lifespan = getLifespan(item.startTime, item.endTime)
       return timeElapsed > lifespan
     })
     items = expired
   }
-  const sortAlphaAsc = (payload) => {
-    return payload.sort((a, b) => a.name.localeCompare(b.name))
+  const sortAlphaAsc = (payload: Array<ItemProps>) => {
+    return payload.sort((a: ItemProps, b: ItemProps) => a.name.localeCompare(b.name))
   }
-  const sortAlphaDesc = (payload) => {
-    return payload.sort((a, b) => b.name.localeCompare(a.name))
+  const sortAlphaDesc = (payload: Array<ItemProps>) => {
+    return payload.sort((a: ItemProps, b: ItemProps) => b.name.localeCompare(a.name))
   }
-  const sortEndtimeAsc = (payload) => {
-    return payload.sort((a, b) => {
-      return new Date(b.endTime) - new Date(a.endTime)
+  const sortEndtimeAsc = (payload: Array<ItemProps>) => {
+    return payload.sort((a: ItemProps, b: ItemProps) => {
+      return new Date(b.endTime).getTime() - new Date(a.endTime).getTime()
     })
   }
-  const sortEndtimeDesc = (payload) => {
-    return payload.sort((a, b) => {
-      return new Date(a.endTime) - new Date(b.endTime)
+  const sortEndtimeDesc = (payload: Array<ItemProps>) => {
+    return payload.sort((a: ItemProps, b: ItemProps) => {
+      return new Date(a.endTime).getTime() - new Date(b.endTime).getTime()
     })
   }
 
@@ -296,13 +291,36 @@
     const startTime = new Date()
     if (search.endTime) {
       let endTime = new Date(search.endTime)
-      search.endRelatively.years = differenceInYears(endTime, startTime)
-      endTime = subYears(new Date(endTime), search.endRelatively.years)
-      search.endRelatively.months = differenceInMonths(endTime, startTime)
-      endTime = subMonths(new Date(endTime), differenceInMonths(endTime, startTime))
-      search.endRelatively.weeks = differenceInWeeks(endTime, startTime)
-      endTime = subWeeks(new Date(endTime), differenceInWeeks(endTime, startTime))
-      search.endRelatively.days = differenceInDays(endTime, startTime)
+
+      if (subYears(new Date(endTime), differenceInYears(endTime, startTime)) < startTime) {
+        search.endRelatively.years = 0
+      }
+      else {
+        search.endRelatively.years = differenceInYears(endTime, startTime)
+        endTime = subYears(new Date(endTime), differenceInYears(endTime, startTime))
+      }
+      if (subMonths(new Date(endTime), differenceInMonths(endTime, startTime)) < startTime) {
+        search.endRelatively.months = 0
+      }
+      else {
+        search.endRelatively.months = differenceInMonths(endTime, startTime)
+        endTime = subMonths(new Date(endTime), differenceInMonths(endTime, startTime))
+      }
+      if (subWeeks(new Date(endTime), differenceInWeeks(endTime, startTime)) < startTime) {
+        search.endRelatively.weeks = 0
+      }
+      else {
+        search.endRelatively.weeks = differenceInWeeks(endTime, startTime)
+        endTime = subWeeks(new Date(endTime), differenceInWeeks(endTime, startTime))
+      }
+
+      // search.endRelatively.years = differenceInYears(endTime, startTime)
+      // endTime = subYears(new Date(endTime), search.endRelatively.years)
+      // search.endRelatively.months = differenceInMonths(endTime, startTime)
+      // endTime = subMonths(new Date(endTime), differenceInMonths(endTime, startTime))
+      // search.endRelatively.weeks = differenceInWeeks(endTime, startTime)
+      // endTime = subWeeks(new Date(endTime), differenceInWeeks(endTime, startTime))
+      // search.endRelatively.days = differenceInDays(endTime, startTime)
       endTime = subDays(new Date(endTime), differenceInDays(endTime, startTime))
       search.endRelatively.hours = differenceInHours(endTime, startTime)
       endTime = subHours(new Date(endTime), differenceInHours(endTime, startTime))
@@ -324,7 +342,7 @@
     // console.log('searching items!')
   }
 
-  const sortItems = (payload) => {
+  const sortItems = (payload: Array<ItemProps>) => {
     switch ($sortingMode) {
       case 'alpha-ascending':
         sortAlphaAsc(payload)
@@ -419,7 +437,7 @@
     }
     categorizedItems.push(uncategorizedCategory)
     sortByTimeStatus()
-    items.forEach((item) => {
+    items.forEach((item: ItemProps) => {
       if (item.category) {
         const found = categorizedItems.find(element => element.id === item.category.id)
         if (found) found.items.push(item)
@@ -441,7 +459,7 @@
     listings = items
   }
 
-  const getItems = async(query) => {
+  const getItems = async(query: searchQueryProps) => {
     // https://supabase.com/docs/reference/javascript/using-filters
     let fetch = supabase
       .from('items')
@@ -499,7 +517,7 @@
     */
   }
 
-  const getItemImage = async (path) => {
+  const getItemImage = async (path: string) => {
     const { data, error } = await supabase
       .storage
       .from('expired')
@@ -515,10 +533,15 @@
     }
   }
 
-  const searchQuery = {}
+  interface searchQueryProps {
+    name?: string,
+    end?: string,
+    cat?: string
+  }
+  const searchQuery: searchQueryProps = {}
 
   let addingCategory = false
-  let newCategory
+  let newCategory: string
   let newCategoryValid = false
   const checkNewCategoryValidity = () => {
     if (newCategory && /([^\s])/.test(newCategory)) {
@@ -555,16 +578,16 @@
     }
   }
 
-  const removeCategory = (e) => {
-    const indexCategories = categories.findIndex((x) => x.id === e.detail.id)
+  const removeCategory = (e: CustomEvent) => {
+    const indexCategories = categories.findIndex((x: CategoryProps) => x.id === e.detail.id)
     if ( indexCategories !== -1) {
       categories = [...categories.slice(0, indexCategories), ...categories.slice(indexCategories + 1)]
     }
     generateListings()
   }
 
-  const updateCategory = (e) => {
-    const indexCategories = categories.findIndex((x) => x.id === e.detail.id)
+  const updateCategory = (e: CustomEvent) => {
+    const indexCategories = categories.findIndex((x: CategoryProps) => x.id === e.detail.id)
     if ( indexCategories !== -1) {
       categories[indexCategories].name = e.detail.name
     }
@@ -586,12 +609,17 @@
 
   // Invitation :: New Users
   // https://juvelylevqqyyokxzkkq.supabase.co/auth/v1/verify?token=CAspA-OBu4inFJdKu30D-g&type=invite&redirect_to=http://localhost:3000
+  // https://localhost:3000/#access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNjQ1MjA1OTk3LCJzdWIiOiIyOGIxN2NiNi1mYjM3LTRjNjMtYTkxNC0xZWRmMDkzYjYyNDQiLCJlbWFpbCI6ImplcmVteUBqZXJlZGV2LmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnt9LCJyb2xlIjoiYXV0aGVudGljYXRlZCJ9.eRSn7dL7uqhO6iK4AH72RarfCWqFqrRZ5_-GdkdtAOE&expires_in=3600&refresh_token=0xjDXBM9mwaa6yPdTtUmzQ&token_type=bearer&type=invite
   // http://localhost:3000/#error_code=410&error_description=Confirmation+token+expired
   // const type = $page.url.searchParams.get('type')
   // beforeNavigate(() => {
   //   const type = $page.url.searchParams.get('type')
   //   console.log(`type is ${type}`)
   // })
+
+  // Reset Password
+  // https://juvelylevqqyyokxzkkq.supabase.co/auth/v1/verify?token=K38j-Xb11CbncAA716H6lQ&type=recovery&redirect_to=https://localhost:3000
+  // https://localhost:3000/#access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNjQ1MjA1ODU1LCJzdWIiOiJmZGU0YmIxOS0zYzk4LTRkNzEtOGI5Mi01ZjVlMjYxOWMyOTgiLCJlbWFpbCI6ImplcmVteUBqZXJlZGV2LmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnt9LCJyb2xlIjoiYXV0aGVudGljYXRlZCJ9.dFIYnmS5qWEoSg0zeLgWBvEYI3jowCvPTD5cjwWtHO8&expires_in=3600&refresh_token=2u-C-sOOV_Fk-bkVBnpZAQ&token_type=bearer&type=recovery
 
   // export async function load({ session }) {
   //   const { user } = session
@@ -606,7 +634,7 @@
     categories = await getCategories()
     clock = window.setInterval(runClock, 1000);
     allItems = await getItems(searchQuery)
-    allItems.forEach(async(item) => {
+    allItems.forEach(async(item: ItemProps) => {
       if (item.imagePath) {
         const imagePath = $session.user.id + "/" + item.imagePath
         item.image = await getItemImage(imagePath)
@@ -700,7 +728,7 @@
           </div>
           <div class="categories-list mt-2">
             {#each categories as category}
-              <Category category="{category}" on:updateCategory={updateCategory} on:removeCategory={removeCategory} />
+              <CategoryBar category="{category}" on:updateCategory={updateCategory} on:removeCategory={removeCategory} />
             {/each}
           </div>
         </div>

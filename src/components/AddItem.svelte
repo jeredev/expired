@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { supabase } from "$lib/supabase";
   import { session } from "$app/stores";
   import { message } from "../stores";
@@ -27,8 +27,8 @@
     subMinutes,
   } from 'date-fns'
   import { createEventDispatcher } from "svelte";
-  import { dataset_dev } from "svelte/internal";
-import Item from "./Item.svelte";
+  // import { dataset_dev } from "svelte/internal";
+  // import Item from "./Item.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -86,11 +86,34 @@ import Item from "./Item.svelte";
     const startTime = new Date(newItem.startTime)
     if (newItem.endTime) {
       let endTime = new Date(newItem.endTime)
-      endRelatively.years = differenceInYears(endTime, startTime)
-      endTime = subYears(new Date(endTime), endRelatively.years)
-      endRelatively.months = differenceInMonths(endTime, startTime)
-      endTime = subMonths(new Date(endTime), differenceInMonths(endTime, startTime))
-      endRelatively.weeks = differenceInWeeks(endTime, startTime)
+
+      if (subYears(new Date(endTime), differenceInYears(endTime, startTime)) < startTime) {
+        endRelatively.years = 0
+      }
+      else {
+        endRelatively.years = differenceInYears(endTime, startTime)
+        endTime = subYears(new Date(endTime), differenceInYears(endTime, startTime))
+      }
+      if (subMonths(new Date(endTime), differenceInMonths(endTime, startTime)) < startTime) {
+        endRelatively.months = 0
+      }
+      else {
+        endRelatively.months = differenceInMonths(endTime, startTime)
+        endTime = subMonths(new Date(endTime), differenceInMonths(endTime, startTime))
+      }
+      if (subWeeks(new Date(endTime), differenceInWeeks(endTime, startTime)) < startTime) {
+        endRelatively.weeks = 0
+      }
+      else {
+        endRelatively.weeks = differenceInWeeks(endTime, startTime)
+        endTime = subWeeks(new Date(endTime), differenceInWeeks(endTime, startTime))
+      }
+
+      // endRelatively.years = differenceInYears(endTime, startTime)
+      // endTime = subYears(new Date(endTime), endRelatively.years)
+      // endRelatively.months = differenceInMonths(endTime, startTime)
+      // endTime = subMonths(new Date(endTime), differenceInMonths(endTime, startTime))
+      // endRelatively.weeks = differenceInWeeks(endTime, startTime)
       endTime = subWeeks(new Date(endTime), differenceInWeeks(endTime, startTime))
       endRelatively.days = differenceInDays(endTime, startTime)
       endTime = subDays(new Date(endTime), differenceInDays(endTime, startTime))
@@ -118,7 +141,6 @@ import Item from "./Item.svelte";
           name: newItem.name.trim(),
           startTime: new Date(newItem.startTime),
           endTime: new Date(newItem.endTime),
-          // imagePath: newItem.image,
           category: newItem.category,
         },
       ])
@@ -299,15 +321,16 @@ import Item from "./Item.svelte";
       console.error('Error:', error)
     }
   }
-  let categories
+  let categories: Array<CategoryProps> | null
 
-  let scanner
-  let scannerActive
-  let detection
+  let scanner: boolean
+  let scannerActive: boolean
+  let detection: number
   let barcodeDetector
-  let mediaStream
+  let mediaStream: MediaStream
   let scannedBarcode
   let video
+  // let video: HTMLVideoElement
 
   const setupScanner = () => {
     scanner = true

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { supabase } from "$lib/supabase";
   import Icon from '@iconify/svelte'
   import { message } from "../stores";
@@ -13,8 +13,8 @@
   let statusRemoving = false
 
   let enableEditCategory = false
-  let editedCategoryName
-  let editCategoryValid
+  let editedCategoryName: string
+  let editCategoryValid: boolean
   const checkEditCategoryValidity = () => {
     if (editedCategoryName && /([^\s])/.test(editedCategoryName) && editedCategoryName !== category.name) {
       editCategoryValid = true

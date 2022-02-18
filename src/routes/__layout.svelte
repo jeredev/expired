@@ -1,4 +1,32 @@
 
+<!-- <script context="module">
+	export function load({ url }) {
+    console.log(url.hash)
+    // console.log(url.href) // This is correct and matches input
+    const params = new URLSearchParams(url.href)
+    for(var pair of params.entries()) {
+      console.log(pair[0]+ ', '+ pair[1]);
+    }
+    // if (new URLSearchParams(url.href).get('access_token')) {
+    //   console.log('access')
+    // }
+    if (params.get('type') === 'recovery') {
+      console.log('go to reset page')
+      return {
+        status: 302,
+        redirect: '/reset'
+      }
+    }
+
+    return {}
+    // if (params.get('type') === 'recovery') {
+    //   // Redirect to Password Reset page
+    // }
+		
+
+		// ...
+	}
+</script> -->
 <script>
   import { supabase } from "$lib/supabase";
   import { session } from "$app/stores";
@@ -58,6 +86,10 @@
   }
   ::-webkit-calendar-picker-indicator {
     filter: invert(1);
+  }
+  a {
+    color: var(--red);
+    text-decoration: underline;
   }
   .btn {
     @apply

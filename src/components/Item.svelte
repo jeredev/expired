@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { supabase } from "$lib/supabase";
   import { session } from "$app/stores";
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
