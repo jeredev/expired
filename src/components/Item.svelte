@@ -919,4 +919,8 @@
       transform: scaleX(0);
     }
   }
+  .form-field input:focus-visible, .form-field select:focus-visible {
+    filter: drop-shadow(0 0 0.125rem #fff);
+    outline: 1px solid #fff;
+  }
 </style>

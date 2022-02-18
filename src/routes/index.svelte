@@ -904,6 +904,14 @@
 </div>
 
 <style>
+  .login-form-fields input:focus-visible {
+    /* outline: 5px solid var(--red); */
+    filter: drop-shadow(0 0 0.125rem #fff);
+  }
+  .form-field input:focus-visible, .form-field select:focus-visible {
+    filter: drop-shadow(0 0 0.125rem #fff);
+    outline: 1px solid #fff;
+  }
   @media only all and (min-width: 40em) {
     .login-form-fields {
       display: grid;

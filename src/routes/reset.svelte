@@ -69,7 +69,7 @@
       <form on:submit|preventDefault={recoverPassword}>
         <fieldset>
           <div class="form-field my-2">
-            <label for="password" class="block">Email</label>
+            <label for="email" class="block">Email</label>
             <input
               type="email"
               id="email"
@@ -84,3 +84,10 @@
     </div>
   {/if}
 </div>
+
+<style>
+  .form-field input:focus-visible {
+    /* outline: 5px solid var(--red); */
+    filter: drop-shadow(0 0 0.125rem #fff);
+  }
+</style>

@@ -67,3 +67,10 @@
     </form>
   </div>
 </div>
+
+<style>
+  .form-field input:focus-visible {
+    /* outline: 5px solid var(--red); */
+    filter: drop-shadow(0 0 0.125rem #fff);
+  }
+</style>
