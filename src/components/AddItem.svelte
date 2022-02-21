@@ -211,7 +211,7 @@
       endRelatively.days = 0
       endRelatively.hours = 0
       endRelatively.minutes = 0
-      fileInput = null
+      fileInput.value = ''
       newItemImagePreview = null
       dispatch('add', data)
       message.set({

@@ -693,10 +693,10 @@
                     {#if confirmDelete}
                       <div transition:slide class="mt-4">
                         Delete this item?
-                        <button class="btn negative" on:click="{removeItem}">
+                        <button class="btn negative" on:click="{removeItem}" disabled="{statusProcessing}">
                           Yes
                         </button>
-                        <button class="btn mx-2" on:click="{() => { confirmDelete = false }}">
+                        <button class="btn mx-2" on:click="{() => { confirmDelete = false }}" disabled="{statusProcessing}">
                           No
                         </button>
                       </div>
