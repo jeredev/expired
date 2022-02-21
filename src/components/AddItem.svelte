@@ -213,6 +213,7 @@
       endRelatively.minutes = 0
       fileInput.value = ''
       newItemImagePreview = null
+      checkNewItemValidity()
       dispatch('add', data)
       message.set({
         text: 'Successfully added new item.',
@@ -454,7 +455,7 @@
         {/if}
       </div>
     {/if}
-    <form on:submit|preventDefault class="form form--add-item">
+    <form on:submit|preventDefault class="form form--add-item" autocomplete="off">
       <div class="form-field my-2">
         <label for="new-item--name block mb-1">Item Name</label>
         <input id="new-item-name" bind:value={newItem.name} type="text" class="bg-black p-1 text-white w-full" on:input="{checkNewItemValidity}" required>
