@@ -438,7 +438,7 @@
           .map(result => result.transcript)
           .join('')
         if (text) {
-          newItem.name = text
+          newItem.name = camelize(text)
         }
         recognition.stop()
       })
@@ -447,6 +447,14 @@
   // const SpeechRecognition = window.SpeechRecognition || webkitSpeechRecognition
   // const recognition = new SpeechRecognition()
   // console.log(recognition)
+
+  function camelize(str: string) {
+    return str.replace(/[^\s]+/g, function(word) {
+      return word.replace(/^./, function(first) {
+        return first.toUpperCase();
+      });
+    });
+  }
 
   onMount(async() => {
     categories = await getCategories()
@@ -498,6 +506,9 @@
             <Icon icon="clarity:microphone-line" />
           </button>
         {/if}
+        <button type="button" class="btn" on:click="{() => camelize(newItem.name)}">
+          <Icon icon="clarity:arrow-line" />
+        </button>
         <input id="new-item-name" bind:value={newItem.name} type="text" class="bg-black p-1 text-white w-full" on:input="{checkNewItemValidity}" required>
       </div>
       <div class="form-field my-2">
