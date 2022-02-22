@@ -427,11 +427,38 @@
       })
   }
 
+  // Speech Recognition
+  let recognition = false
+  const listenForName = () => { 
+    if (recognition) {
+      recognition.start()
+      recognition.addEventListener('result', (e) => {
+        let text = Array.from(e.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('')
+        if (text) {
+          newItem.name = text
+        }
+        recognition.stop()
+      })
+    }
+  }
+  // const SpeechRecognition = window.SpeechRecognition || webkitSpeechRecognition
+  // const recognition = new SpeechRecognition()
+  // console.log(recognition)
+
   onMount(async() => {
     categories = await getCategories()
     if (('BarcodeDetector' in window)) {
       setupScanner()
     }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (SpeechRecognition) {
+      // console.log('true') // Chrome needs webkit prefix version
+      recognition = new SpeechRecognition()
+    }
+    
   })
 
 </script>
@@ -466,6 +493,11 @@
     <form on:submit|preventDefault class="form form--add-item" autocomplete="off">
       <div class="form-field my-2">
         <label for="new-item--name block mb-1">Item Name</label>
+        {#if recognition}
+          <button type="button" class="btn" on:click="{listenForName}">
+            <Icon icon="clarity:microphone-line" />
+          </button>
+        {/if}
         <input id="new-item-name" bind:value={newItem.name} type="text" class="bg-black p-1 text-white w-full" on:input="{checkNewItemValidity}" required>
       </div>
       <div class="form-field my-2">
