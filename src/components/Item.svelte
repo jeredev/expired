@@ -179,7 +179,7 @@
     }
   }
   const buildItemImage = async (path) => {
-    // console.log('building')
+    console.log('building')
     const imagePath = $session.user.id + "/" + item.imagePath
     item.image = await getItemImage(imagePath)
   }
@@ -187,6 +187,11 @@
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
         entry.target.classList.remove('unset')
+        // Build Item Image
+        if (item.imagePath && !item.image) {
+          item.imageLoaded = false
+          buildItemImage(item.imagePath)
+        }
         io.unobserve(entry.target)
       }
     })
@@ -498,10 +503,10 @@
   onMount(() => {
     updateEndTimeRelativity()
     checkUpdateValidity()
-    if (item.imagePath && !item.image) {
-      item.imageLoaded = false
-      buildItemImage(item.imagePath)
-    }
+    // if (item.imagePath && !item.image) {
+    //   item.imageLoaded = false
+    //   buildItemImage(item.imagePath)
+    // }
     if (itemElement) {
       io.observe(itemElement)
     }

@@ -288,7 +288,9 @@
     }
   }
 
+  let addNewCategoryProcessing = false
   const addNewCategory = async() => {
+    addNewCategoryProcessing = true
     const { data, error } = await supabase
       .from('categories')
       .insert([
@@ -297,6 +299,7 @@
         },
       ])
     if (error) {
+      addNewCategoryProcessing = false
       message.set({
         text: `Error: ${error.message}`,
         timed: true
@@ -305,6 +308,7 @@
       return
     }
     if (data) {
+      addNewCategoryProcessing = false
       categories = await getCategories()
       newCategory = null
       addingCategory = false
@@ -610,7 +614,7 @@
               on:input="{checkNewCategoryValidity}"
             >
             <div class="input-field__panel">
-              <button type="button" class="btn" disabled="{!newCategoryValid}" on:click="{addNewCategory}">Add</button>
+              <button type="button" class="btn" disabled="{!newCategoryValid || addNewCategoryProcessing}" on:click="{addNewCategory}">Add</button>
             </div>
           </div>
         {/if}
