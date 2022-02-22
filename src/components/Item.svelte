@@ -179,7 +179,7 @@
     }
   }
   const buildItemImage = async (path) => {
-    console.log('building')
+    // console.log('building')
     const imagePath = $session.user.id + "/" + item.imagePath
     item.image = await getItemImage(imagePath)
   }
@@ -599,7 +599,7 @@
                 <div class="area area--category">
                   <div class="form-field mb-2">
                     <label for="edit-{item.id}--category" class="block">Category</label>
-                    <select name="" id="" class="bg-black px-1 py-2 text-white w-full" bind:value="{item.edits.category.id}">
+                    <select name="" id="edit-{item.id}--category" class="bg-black px-1 py-2 text-white w-full" bind:value="{item.edits.category.id}">
                       {#each categories as category}
                         <option value="{category.id}">{category.name}</option>
                       {/each}
@@ -609,10 +609,11 @@
                 </div>
                 <div class="area area--start-time">
                   <div class="form-field mb-2">
-                    <label for="" class="block">Start Time</label>
+                    <label for="edit-{item.id}--start-time" class="block">Start Time</label>
                     <div class="relative">
                       <input
                         bind:value="{item.edits.startTime}"
+                        id="edit-{item.id}--start-time"
                         type="datetime-local"
                         pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
                         required
@@ -624,10 +625,11 @@
                   </div>
                   <div class="area area--end-time">
                     <div class="form-field mb-2">
-                      <label for="" class="block">End Time</label>
+                      <label for="edit-{item.id}--end-time" class="block">End Time</label>
                       <div class="relative">
                         <input
                           bind:value="{item.edits.endTime}"
+                          id="edit-{item.id}--end-time"
                           type="datetime-local"
                           pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
                           required
