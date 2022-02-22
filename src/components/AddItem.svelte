@@ -133,7 +133,9 @@
     checkNewItemValidity()
   }
 
+  let addNewItemProcessing = false
   const addNewItem = async() => {
+    addNewItemProcessing = true
     const { data, error } = await supabase
       .from('items')
       .insert([
@@ -145,6 +147,7 @@
         },
       ])
     if (error) {
+      addNewItemProcessing = false
       message.set({
         text: `Error: ${error.message}`,
         timed: true
@@ -213,6 +216,7 @@
       endRelatively.minutes = 0
       fileInput.value = ''
       newItemImagePreview = null
+      addNewItemProcessing = false
       checkNewItemValidity()
       dispatch('add', data)
       message.set({
@@ -618,7 +622,7 @@
           </select>
         {/if}
       </div>
-      <button type="submit" class="btn my-4" disabled={!newItemValid} on:click="{addNewItem}">
+      <button type="submit" class="btn my-4" disabled={!newItemValid || addNewItemProcessing} on:click="{addNewItem}">
         Add Item
       </button>
     </form>
