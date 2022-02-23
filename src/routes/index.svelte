@@ -946,4 +946,12 @@
   .panel {
     flex: 1;
   }
+  .unit-form-fields {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .unit-form-fields label {
+    font-size: 80%;
+  }
 </style>

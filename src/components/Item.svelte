@@ -626,7 +626,7 @@
                   <div class="form-field mb-2">
                     <label for="edit-{item.id}--name">Name</label>
                     {#if recognition}
-                      <button type="button" class="btn" on:click="{listenForName}">
+                      <button type="button" class="btn ml-2 px-2 py-1" on:click="{listenForName}">
                         <Icon icon="clarity:microphone-line" />
                       </button>
                     {/if}
@@ -681,27 +681,27 @@
                     <form>
                       <fieldset>
                         <div class="unit-form-fields">
-                          <div class="form-field grid gap-4 mb-2">
+                          <div class="form-field mb-2">
                             <label for="edit-{item.id}--endtime-years">Years</label>
                             <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-years" bind:value="{item.edits.endRelatively.years}" on:input="{updateEndTimeRelatively}" />
                           </div>
-                          <div class="form-field grid gap-4 mb-2">
+                          <div class="form-field mb-2">
                             <label for="edit-{item.id}--endtime-months">Months</label>
                             <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-months" bind:value="{item.edits.endRelatively.months}" on:input="{updateEndTimeRelatively}" />
                           </div>
-                          <div class="form-field grid gap-4 mb-2">
+                          <div class="form-field mb-2">
                             <label for="edit-{item.id}--endtime-weeks">Weeks</label>
                             <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-weeks" bind:value="{item.edits.endRelatively.weeks}" on:input="{updateEndTimeRelatively}" />
                           </div>
-                          <div class="form-field grid gap-4 mb-2">
+                          <div class="form-field mb-2">
                             <label for="edit-{item.id}--endtime-days">Days</label>
                             <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-days" bind:value="{item.edits.endRelatively.days}" on:input="{updateEndTimeRelatively}" />
                           </div>
-                          <div class="form-field grid gap-4 mb-2">
+                          <div class="form-field mb-2">
                             <label for="edit-{item.id}--endtime-hours">Hours</label>
                             <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-hours" bind:value="{item.edits.endRelatively.hours}" on:input="{updateEndTimeRelatively}" />
                           </div>
-                          <div class="form-field grid gap-4 mb-2">
+                          <div class="form-field mb-2">
                             <label for="edit-{item.id}--endtime-minutes">Minutes</label>
                             <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-minutes" bind:value="{item.edits.endRelatively.minutes}" on:input="{updateEndTimeRelatively}" />
                           </div>
@@ -966,5 +966,17 @@
   .form-field input:focus-visible, .form-field select:focus-visible {
     filter: drop-shadow(0 0 0.125rem #fff);
     outline: 1px solid #fff;
+  }
+  .unit-form-fields {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(6, 1fr);
+  }
+  .unit-form-fields .form-field input {
+    display: block;
+    width: 100%;
+  }
+  .unit-form-fields .form-field label {
+    font-size: 80%;
   }
 </style>

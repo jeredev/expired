@@ -504,7 +504,7 @@
       <div class="form-field my-2">
         <label for="new-item--name block mb-1">Item Name</label>
         {#if recognition}
-          <button type="button" class="btn" on:click="{listenForName}">
+          <button type="button" class="btn ml-2 px-2 py-1" on:click="{listenForName}">
             <Icon icon="clarity:microphone-line" />
           </button>
         {/if}
