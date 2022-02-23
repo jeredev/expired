@@ -258,14 +258,15 @@
     category: ''
   }
 
-  let searchQueryValid = false
+  let searchQueryValid = true
 
   const checkSearchValidity = () => {
     if (/([^\s])/.test(search.name) || /([^\s])/.test(search.endTime) || /([^\s])/.test(search.category)) {
       searchQueryValid = true
     }
     else {
-      searchQueryValid = false
+      // searchQueryValid = false
+      searchQueryValid = true
     }
   }
 
@@ -340,6 +341,10 @@
 
   const searchItems = async() => {
     // console.log('searching items!')
+    // let destination = ''
+    // if (searchQuery)
+    // goto('/')
+    // console.log($page.params.get('name'))
   }
 
   const sortItems = (payload: Array<ItemProps>) => {
@@ -630,6 +635,10 @@
   //   };
   // }
 
+  function goBack() {
+    history.back()
+  }
+
   onMount(async() => {
     categories = await getCategories()
     clock = window.setInterval(runClock, 1000);
@@ -683,27 +692,29 @@
   </div>
   {#if $session && $session.user}
     <div class="homebase">
-      {#if Object.keys(searchQuery).length}
-        <a href="/" class="btn">
-          <Icon icon="clarity:arrow-line" style="display: inline; transform: rotate(-90deg);" />
-        </a>
-      {/if}
-      <div class="panel flex justify-end mb-4">
-        <button class={ categoriesMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { categoriesMenuActive = !categoriesMenuActive }}>
-          <Icon icon="clarity:blocks-group-line" />
-        </button>
-        <button class={ sortingMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { sortingMenuActive = !sortingMenuActive }}>
-          <Icon icon="clarity:sort-by-line" />
-        </button>
-        <button class={ searchMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { searchMenuActive = !searchMenuActive }}>
-          <Icon icon="clarity:search-line" />
-        </button>
-        <button class={ addMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { addMenuActive = !addMenuActive }}>
-          <Icon icon="clarity:add-line" />
-        </button>
-        <button on:click={logOut} class="btn ml-2" disabled="{statusProcessing}">
-          <Icon icon="clarity:logout-solid" />
-        </button>
+      <div class="controls pb-4 flex">
+        {#if Object.keys(searchQuery).length}
+          <button class="btn" on:click="{() => { goBack() }}">
+            <Icon icon="clarity:arrow-line" style="display: inline; transform: rotate(-90deg);" />
+          </button>
+        {/if}
+        <div class="panel flex justify-end">
+          <button class={ categoriesMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { categoriesMenuActive = !categoriesMenuActive }}>
+            <Icon icon="clarity:blocks-group-line" />
+          </button>
+          <button class={ sortingMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { sortingMenuActive = !sortingMenuActive }}>
+            <Icon icon="clarity:sort-by-line" />
+          </button>
+          <button class={ searchMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { searchMenuActive = !searchMenuActive }}>
+            <Icon icon="clarity:search-line" />
+          </button>
+          <button class={ addMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { addMenuActive = !addMenuActive }}>
+            <Icon icon="clarity:add-line" />
+          </button>
+          <button on:click={logOut} class="btn ml-2" disabled="{statusProcessing}">
+            <Icon icon="clarity:logout-solid" />
+          </button>
+        </div>
       </div>
       {#if categoriesMenuActive}
         <div transition:slide class="sector mb-4">
@@ -928,5 +939,8 @@
   }
   .items-list {
     border-top: 2px solid var(--gray);
+  }
+  .controls {
+    justify-content: space-between;
   }
 </style>
