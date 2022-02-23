@@ -216,6 +216,7 @@
       endRelatively.minutes = 0
       fileInput.value = ''
       newItemImagePreview = null
+      noImageFound = false
       addNewItemProcessing = false
       checkNewItemValidity()
       dispatch('add', data)
@@ -341,6 +342,8 @@
   let video
   // let video: HTMLVideoElement
 
+  let noImageFound = false
+
   const setupScanner = () => {
     scanner = true
     barcodeDetector = new BarcodeDetector({
@@ -410,6 +413,8 @@
         if (data.product.image_url) {
           newItemImagePreview = data.product.image_url
           newItem.image = await fetch(data.product.image_url).then(r => r.blob())
+        } else {
+          noImageFound = true
         }
         // message.set(null)
         message.set({
@@ -509,6 +514,9 @@
         <input id="new-item-name" bind:value={newItem.name} type="text" class="bg-black p-1 text-white w-full" on:input="{checkNewItemValidity}" required>
       </div>
       <div class="form-field my-2">
+        {#if noImageFound}
+          <p class="my-2 p-1 border-red-800">No image found for scanned item.</p>
+        {/if}
         <div class="add-item-image">
           {#if newItemImagePreview}
             <h1>Preview</h1>
