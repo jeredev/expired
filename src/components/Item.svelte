@@ -500,9 +500,41 @@
       item.edits.endRelatively.minutes = 0
     }
   }
+
+  // Speech Recognition
+  let recognition = false
+  const listenForName = () => { 
+    if (recognition) {
+      recognition.start()
+      recognition.addEventListener('result', (e) => {
+        let text = Array.from(e.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('')
+        if (text) {
+          item.edits.name = camelize(text)
+        }
+        recognition.stop()
+      })
+    }
+  }
+
+  function camelize(str: string) {
+    return str.replace(/[^\s]+/g, function(word) {
+      return word.replace(/^./, function(first) {
+        return first.toUpperCase();
+      });
+    });
+  }
+
   onMount(() => {
     updateEndTimeRelativity()
     checkUpdateValidity()
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (SpeechRecognition) {
+      // console.log('true') // Chrome needs webkit prefix version
+      recognition = new SpeechRecognition()
+    }
     // if (item.imagePath && !item.image) {
     //   item.imageLoaded = false
     //   buildItemImage(item.imagePath)
@@ -592,7 +624,12 @@
               <div class="menu-area">
                 <div class="area area--name">
                   <div class="form-field mb-2">
-                    <label for="edit-{item.id}--name" class="block">Name</label>
+                    <label for="edit-{item.id}--name">Name</label>
+                    {#if recognition}
+                      <button type="button" class="btn" on:click="{listenForName}">
+                        <Icon icon="clarity:microphone-line" />
+                      </button>
+                    {/if}
                     <input type="text" id="edit-{item.id}--name" class="bg-black p-2 text-white w-full" bind:value="{item.edits.name}" on:input="{checkUpdateValidity}" />
                   </div>
                 </div>

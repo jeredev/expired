@@ -449,9 +449,6 @@
       })
     }
   }
-  // const SpeechRecognition = window.SpeechRecognition || webkitSpeechRecognition
-  // const recognition = new SpeechRecognition()
-  // console.log(recognition)
 
   function camelize(str: string) {
     return str.replace(/[^\s]+/g, function(word) {
