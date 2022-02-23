@@ -941,6 +941,9 @@
     border-top: 2px solid var(--gray);
   }
   .controls {
-    justify-content: space-between;
+    justify-content: flex-end;
+  }
+  .panel {
+    flex: 1;
   }
 </style>
