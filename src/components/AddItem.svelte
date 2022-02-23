@@ -406,7 +406,7 @@
     fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
       .then(response => response.json())
       .then(async(data) => {
-        if (data.product.product_name_en) newItem.name = data.product.product_name_en
+        if (data.product.product_name_en) newItem.name = camelize(data.product.product_name_en)
         if (data.product.image_url) {
           newItemImagePreview = data.product.image_url
           newItem.image = await fetch(data.product.image_url).then(r => r.blob())
@@ -506,9 +506,6 @@
             <Icon icon="clarity:microphone-line" />
           </button>
         {/if}
-        <button type="button" class="btn" on:click="{() => camelize(newItem.name)}">
-          <Icon icon="clarity:arrow-line" />
-        </button>
         <input id="new-item-name" bind:value={newItem.name} type="text" class="bg-black p-1 text-white w-full" on:input="{checkNewItemValidity}" required>
       </div>
       <div class="form-field my-2">
