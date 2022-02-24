@@ -1,22 +1,23 @@
 
-<!-- <script context="module">
-	export function load({ url }) {
-    console.log(url.hash)
-    // console.log(url.href) // This is correct and matches input
-    const params = new URLSearchParams(url.href)
-    for(var pair of params.entries()) {
-      console.log(pair[0]+ ', '+ pair[1]);
-    }
-    // if (new URLSearchParams(url.href).get('access_token')) {
-    //   console.log('access')
+<script context="module">
+	export async function load({ session }) {
+    // console.log('session from load below:')
+    // console.log(session)
+    // // console.log(url.href) // This is correct and matches input
+    // const params = new URLSearchParams(url.href)
+    // for(var pair of params.entries()) {
+    //   console.log(pair[0]+ ', '+ pair[1]);
     // }
-    if (params.get('type') === 'recovery') {
-      console.log('go to reset page')
-      return {
-        status: 302,
-        redirect: '/reset'
-      }
-    }
+    // // if (new URLSearchParams(url.href).get('access_token')) {
+    // //   console.log('access')
+    // // }
+    // if (params.get('type') === 'recovery') {
+    //   console.log('go to reset page')
+    //   return {
+    //     status: 302,
+    //     redirect: '/reset'
+    //   }
+    // }
 
     return {}
     // if (params.get('type') === 'recovery') {
@@ -26,7 +27,7 @@
 
 		// ...
 	}
-</script> -->
+</script>
 <script>
   import { supabase } from "$lib/supabase";
   import { session } from "$app/stores";
@@ -35,10 +36,18 @@
   import { BrowserTracing } from "@sentry/tracing";
 
   if (browser) {
-    $session = supabase.auth.session()
-    supabase.auth.onAuthStateChange((event, sesh) => {
-      handleAuthChange(event, sesh)
-      $session = sesh
+    // $session = supabase.auth.session()
+    supabase.auth.onAuthStateChange(async(event, sesh) => {
+      // console.log('$session below:')
+      // console.log($session)
+      await handleAuthChange(event, sesh)
+      const res = await fetch('/api/auth', {
+        method: 'GET',
+        credentials: 'same-origin'
+      })
+      // console.log(await res.json())
+      $session = await res.json()
+      // $session = sesh
     })
     // const user = supabase.auth.user()
     // console.log(user)
@@ -52,6 +61,9 @@
       credentials: 'same-origin',
       body: JSON.stringify({ event, session })
     })
+    // const results = await res.json()
+    // console.log('results below:')
+    // console.log(results)
     // if (!response.ok) {
     //   throw new Error(`HTTP error! status: ${response.status}`);
     // }

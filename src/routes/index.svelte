@@ -43,7 +43,9 @@
   let time = new Date().getTime()
 
   let email: string;
+  email = 'jeremy@jeremywynn.com'
   let password: string;
+  password = "BBBnhtkm1!!!"
 
   let addMenuActive = false
   let categoriesMenuActive = false
@@ -71,6 +73,23 @@
         text: 'Successfully logged in.',
         timed: true
       })
+      // Get account information
+      // const { data, error } = await supabase
+      //   .from('accounts')
+      //   .select()
+      //   .eq('owner', user.id)
+      // if (data) {
+      //   console.log(`data from account below: (looking up ${user.id})`)
+      //   console.log(data)
+      // }
+      // if (error) {
+      //   message.set({
+      //     text: `Error: ${error.message}`,
+      //     timed: true
+      //   })
+      //   console.error('Error:', error)
+      //   return
+      // }
       // Perform mount operations
       categories = await getCategories()
       const params = new URLSearchParams(location.search)
@@ -640,18 +659,22 @@
   }
 
   onMount(async() => {
-    categories = await getCategories()
-    clock = window.setInterval(runClock, 1000);
-    allItems = await getItems(searchQuery)
-    allItems.forEach(async(item: ItemProps) => {
-      if (item.imagePath) {
-        const imagePath = $session.user.id + "/" + item.imagePath
-        item.image = await getItemImage(imagePath)
-      }
-    })
-    items = allItems
-    generateListings()
-
+    // console.log('onMount()')
+    // console.log($session)
+    if ($session && $session.user && $session.user.account?.active) {
+      categories = await getCategories()
+      clock = window.setInterval(runClock, 1000);
+      allItems = await getItems(searchQuery)
+      allItems.forEach(async(item: ItemProps) => {
+        if (item.imagePath) {
+          const imagePath = $session.user.id + "/" + item.imagePath
+          item.image = await getItemImage(imagePath)
+        }
+      })
+      items = allItems
+      generateListings()
+    }
+    
   });
   onDestroy(() => {
     clearInterval(clock)
@@ -662,7 +685,7 @@
   <Messenger />
   <div class="header">
     <!-- <button type="button" class="btn" on:click="{sendMsg}">Message</button> -->
-    {#if !$session}
+    {#if $session && !$session.user}
       <form on:submit|preventDefault={logIn} class="form form--login">
         <div class="login-form-fields">
           <input
@@ -690,7 +713,7 @@
       </form>
     {/if}
   </div>
-  {#if $session && $session.user}
+  {#if $session && $session.user && $session.user.account.active}
     <div class="homebase">
       <div class="controls pb-4 flex">
         {#if Object.keys(searchQuery).length}
@@ -909,6 +932,8 @@
         <p>Loading...</p>
       {/if}
     </div>
+  {:else if $session && $session.user && !$session.user.account.active}
+    <p>Account inactive. Please <a href="/">reactivate your account</a> here.</p>
   {:else}
     <div class="py-4">Authorized users only.</div>
   {/if}

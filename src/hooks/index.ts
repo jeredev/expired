@@ -2,17 +2,36 @@ import type { Handle, GetSession, RequestEvent } from '@sveltejs/kit'
 import type { AuthChangeEvent, AuthSession } from '@supabase/supabase-js'
 import { serialize, parse } from 'cookie'
 import { API_AUTH, COOKIE_NAME, COOKIE_OPTIONS } from '$lib/constants'
-import { auth } from '$lib/supabase'
+import { auth, supabase } from '$lib/supabase'
 
 export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, resolve: (request: RequestEvent) => Promise<Response> }) => {
-  
+  // console.log('handle hit!')
   const sbToken = event.request.headers.get('Cookie') ? parse(event.request.headers.get('Cookie'))[COOKIE_NAME] : ''
   if (sbToken) {
     const { user, error } = await auth.api.getUser(sbToken)
     if (error) {
       // Handle error here
     }
-    event.locals.user = user
+    if (user) {
+      // event.locals.user = user
+      const { data, error } = await supabase
+        .from('accounts')
+        .select()
+        .eq('owner', user.id)
+      if (data) {
+        // console.log(`data from account below: (looking up ${user.id})`)
+        // console.log(data)
+        user.account = data[0]
+        // console.log(event.locals.user) // Works but doesn't seem to have any effect on $session
+      }
+      if (error) {
+        console.error('Error:', error)
+        // return
+      }
+      // console.log(user) // Same and working
+      event.locals.user = user
+      // console.log(event.locals.user) // Same and working
+    }
   }
 
   const response = await resolve(event);
@@ -26,7 +45,7 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
         expires: new Date(session.expires_at),
         maxAge: session.expires_in
       })
-      await auth.setAuth(session.access_token)
+      auth.setAuth(session.access_token)
       response.headers.append('Set-Cookie', cookieHeader)
     } else if (authChangeEvent === 'SIGNED_OUT') {
       const cookieHeader = await serialize(COOKIE_NAME, 'deleted', { ...COOKIE_OPTIONS, maxAge: 0 })
@@ -75,6 +94,8 @@ export async function handle({ event, resolve }: { event: RequestEvent, resolve:
 */
 
 export const getSession: GetSession = ({ locals }) => {
+  // console.log('getSession')
+  // console.log(locals)
   const { user } = locals
   // only include the properties that are needed client-side — exclude anything else attached to the user like access tokens etc
   // we know that the `user` object won't have anything sensitive so we're making the entire `user` object available

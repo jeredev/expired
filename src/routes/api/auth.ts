@@ -1,4 +1,6 @@
 import type{ RequestEvent } from '@sveltejs/kit'
+// import { supabase } from '$lib/supabase'
+
 /**
  * @type {import('@sveltejs/kit').RequestHandler}
  */
@@ -16,7 +18,10 @@ export async function post(event: RequestEvent /*, res: Response (read the notes
 
 /** @type {import('@sveltejs/kit').RequestHandler} */
 export async function get({ locals }) {
+  // console.log('get from api/auth')
   const { user } = locals // refer hooks to see how this got populated
+  // console.log('get.locals from auth.ts in api/auth')
+  // console.log(user) // Doesn't seem to work
   return {
     body: {
       user
