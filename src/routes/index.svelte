@@ -42,10 +42,8 @@
   let listings = null
   let time = new Date().getTime()
 
-  let email: string;
-  email = 'jeremy@jeremywynn.com'
-  let password: string;
-  password = "BBBnhtkm1!!!"
+  let email: string
+  let password: string
 
   let addMenuActive = false
   let categoriesMenuActive = false
@@ -658,9 +656,17 @@
     history.back()
   }
 
+  // console.log($session)
+  // console.log($session.user)
+  // console.log($session.user.account)
+  // console.log($session.user.account.active)
+
   onMount(async() => {
     // console.log('onMount()')
     // console.log($session)
+    // console.log($session.user)
+    // console.log($session.user.account)
+    // console.log($session.user.account.active)
     if ($session && $session.user && $session.user.account?.active) {
       categories = await getCategories()
       clock = window.setInterval(runClock, 1000);
@@ -713,7 +719,7 @@
       </form>
     {/if}
   </div>
-  {#if $session && $session.user && $session.user.account.active}
+  {#if $session && $session.user && $session.user.account && $session.user.account.active}
     <div class="homebase">
       <div class="controls pb-4 flex">
         {#if Object.keys(searchQuery).length}
@@ -932,7 +938,7 @@
         <p>Loading...</p>
       {/if}
     </div>
-  {:else if $session && $session.user && !$session.user.account.active}
+  {:else if $session && $session.user && $session.user.account && !$session.user.account.active}
     <p>Account inactive. Please <a href="/">reactivate your account</a> here.</p>
   {:else}
     <div class="py-4">Authorized users only.</div>

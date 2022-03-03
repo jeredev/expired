@@ -8,12 +8,14 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
   // console.log('handle hit!')
   const sbToken = event.request.headers.get('Cookie') ? parse(event.request.headers.get('Cookie'))[COOKIE_NAME] : ''
   if (sbToken) {
+    // https://supabase.com/docs/reference/javascript/auth-api-getuser
     const { user, error } = await auth.api.getUser(sbToken)
     if (error) {
       // Handle error here
     }
     if (user) {
       // event.locals.user = user
+      // Link the user to their account
       const { data, error } = await supabase
         .from('accounts')
         .select()
@@ -36,6 +38,7 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
 
   const response = await resolve(event);
 
+  // Handle Auth Change events
   if (event.request.method === 'POST' && new URL(event.request.url).pathname === API_AUTH) {
     const { event: authChangeEvent, session } = JSON.parse(await event.request.text()) as { event: AuthChangeEvent, session: AuthSession }
 
@@ -45,10 +48,12 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
         expires: new Date(session.expires_at),
         maxAge: session.expires_in
       })
+      // https://supabase.com/docs/reference/javascript/auth-setauth
       auth.setAuth(session.access_token)
       response.headers.append('Set-Cookie', cookieHeader)
     } else if (authChangeEvent === 'SIGNED_OUT') {
       const cookieHeader = await serialize(COOKIE_NAME, 'deleted', { ...COOKIE_OPTIONS, maxAge: 0 })
+      // https://supabase.com/docs/reference/javascript/auth-signout
       await auth.api.signOut(sbToken)
       response.headers.append('Set-Cookie', cookieHeader)
     }
