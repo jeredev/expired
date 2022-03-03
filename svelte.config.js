@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-cloudflare';
+import adapter from '@sveltejs/adapter-auto';
 import preprocess from 'svelte-preprocess';
 import { windi } from 'svelte-windicss-preprocess';
 
@@ -11,7 +11,7 @@ const config = {
     windi({})
   ],
 	kit: {
-		adapter: adapter(),
+		adapter: adapter()
 	}
 };
 
