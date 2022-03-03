@@ -502,7 +502,7 @@
   }
 
   // Speech Recognition
-  let recognition = false
+  let recognition
   const listenForName = () => { 
     if (recognition) {
       recognition.start()
@@ -530,7 +530,7 @@
   onMount(() => {
     updateEndTimeRelativity()
     checkUpdateValidity()
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    const SpeechRecognition = (<any>window).SpeechRecognition || (<any>window).webkitSpeechRecognition
     if (SpeechRecognition) {
       // console.log('true') // Chrome needs webkit prefix version
       recognition = new SpeechRecognition()

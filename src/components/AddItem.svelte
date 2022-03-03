@@ -336,7 +336,7 @@
   let scanner: boolean
   let scannerActive: boolean
   let detection: number
-  let barcodeDetector
+  let barcodeDetector // The instantiated BarcodeDetector instance
   let mediaStream: MediaStream
   let scannedBarcode
   let video
@@ -346,6 +346,7 @@
 
   const setupScanner = () => {
     scanner = true
+    //@ts-ignore
     barcodeDetector = new BarcodeDetector({
       formats: [
         // 'ean_13',
@@ -372,17 +373,21 @@
     scannerActive = false
   }
 
+  interface barcode {
+    rawValue: string
+  }
+
   const detect = async() => {
     function render() {
       barcodeDetector
         .detect(video)
-        .then(barcodes => {
-          barcodes.forEach(async(barcode) => {
+        .then((barcodes: barcode[]) => {
+          barcodes.forEach(async(barcode: barcode) => {
             if (scannedBarcode) return
             else {
               scannedBarcode = barcode.rawValue
               stopDetection()
-              const scannedItem = await barcodeLookup(scannedBarcode)
+              await barcodeLookup(scannedBarcode)
               deactivateScanner()
             }
           });
@@ -433,7 +438,7 @@
   }
 
   // Speech Recognition
-  let recognition = false
+  let recognition
   const listenForName = () => { 
     if (recognition) {
       recognition.start()
@@ -463,9 +468,8 @@
     if (('BarcodeDetector' in window)) {
       setupScanner()
     }
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    const SpeechRecognition = (<any>window).SpeechRecognition || (<any>window).webkitSpeechRecognition
     if (SpeechRecognition) {
-      // console.log('true') // Chrome needs webkit prefix version
       recognition = new SpeechRecognition()
     }
     
