@@ -205,7 +205,7 @@ export async function post(event: RequestEvent) {
                 const { data: imageData, error: imageError } = await supabase
                   .storage
                   .from('expired')
-                  .createSignedUrl(path, 60)
+                  .createSignedUrl(path, 600)
                 if (imageError) {
                   console.log('imageError:')
                   console.log(imageError)
