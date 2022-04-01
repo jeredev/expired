@@ -3,7 +3,6 @@ import { serialize, parse } from 'cookie'
 
 export async function post({ request }) {
   try {
-    console.log('signing out!')
     const sbToken = request.headers.get('Cookie') ? parse(request.headers.get('Cookie'))['supatoken'] : ''
     if (sbToken) {
       await supabase.auth.api.signOut(sbToken)
@@ -14,6 +13,7 @@ export async function post({ request }) {
         httpOnly: true,
         maxAge: 0
       })
+      await supabase.auth.api.signOut(sbToken)
       return {
         status: 200,
         // Set cookies?

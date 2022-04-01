@@ -2,10 +2,9 @@ import { supabase } from "$lib/supabase"
 import type { RequestEvent } from "@sveltejs/kit/types/internal"
 
 export async function get(event: RequestEvent) {
-  // console.log('get')
   try {
-    // console.log('try')
-    if (event.locals.user) {
+    if (event.locals.user && event.locals.user.id) {
+      console.log(event.locals.user)
       const params = event.url.searchParams
       let lookup = supabase
         .from('items')
