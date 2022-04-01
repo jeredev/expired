@@ -4,7 +4,6 @@ import type { RequestEvent } from "@sveltejs/kit/types/internal"
 export async function get(event: RequestEvent) {
   try {
     if (event.locals.user && event.locals.user.id) {
-      console.log(event.locals.user)
       const params = event.url.searchParams
       let lookup = supabase
         .from('items')
@@ -105,7 +104,7 @@ export async function get(event: RequestEvent) {
       return
     }
     else {
-      throw 'No user detected'
+      throw 'Unauthorized'
     }
   }
   catch (e) {

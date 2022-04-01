@@ -1,80 +1,40 @@
 import type { Handle } from '@sveltejs/kit'
 import type { RequestEvent } from "@sveltejs/kit/types/internal"
 import { parse } from 'cookie'
-import { auth, supabase } from '$lib/supabase'
+import { supabase } from '$lib/supabase'
 
 // Upcoming :: sveltekit-kratos
 // import type { Session } from '@ory/kratos-client';
 
-// Upcoming
-// import { authApi } from '$lib/auth'
-// import { config } from '$lib/constants'
-// import type { GetSession, Handle } from '@sveltejs/kit/types/internal';
-
-// export const handle: Handle = async ({ request, resolve }) => {
-// 	try {
-// 		const { status, data } = await authApi.toSession(undefined, 'session', {
-// 			headers: {
-// 				Authorization: `${request.headers.authorization}`,
-// 				Cookie: `${request.headers.cookie}`,
-// 				Origin: config.auth.publicUrl
-// 			},
-// 			credentials: 'include'
-// 		});
-
-// 		if (status === 401) {
-// 			request.locals.session = undefined;
-// 			return await resolve(request);
-// 		}
-
-// 		request.locals.session = data;
-
-// 		const response = await resolve(request);
-
-// 		return {
-// 			...response,
-// 			headers: {
-// 				...response.headers
-// 			}
-// 		};
-// 	} catch (error) {
-// 		return await resolve(request);
-// 	}
-// };
-
-
 export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, resolve: (request: RequestEvent) => Promise<Response> }) => {
   // console.log('handle')
+  // console.log(event.request.headers)
   const sbToken = event.request.headers.get('Cookie') ? parse(event.request.headers.get('Cookie'))['supatoken'] : ''
   if (sbToken) {
     // https://supabase.com/docs/reference/javascript/auth-api-getuser
-    const { user, error } = await auth.api.getUser(sbToken)
+    const { user, error } = await supabase.auth.api.getUser(sbToken)
     if (error) {
       // Handle error here
+      throw error
     }
     if (user) {
       // Link the user to their account
-      const { data, error } = await supabase
+      const { data: accountData, error: accountError } = await supabase
         .from('accounts')
         .select()
         .eq('owner', user.id)
-      if (data) {
-        user.account = data[0]
+      if (accountError) {
+        throw accountError
       }
-      if (error) {
-        console.error('Error:', error)
+      if (accountData) {
+        user.account = accountData[0]
+        event.locals.user = user
       }
-      // console.log('user below:')
-      // console.log(user) // Working with account!
-      event.locals.user = user
-    }
-    else {
-      // Unset Auth
-      event.locals.user = null
+      // event.locals.user = user
     }
   }
   else {
-    // console.log('no auth token')
+    event.locals.user = null
   }
 
   const response = await resolve(event);

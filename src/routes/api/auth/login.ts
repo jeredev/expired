@@ -2,7 +2,6 @@ import { supabase } from '$lib/supabase'
 import { serialize, parse } from 'cookie'
 
 export async function post({ request }) {
-
   try {
     const payload = await request.json()
     if (payload.email && payload.password) {
