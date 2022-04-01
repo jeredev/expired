@@ -1,8 +1,6 @@
 import type { Handle } from '@sveltejs/kit'
 import type { RequestEvent } from "@sveltejs/kit/types/internal"
-import type { AuthChangeEvent, AuthSession } from '@supabase/supabase-js'
-import { serialize, parse } from 'cookie'
-import { API_AUTH, COOKIE_NAME, COOKIE_OPTIONS } from '$lib/constants'
+import { parse } from 'cookie'
 import { auth, supabase } from '$lib/supabase'
 
 // Upcoming :: sveltekit-kratos
@@ -80,29 +78,6 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
   }
 
   const response = await resolve(event);
-
-  /*
-  if (event.request.method === 'POST' && new URL(event.request.url).pathname === '/api/auth/login') {
-    console.log('logging in')
-    // console.log('logging out')
-    // const cookieHeader = serialize('supatoken', 'deleted', { ...COOKIE_OPTIONS, maxAge: 0 })
-    // // https://supabase.com/docs/reference/javascript/auth-signout
-    // await supabase.auth.api.signOut(sbToken)
-    // // event.locals.user = null
-    // response.headers.append('Set-Cookie', cookieHeader)
-    // return response
-  }
-
-  if (event.request.method === 'POST' && new URL(event.request.url).pathname === '/api/auth/logout') {
-    console.log('logging out')
-    const cookieHeader = serialize('supatoken', 'deleted', { ...COOKIE_OPTIONS, maxAge: 0 })
-    // https://supabase.com/docs/reference/javascript/auth-signout
-    await supabase.auth.api.signOut(sbToken)
-    // event.locals.user = null
-    response.headers.append('Set-Cookie', cookieHeader)
-    return response
-  }
-  */
 
   // Handle Auth Change events
   // if (event.request.method === 'POST' && new URL(event.request.url).pathname === API_AUTH) {

@@ -500,10 +500,13 @@
     if (itemElement) {
       io.observe(itemElement)
     }
-    image.onload = function() { 
-      // console.log('onload')
-      imageLoaded = true
-      // Do something with 'img.width' here, outside the image onload event handler.
+    if (image) {
+      image.onload = function() { 
+        imageLoaded = true
+      }
+      image.onerror = function() {
+        imageLoaded = true
+      }
     }
   })
   onDestroy(() => {

@@ -68,20 +68,30 @@
           'Content-Type': 'application/json'
         }
       })
-      const data = await res.json()
-      if (data && data.role === 'authenticated') {
-        session.set({ user: data })
-        if ($session && $session.user && $session.user.account?.active) {
-          categories = await getCategories()
-          clock = window.setInterval(runClock, 1000);
-          allItems = await getItems(searchQuery)
-          allItems.forEach(async(item: ItemProps) => {
-            if (item.imagePath) {
-              const imagePath = $session.user.id + "/" + item.imagePath
-            }
-          })
-          items = allItems
-          generateListings()
+      if (!res.ok) {
+        const error = await res.json()
+        console.log(error)
+        message.set({
+          text: `Error: ${error.message}`,
+          timed: true
+        })
+      }
+      if (res.ok) {
+        const data = await res.json()
+        if (data && data.role === 'authenticated') {
+          session.set({ user: data })
+          if ($session && $session.user && $session.user.account?.active) {
+            categories = await getCategories()
+            clock = window.setInterval(runClock, 1000);
+            allItems = await getItems(searchQuery)
+            allItems.forEach(async(item: ItemProps) => {
+              if (item.imagePath) {
+                const imagePath = $session.user.id + "/" + item.imagePath
+              }
+            })
+            items = allItems
+            generateListings()
+          }
         }
       }
     }
@@ -436,7 +446,17 @@
       appendage = '?' + new URLSearchParams(query)
     }
     const res = await fetch('/api/items' + appendage)
-    return await res.json()
+    if (!res.ok) {
+      const error = await res.json()
+      console.log(error)
+      message.set({
+        text: `Error: ${error.message}`,
+        timed: true
+      })
+    }
+    if (res.ok) {
+      return await res.json()
+    }
     // Error handling needed here
     // if (data) return data
     // if (error) {

@@ -2,7 +2,9 @@ import { supabase } from "$lib/supabase"
 import type { RequestEvent } from "@sveltejs/kit/types/internal"
 
 export async function get(event: RequestEvent) {
+  // console.log('get')
   try {
+    // console.log('try')
     if (event.locals.user) {
       const params = event.url.searchParams
       let lookup = supabase

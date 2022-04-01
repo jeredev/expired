@@ -6,24 +6,32 @@ export async function post({ request }) {
   const payload = await request.json()
 
   if (payload.email && payload.password) {
-    // console.log(`full payload: ${payload.email} ${payload.password}`)
+    // console.log(`full payload: ${payload.email} ${payload.password}`) // Works!
     const { user, session, error } = await supabase.auth.signIn({
       email: payload.email,
       password: payload.password,
     })
     if (error) {
-      return
+      console.error('error:', error)
+      return { 
+        status: 400,
+        body: JSON.stringify(error)
+      }
     }
     if (user) {
-      const { data, error } = await supabase
+      const { data: userData, error: userError } = await supabase
         .from('accounts')
         .select()
         .eq('owner', user.id)
-      if (error) {
-        return
+      if (userError) {
+        console.error('userError:', userError)
+        return { 
+          status: 400,
+          body: JSON.stringify(userError)
+        }
       }
-      if (data) {
-        user.account = data[0]
+      if (userData) {
+        user.account = userData[0]
       }
     }
     if (session) {
@@ -40,6 +48,7 @@ export async function post({ request }) {
         expires: new Date(session.expires_at),
         maxAge: session.expires_in
       })
+      supabase.auth.setAuth(session.access_token)
       return {
         status: 200,
         // Set cookies?
