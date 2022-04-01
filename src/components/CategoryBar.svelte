@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { supabase } from "$lib/supabase";
   import Icon from '@iconify/svelte'
   import { message } from "../stores";
   import { createEventDispatcher, onMount } from "svelte";
@@ -28,29 +27,31 @@
   const updateCategory = async() => {
     statusProcessing = true
     statusUpdating = true
-    const { data, error } = await supabase
-      .from('categories')
-      .update({
-        name: editedCategoryName,
-      })
-      .match({ id: category.id })
-    if (error) {
+    const formData = new FormData()
+    formData.append('id', category.id)
+    formData.append('name', editedCategoryName)
+    const res = await fetch('/api/categories', {
+      method: 'PATCH',
+      body: formData
+    })
+    if (!res.ok) {
       statusProcessing = false
       statusUpdating = false
       message.set({
-        text: `Error: ${error.message}`,
+        text: `There was an error in updating a category.`,
         timed: true
       })
-      console.error('There was a problem:', error)
       return
     }
-    if (data && data[0]) {
+    if (res.ok) {
       statusProcessing = false
       statusUpdating = false
       enableEditCategory = false
-      category.name = data[0].name
-      editedCategoryName = data[0].name
-      dispatch('updateCategory', data[0])
+      const processed = await res.json()
+      const updatedCategory = processed[0]
+      category.name = updatedCategory.name
+      editedCategoryName = updatedCategory.name
+      dispatch('updateCategory', updatedCategory)
       message.set({
         text: 'Category updated.',
         timed: true
@@ -60,8 +61,7 @@
 
   let enableDeleteCategory = false
   const deleteCategory = async() => {
-    console.log('delete')
-    if (category.items.length) {
+    if (category.items && category.items.length) {
       return
       // const { data, error } = await supabase
       //   .from('items')
@@ -82,55 +82,38 @@
     else {
       statusProcessing = true
       statusRemoving = true
-      const { data, error } = await supabase
-        .from('categories')
-        .delete()
-        .match({ id: category.id })
-      if (error) {
+      const formData = new FormData()
+      formData.append('id', category.id)
+      const res = await fetch('/api/categories', {
+        method: 'DELETE',
+        body: formData
+      })
+      if (!res.ok) {
         statusProcessing = false
         statusRemoving = false
-        message.set({
-          text: `Error: ${error.message}`,
-          timed: true
-        })
-        console.error('There was a problem:', error)
+        // message.set({
+        //   text: `Error: ${error.message}`,
+        //   timed: true
+        // })
+        // console.error('There was a problem:', error)
         return
       }
-      if (data) {
+      if (res.ok) {
+        const processed = await res.json()
+        const deletedCategory = processed[0]
+        // console.log(deletedCategory)
         statusProcessing = false
         statusRemoving = false
         enableDeleteCategory = false
         // menuVisible = false
-        dispatch('removeCategory', data[0])
+        dispatch('removeCategory', deletedCategory)
         message.set({
           text: 'Category successfully deleted.',
           timed: true
         })
       }
     }
-    // const { data, error } = await supabase
-    //   .from('categories')
-    //   .insert([
-    //     {
-    //       name: newCategory.trim(),
-    //     },
-    //   ])
-    // if (error) {
-    //   message.set({
-    //     text: `Error: ${error.message}`,
-    //     timed: true
-    //   })
-    //   console.log('error adding new category:', error)
-    //   return
-    // }
-    // if (data) {
-    //   categories = await getCategories()
-    //   // newCategory = null
-    //   // addingCategory = false
-    //   // fileInput.value = null // Doesn't work
-    // }
   }
-
   onMount(() => {
     editedCategoryName = category.name
   })

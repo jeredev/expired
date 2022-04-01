@@ -1,17 +1,9 @@
-import { supabase } from "$lib/supabase";
-import { parse } from 'cookie'
-import type { RequestEvent } from '@sveltejs/kit'
+import { supabase } from "$lib/supabase"
+import type { RequestEvent } from "@sveltejs/kit/types/internal"
 
-// Detect user.id???
 export async function get(event: RequestEvent) {
-  // console.log('get')
-  // console.log(event.request.headers)
   try {
-    const sbToken = parse(event.request.headers.get('Cookie'))['sb:token']
-    if (sbToken) {
-      // console.log(supabase.auth.session()) // null
-      // console.log(event.locals)
-      await supabase.auth.setAuth(sbToken)
+    if (event.locals.user) {
       const params = event.url.searchParams
       let lookup = supabase
         .from('items')
@@ -26,6 +18,7 @@ export async function get(event: RequestEvent) {
           ),
           imagePath
         `)
+        // .limit(1)
       if (params.get('name')) {
         lookup = lookup.ilike('name', `%${params.get('name')}%`)
       }
@@ -50,9 +43,55 @@ export async function get(event: RequestEvent) {
       }
       const { data, error } = await lookup
       if (data) {
-        return {
-          status: 200,
-          body: JSON.stringify(data)
+        // Loop through all items and build an array of file paths to be downloaded
+        const imagePaths = []
+        if (data.length) {
+          data.forEach((item) => {
+            let objPath
+            if (item.imagePath) {
+              objPath = `${event.locals.user.id}/${item.imagePath}`
+            }
+            imagePaths.push(objPath)
+          })
+          if (imagePaths.length) {
+            const chunks = []
+            const chunkSize = 40
+            let chunkTracker = 0
+            for (let i = 0; i < imagePaths.length; i += chunkSize) {
+              const chunk = imagePaths.slice(i, i + chunkSize);
+              if (chunk.length) {
+                chunks.push(chunk)
+              }
+            }
+            for (const chunk of chunks) {
+              const { data: storageData, error: storageError } = await supabase
+                .storage
+                .from('expired')
+                .createSignedUrls(chunk, 60)
+              if (storageError) {
+                console.log('storageError:')
+                console.log(storageError)
+              }
+              if (storageData) {
+                // Distribute signed URLS to proper items
+                storageData.forEach((obj, index) => {
+                  const dataIndex = (chunkTracker * chunkSize) + index
+                  data[dataIndex].image = obj.signedURL
+                })
+              }
+              chunkTracker++
+            }
+            return {
+              status: 200,
+              body: JSON.stringify(data)
+            }
+          }
+        }
+        else {
+          return {
+            status: 200,
+            body: JSON.stringify(data)
+          }
         }
       }
       if (error) {

@@ -23,3 +23,12 @@ export const COOKIE_OPTIONS: CookieSerializeOptions = {
   sameSite: 'lax',
   httpOnly: true
 }
+
+// sveltekit-ory-starter
+
+export const config = {
+	auth: {
+		publicUrl: import.meta.env.VITE_KRATOS_PUBLIC_URL || 'http://127.0.0.1:4433',
+		adminUrl: import.meta.env.VITE_KRATOS_ADMIN_URL || 'http://127.0.0.1:4434'
+	}
+};

@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { supabase } from "$lib/supabase";
+  // import { supabase } from "$lib/supabase";
   import { page, session } from "$app/stores";
+
   import { onDestroy, onMount } from "svelte";
+
   import { slide } from 'svelte/transition';
   import Icon from '@iconify/svelte'
   import {
@@ -34,7 +36,9 @@
   import { displayMode, sortingMode, timeStatusMode, message } from "../stores";
 
   // export let categories
-  let categories = null
+  // let categories = null
+  // $: categories = null
+  let categories: Array<CategoryProps> | null = null
 
   let allItems: Array<ItemProps> | null = null
   let items: Array<ItemProps> | null = null
@@ -50,96 +54,62 @@
   let searchMenuActive = false
   let sortingMenuActive = false
 
-  // const sendMsg = () => {
-  //   message.set({
-  //     text: 'Message',
-  //     timed: true
-  //   })
-  // }
-
   let statusProcessing = false
 
   const logIn = async () => {
-    statusProcessing = true
-    const { user, error } = await supabase.auth.signIn({
-      email: email,
-      password: password,
-    });
-    if (user) {
-      statusProcessing = false
-      message.set({
-        text: 'Successfully logged in.',
-        timed: true
-      })
-      // Get account information
-      // const { data, error } = await supabase
-      //   .from('accounts')
-      //   .select()
-      //   .eq('owner', user.id)
-      // if (data) {
-      //   console.log(`data from account below: (looking up ${user.id})`)
-      //   console.log(data)
-      // }
-      // if (error) {
-      //   message.set({
-      //     text: `Error: ${error.message}`,
-      //     timed: true
-      //   })
-      //   console.error('Error:', error)
-      //   return
-      // }
-      // Perform mount operations
-      categories = await getCategories()
-      const params = new URLSearchParams(location.search)
-      if (params.get('name')) {
-        searchQuery.name = params.get('name')
-        search.name = params.get('name')
-      }
-      if (params.get('end')) {
-        searchQuery.end = params.get('end')
-        search.endTime = params.get('end')
-      }
-      if (params.get('cat')) {
-        searchQuery.cat = params.get('cat')
-        search.category = params.get('cat')
-      }
-      clock = window.setInterval(runClock, 1000);
-      allItems = await getItems(searchQuery)
-      allItems.forEach(async(item: ItemProps) => {
-        if (item.imagePath) {
-          const imagePath = user.id + "/" + item.imagePath
-          item.image = await getItemImage(imagePath)
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email,
+          password
+        }),
+        headers: {
+          'Content-Type': 'application/json'
         }
       })
-      items = allItems
-      generateListings()
+      const data = await res.json()
+      if (data && data.role === 'authenticated') {
+        session.set({ user: data })
+        if ($session && $session.user && $session.user.account?.active) {
+          categories = await getCategories()
+          clock = window.setInterval(runClock, 1000);
+          allItems = await getItems(searchQuery)
+          allItems.forEach(async(item: ItemProps) => {
+            if (item.imagePath) {
+              const imagePath = $session.user.id + "/" + item.imagePath
+            }
+          })
+          items = allItems
+          generateListings()
+        }
+      }
     }
-    if (error) {
-      statusProcessing = false
+    catch(e) {
+      console.log(e)
       message.set({
-        text: `Error: ${error.message}`,
+        text: `Error: ${e}`,
         timed: true
       })
-      console.error('There was a problem:', error)
-      return
     }
   };
 
   const logOut = async () => {
-    statusProcessing = true
-    const { error } = await supabase.auth.signOut();
-    statusProcessing = false
-    if (error) {
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
+    try {
+      const res = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       })
-      console.error('There was a problem:', error)
-      return
+      if (res.ok) {
+        session.set({ user: null })
+      }
     }
-    else {
+    catch(e) {
+      console.log(e)
       message.set({
-        text: 'Successfully logged out.',
+        text: `Error: ${e}`,
         timed: true
       })
     }
@@ -159,10 +129,10 @@
         item.edits.category.id = found.id
         item.edits.category.name = found.name
       }
-      if (item.imagePath) {
-        const imagePath = $session.user.id + "/" + item.imagePath
-        item.image = await getItemImage(imagePath)
-      }
+      // if (item.imagePath) {
+      //   const imagePath = $session.user.id + "/" + item.imagePath
+      //   item.image = await getItemImage(imagePath)
+      // }
       item.time = time
       allItems.push(item)
       // items = [...items, item]
@@ -171,16 +141,8 @@
   }
 
   const removeItem = (e: CustomEvent) => {
-    const indexAllItems = allItems.findIndex((x) => x.id === e.detail.id)
-    // console.log(`indexAllItems = ${indexAllItems}`)
-    if ( indexAllItems !== -1) {
-      allItems = [...allItems.slice(0, indexAllItems), ...allItems.slice(indexAllItems + 1)]
-    }
-    const indexItems = items.findIndex((x) => x.id === e.detail.id)
-    // console.log(`indexItems = ${indexItems}`)
-    if ( indexItems !== -1) {
-      items = [...items.slice(0, indexItems), ...items.slice(indexItems + 1)]
-    }
+    allItems = allItems.filter((item: ItemProps) => item.id !== e.detail.id)
+    items = items.filter((item: ItemProps) => item.id !== e.detail.id)
     // Is this part even needed?
     // const indexListings = listings.findIndex((x) => x.id === e.detail.id)
     // console.log(`indexListings = ${indexListings}`)
@@ -249,6 +211,9 @@
   }
   const sortAlphaDesc = (payload: Array<ItemProps>) => {
     return payload.sort((a: ItemProps, b: ItemProps) => b.name.localeCompare(a.name))
+  }
+  const sortCatsAlphaAsc = (payload: Array<CategoryProps>) => {
+    return payload.sort((a: CategoryProps, b: CategoryProps) => a.name.localeCompare(b.name))
   }
   const sortEndtimeAsc = (payload: Array<ItemProps>) => {
     return payload.sort((a: ItemProps, b: ItemProps) => {
@@ -412,22 +377,6 @@
 
   // let categories = []
   const getCategories = async() => {
-    // const { data, error } = await supabase
-    //   .from('categories')
-    //   .select(`
-    //     id,
-    //     name
-    //   `)
-    //   .order('name', {ascending: true})
-    // if (data) return data
-    // if (error) {
-    //   message.set({
-    //     text: `Error: ${error.message}`,
-    //     timed: true
-    //   })
-    //   console.error('Error:', error)
-    //   return
-    // }
     const res = await fetch('/api/categories')
     return await res.json()
   }
@@ -482,44 +431,6 @@
   }
 
   const getItems = async(query: searchQueryProps) => {
-    // https://supabase.com/docs/reference/javascript/using-filters
-    // let fetch = supabase
-    //   .from('items')
-    //   .select(`
-    //     id,
-    //     name,
-    //     startTime,
-    //     endTime,
-    //     category (
-    //       id,
-    //       name
-    //     ),
-    //     imagePath
-    //   `)
-    // // .limit(1)
-    // if (query.name && /([^\s])/.test(query.name)) {
-    //   fetch = fetch.ilike('name', `%${query.name}%`)
-    // }
-    // if (query.end && /([^\s])/.test(query.end)) {
-    //   const endDate = new Date(query.end).toISOString()
-    //   console.log(typeof endDate)
-    //   fetch = fetch.lte('endTime', endDate)
-    // }
-    // if (query.cat && /([^\s])/.test(query.cat)) {
-    //   const category = categories.find((category) => category.name === query.cat)
-    //   fetch = fetch.eq('category', `${category.id}`)
-    // }
-    // const { data, error } = await fetch
-    // if (data) return data
-    // if (error) {
-    //   message.set({
-    //     text: `Error: ${error.message}`,
-    //     timed: true
-    //   })
-    //   console.error('Error:', error)
-    //   return
-    // }
-    
     let appendage = ''
     if (query) {
       appendage = '?' + new URLSearchParams(query)
@@ -539,21 +450,22 @@
     
   }
 
-  const getItemImage = async (path: string) => {
-    const { data, error } = await supabase
-      .storage
-      .from('expired')
-      .download(path)
-    if (data) return URL.createObjectURL(data)
-    if (error) {
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('Error:', error)
-      return
-    }
-  }
+  // const getItemImage = async (path: string) => {
+  //   // path = 'e458a055-3dbc-4fec-91f7-e1c9c31ea930/0e2dc853-10a6-458b-9ddd-0675501ae6bb'
+  //   const { data, error } = await supabase
+  //     .storage
+  //     .from('expired')
+  //     .download(path)
+  //   if (data) return URL.createObjectURL(data)
+  //   if (error) {
+  //     message.set({
+  //       text: `Error: ${error.message}`,
+  //       timed: true
+  //     })
+  //     console.error('Error:', error)
+  //     return
+  //   }
+  // }
 
   interface searchQueryProps {
     name?: string,
@@ -577,23 +489,27 @@
   }
   const addNewCategory = async() => {
     addingCategory = true
-    const { data, error } = await supabase
-      .from('categories')
-      .insert([
-        {
-          name: newCategory.trim(),
-        },
-      ])
-    if (error) {
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.log('error adding new category:', error)
+    const formData = new FormData()
+    formData.append('name', newCategory.trim())
+    const res = await fetch('/api/categories', {
+      method: 'POST',
+      body: formData
+    })
+    if (!res.ok) {
+      // message.set({
+      //   text: `Error: ${error.message}`,
+      //   timed: true
+      // })
+      // console.log('error adding new category:', error)
       return
     }
-    if (data) {
-      categories = await getCategories()
+    if (res.ok) {
+      const processed = await res.json()
+      const returnedCategory = processed[0]
+
+      categories = [...categories, returnedCategory]
+      categories = sortCatsAlphaAsc(categories)
+
       generateListings()
       newCategory = null
       addingCategory = false
@@ -601,11 +517,8 @@
   }
 
   const removeCategory = (e: CustomEvent) => {
-    const indexCategories = categories.findIndex((x: CategoryProps) => x.id === e.detail.id)
-    if ( indexCategories !== -1) {
-      categories = [...categories.slice(0, indexCategories), ...categories.slice(indexCategories + 1)]
-    }
-    generateListings()
+    categories = categories.filter((category: CategoryProps) => category.id !== e.detail.id)
+    generateListings() // Why?
   }
 
   const updateCategory = (e: CustomEvent) => {
@@ -643,45 +556,30 @@
   // https://juvelylevqqyyokxzkkq.supabase.co/auth/v1/verify?token=K38j-Xb11CbncAA716H6lQ&type=recovery&redirect_to=https://localhost:3000
   // https://localhost:3000/#access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNjQ1MjA1ODU1LCJzdWIiOiJmZGU0YmIxOS0zYzk4LTRkNzEtOGI5Mi01ZjVlMjYxOWMyOTgiLCJlbWFpbCI6ImplcmVteUBqZXJlZGV2LmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnt9LCJyb2xlIjoiYXV0aGVudGljYXRlZCJ9.dFIYnmS5qWEoSg0zeLgWBvEYI3jowCvPTD5cjwWtHO8&expires_in=3600&refresh_token=2u-C-sOOV_Fk-bkVBnpZAQ&token_type=bearer&type=recovery
 
-  // export async function load({ session }) {
-  //   const { user } = session
-  //   return {
-  //     props: {
-  //       user
-  //     }
-  //   };
-  // }
-
   function goBack() {
     history.back()
   }
 
-  // console.log($session)
-  // console.log($session.user)
-  // console.log($session.user.account)
-  // console.log($session.user.account.active)
-
   onMount(async() => {
-    // console.log('onMount()')
-    // console.log($session)
-    // console.log($session.user)
-    // console.log($session.user.account)
-    // console.log($session.user.account.active)
     if ($session && $session.user && $session.user.account?.active) {
       categories = await getCategories()
+      // console.log('categories mounted below:')
+      // console.log(categories)
       clock = window.setInterval(runClock, 1000);
       allItems = await getItems(searchQuery)
       allItems.forEach(async(item: ItemProps) => {
-        if (item.imagePath) {
-          const imagePath = $session.user.id + "/" + item.imagePath
-          item.image = await getItemImage(imagePath)
-        }
+        // console.log(item.name)
+        // console.log(item.image)
+        // if (item.imagePath) {
+        //   const imagePath = $session.user.id + "/" + item.imagePath
+        //   // console.log(`imagePath from mount is ${imagePath}`)
+        //   // item.image = await getItemImage(imagePath)
+        // }
       })
       items = allItems
       generateListings()
     }
-    
-  });
+  })
   onDestroy(() => {
     clearInterval(clock)
   })
@@ -690,7 +588,6 @@
 <div class="decay mx-auto max-w-50rem p-4 text-white">
   <Messenger />
   <div class="header">
-    <!-- <button type="button" class="btn" on:click="{sendMsg}">Message</button> -->
     {#if $session && !$session.user}
       <form on:submit|preventDefault={logIn} class="form form--login">
         <div class="login-form-fields">
@@ -767,7 +664,7 @@
             </div>
           </div>
           <div class="categories-list mt-2">
-            {#each categories as category}
+            {#each categories as category (category.id)}
               <CategoryBar category="{category}" on:updateCategory={updateCategory} on:removeCategory={removeCategory} />
             {/each}
           </div>

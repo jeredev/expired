@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { supabase } from "$lib/supabase";
+  // import { supabase } from "$lib/supabase";
   import { session } from "$app/stores";
   import { message } from "../stores";
   import { onMount } from "svelte";
@@ -136,31 +136,37 @@
   let addNewItemProcessing = false
   const addNewItem = async() => {
     addNewItemProcessing = true
-    const { data, error } = await supabase
-      .from('items')
-      .insert([
-        {
-          name: newItem.name.trim(),
-          startTime: new Date(newItem.startTime),
-          endTime: new Date(newItem.endTime),
-          category: newItem.category,
-        },
-      ])
-    if (error) {
-      addNewItemProcessing = false
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('Error:', error)
-      return
+    const formData = new FormData()
+    formData.append('name', newItem.name.trim())
+    if (newItem.image) {
+      formData.append('image', newItem.image)
     }
-    if (data) {
-      if (newItem.image) {
-        const newItemWithImg = await addNewItemImage(data)
-        if (newItemWithImg) data[0].imagePath = newItemWithImg[0].imagePath
-      }
-      data.forEach((item) => {
+    // payload.startTime = new Date(newItem.startTime)
+    const startTimeStr = new Date(newItem.startTime).toISOString()
+    formData.append('startTime', startTimeStr)
+    // payload.endTime = new Date(newItem.endTime)
+    const endTimeStr = new Date(newItem.endTime).toISOString()
+    formData.append('endTime', endTimeStr)
+    formData.append('category', newItem.category)
+    formData.append('creator', $session.user.id)
+    
+    const res = await fetch('/api/item', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!res.ok) {
+      console.log('res NOT ok')
+      console.log(await res.json())
+      // message.set({
+      //   text: `Error: ${error.message}`,
+      //   timed: true
+      // })
+    }
+    
+    if (res.ok) {
+      const newItems = await res.json()
+      newItems.forEach((item) => {
         item.edits = {
           name: item.name,
           category: {},
@@ -219,41 +225,13 @@
       noImageFound = false
       addNewItemProcessing = false
       checkNewItemValidity()
-      dispatch('add', data)
+      dispatch('add', newItems)
       message.set({
         text: 'Successfully added new item.',
         timed: true
       })
     }
-  }
-
-  const addNewItemImage = async(item) => {
-    const { data, error } = await supabase
-      .storage
-      .from('expired')
-      .upload(`${$session.user.id}/${item[0].id}`, newItem.image)
-    if (error) {
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('Error:', error)
-      return
-    }
-    if (data && data.Key) {
-      const {data, error} = await supabase
-        .from('items')
-        .update({ imagePath: `${item[0].id}` })
-        .match({ id: item[0].id })
-      if (data) return data
-      if (error) {
-        message.set({
-          text: `Error: ${error.message}`,
-          timed: true
-        })
-        console.error('Error:', error)
-      }
-    }
+    addNewItemProcessing = false
   }
 
   let fileInput
@@ -289,26 +267,59 @@
     }
   }
 
+  // addingCategory = true
+  // const formData = new FormData()
+  // formData.append('name', newCategory.trim())
+  // const res = await fetch('/api/categories', {
+  //   method: 'POST',
+  //   body: formData
+  // })
+  // if (!res.ok) {
+  //   // message.set({
+  //   //   text: `Error: ${error.message}`,
+  //   //   timed: true
+  //   // })
+  //   // console.log('error adding new category:', error)
+  //   return
+  // }
+  // if (res.ok) {
+  //   const processed = await res.json()
+  //   const returnedCategory = processed[0]
+
+  //   categories = [...categories, returnedCategory]
+  //   categories = sortCatsAlphaAsc(categories)
+
+  //   generateListings()
+  //   newCategory = null
+  //   addingCategory = false
+  // }
+
   let addNewCategoryProcessing = false
   const addNewCategory = async() => {
     addNewCategoryProcessing = true
-    const { data, error } = await supabase
-      .from('categories')
-      .insert([
-        {
-          name: newCategory.trim(),
-        },
-      ])
-    if (error) {
+    const formData = new FormData()
+    formData.append('name', newCategory.trim())
+    // const { data, error } = await supabase
+    //   .from('categories')
+    //   .insert([
+    //     {
+    //       name: newCategory.trim(),
+    //     },
+    //   ])
+    const res = await fetch('/api/categories', {
+      method: 'POST',
+      body: formData
+    })
+    if (!res.ok) {
       addNewCategoryProcessing = false
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.log('error adding new category:', error)
+      // message.set({
+      //   text: `Error: ${error.message}`,
+      //   timed: true
+      // })
+      // console.log('error adding new category:', error)
       return
     }
-    if (data) {
+    if (res.ok) {
       addNewCategoryProcessing = false
       categories = await getCategories()
       newCategory = null
@@ -318,17 +329,16 @@
   }
 
   const getCategories = async() => {
-    const { data, error } = await supabase
-      .from('categories')
-      .select()
-      .order('name', { ascending: true })
-    if (data) return data
-    if (error) {
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('Error:', error)
+    const res = await fetch('/api/categories')
+    if (!res.ok) {
+      //   message.set({
+      //     text: `Error: ${error.message}`,
+      //     timed: true
+      //   })
+      //   console.error('Error:', error)
+    }
+    if (res.ok) {
+      return await res.json()
     }
   }
   let categories: Array<CategoryProps> | null

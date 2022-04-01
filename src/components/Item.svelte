@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { supabase } from "$lib/supabase";
+  // import { supabase } from "$lib/supabase";
   import { session } from "$app/stores";
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { slide } from 'svelte/transition';
@@ -33,9 +33,12 @@
   export let item
   export let time
 
+  let image: HTMLImageElement
+  let imageLoaded = false
+
   item.expired = null
   item.imminent = false
-  item.imageLoaded = true
+  // imageLoaded = false
 
   item.edits = {
     name: item.name,
@@ -77,29 +80,16 @@
   const removeItem = async() => {
     statusProcessing = true
     statusRemoving = true
-    const { data, error } = await supabase
-      .from('items')
-      .delete()
-      .match({ id: item.id })
-    if (error) {
-      statusProcessing = false
-      statusRemoving = false
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('There was a problem:', error)
-      return
+    const formData = new FormData()
+    formData.append('id', item.id)
+    const res = await fetch('/api/item', {
+      method: 'DELETE',
+      body: formData
+    })
+    if (!res.ok) {
+      // Error here
     }
-    if (data) {
-      if (data[0] && data[0].imagePath) {
-        const fromPath = `${$session.user.id}/${data[0].imagePath}`
-        // Ideally, this should be done behind the scenes or in a housekeeping like fashion // Worked
-        await supabase
-          .storage
-          .from('expired')
-          .remove([fromPath])
-      }
+    if (res.ok) {
       statusProcessing = false
       statusRemoving = false
       menuVisible = false
@@ -158,40 +148,22 @@
   item.precursorBar = getPrecursorBar()
   item.timeBar = getTimeBar()
   item.timeRemaining = getTimeRemainder()
-  const getItemImage = async (path) => {
-    // console.log('getting image from supabase')
-    const { data, error } = await supabase
-      .storage
-      .from('expired')
-      .download(path)
-    if (data) {
-      item.imageLoaded = true
-      return URL.createObjectURL(data)
-    }
-    if (error) {
-      console.log(`error from ${path}`)
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('Error:', error)
-      return
-    }
-  }
-  const buildItemImage = async (path) => {
-    // console.log('building')
-    const imagePath = $session.user.id + "/" + item.imagePath
-    item.image = await getItemImage(imagePath)
-  }
   const io = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
         entry.target.classList.remove('unset')
+        // Forcing
+        // item.imageLoaded = false
+        // buildItemImage(item.imagePath)
         // Build Item Image
-        if (item.imagePath && !item.image) {
-          item.imageLoaded = false
-          buildItemImage(item.imagePath)
-        }
+        // if (item.imagePath && !item.image) {
+        // console.log(item.image)
+        // if (item.imagePath && !item.image) {
+        //   console.log('no item.image')
+        //   item.imageLoaded = false
+        //   // item.image = 
+        //   // buildItemImage(item.imagePath)
+        // }
         io.unobserve(entry.target)
       }
     })
@@ -215,41 +187,28 @@
 
   const deleteImage = async() => {
     if (item.imagePath && $session.user.id) {
-      const fromPath = `${$session.user.id}/${item.imagePath}`
-      const { data, error } = await supabase
-        .storage
-        .from('expired')
-        .remove([fromPath])
-      if (error) {
-        message.set({
-          text: `Error: ${error.message}`,
-          timed: true
-        })
-        console.error('Error:', error)
-        return
+      const formData = new FormData()
+      formData.append('id', item.id)
+      formData.append('image', null)
+      formData.append('imagePath', item.imagePath)
+      const res = await fetch('/api/item', {
+        method: 'PATCH',
+        body: formData
+      })
+      // Res.error
+      if (!res.ok) {
+        // message.set({
+        //   text: `Error: ${error.message}`,
+        //   timed: true
+        // })
       }
-      if (data && data.length > 0) {
-        // Edit item to remove imagePath
-        const { error } = await supabase
-          .from('items')
-          .update({ imagePath: null })
-          .match({ id: item.id })
+      if (res.ok) {
         item.imagePath = null
         item.image = null
-        if (error) {
-          message.set({
-            text: `Error: ${error.message}`,
-            timed: true
-          })
-          console.error('Error:', error)
-          return
-        }
-        else {
-          message.set({
-            text: 'Successfully deleted item image.',
-            timed: true 
-          })
-        }
+        message.set({
+          text: 'Successfully deleted item image.',
+          timed: true 
+        })
       }
     }
   }
@@ -260,30 +219,37 @@
     statusProcessing = true
     // Calculate new endTime
     let renewedEndTime = updateEndTimeRelativelyForRenewal()
-    const { data, error } = await supabase
-      .from('items')
-      .update({
-        startTime: new Date(),
-        endTime: new Date(renewedEndTime),
-      })
-      .match({ id: item.id })
-    if (error) {
+
+    const formData = new FormData()
+    formData.append('id', item.id)
+    formData.append('startTime', new Date().toISOString())
+    formData.append('endTime', new Date(renewedEndTime).toISOString())
+
+    const res = await fetch('/api/item', {
+      method: 'PATCH',
+      body: formData
+    })
+
+    if (!res.ok) {
       statusProcessing = false
-      statusUpdating = false
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('There was a problem:', error)
+      statusRenewing = false
+      // message.set({
+      //   text: `Error: ${error.message}`,
+      //   timed: true
+      // })
+      // console.error('There was a problem:', error)
       return
     }
-    if (data && data[0]) {
-      item.name = data[0].name
-      item.startTime = data[0].startTime
-      item.endTime = data[0].endTime
-      item.edits.name = data[0].name
+    if (res.ok) {
+      const processed = await res.json()
+      const renewedItem = processed[0]
+
+      item.name = renewedItem.name
+      item.startTime = renewedItem.startTime
+      item.endTime = renewedItem.endTime
+      item.edits.name = renewedItem.name
       // Find category name / Assign category
-      const found = categories.find(element => element.id === data[0].category)
+      const found = categories.find(element => element.id === renewedItem.category)
       if (!found) {
         item.category = {}
       } else {
@@ -293,13 +259,13 @@
         item.edits.category.id = found.id
         item.edits.category.name = found.name
       }
-      item.edits.startTime = format(new Date(data[0].startTime), 'yyyy-MM-dd\'T\'HH:mm')
-      item.edits.endTime = format(new Date(data[0].endTime), 'yyyy-MM-dd\'T\'HH:mm')
+      item.edits.startTime = format(new Date(renewedItem.startTime), 'yyyy-MM-dd\'T\'HH:mm')
+      item.edits.endTime = format(new Date(renewedItem.endTime), 'yyyy-MM-dd\'T\'HH:mm')
       updateEndTimeRelativity()
       menuVisible = false
       dispatch('update', item)
       statusProcessing = false
-      statusUpdating = false
+      statusRenewing = false
       message.set({
         text: 'Item renewed.',
         timed: true
@@ -309,54 +275,57 @@
 
   let statusUpdating = false
   const updateItem = async () => {
-    statusProcessing = true
-    statusUpdating = true
-    const { data, error } = await supabase
-      .from('items')
-      .update({
-        name: item.edits.name,
-        startTime: item.edits.startTime,
-        endTime: item.edits.endTime,
-        category: item.edits.category.id,
-      })
-      .match({ id: item.id })
-    if (error) {
-      statusProcessing = false
-      statusUpdating = false
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('There was a problem:', error)
-      return
-    }
-    if (data && data[0]) {
-      item.name = data[0].name
-      item.startTime = data[0].startTime
-      item.endTime = data[0].endTime
-      item.edits.name = data[0].name
-      // Find category name / Assign category
-      const found = categories.find(element => element.id === data[0].category)
-      if (!found) {
-        item.category = {}
-      } else {
-        item.category = {}
-        item.category.id = found.id
-        item.category.name = found.name
-        item.edits.category.id = found.id
-        item.edits.category.name = found.name
+
+    const formData = new FormData()
+    formData.append('id', item.id)
+    formData.append('name', item.edits.name)
+    formData.append('startTime', item.edits.startTime)
+    formData.append('endTime', item.edits.endTime)
+    formData.append('category', item.edits.category.id)
+
+    // const payload = {}
+    // payload.id = item.id
+    // payload.name = item.edits.name
+    // payload.startTime = item.edits.startTime
+    // payload.endTime = item.edits.endTime
+    // payload.category = item.edits.category.id
+
+    const res = await fetch('/api/item', {
+      method: 'PATCH',
+      body: formData
+    })
+    // Res.error
+    if (res.ok) {
+      const processed = await res.json()
+      const updatedItem = processed[0]
+      if (updatedItem.id === item.id) {
+        item.name = updatedItem.name
+        item.startTime = updatedItem.startTime
+        item.endTime = updatedItem.endTime
+        item.edits.name = updatedItem.name
+        // Find category name / Assign category
+        const found = categories.find(element => element.id === updatedItem.category)
+        if (!found) {
+          item.category = {}
+        } else {
+          item.category = {}
+          item.category.id = found.id
+          item.category.name = found.name
+          item.edits.category.id = found.id
+          item.edits.category.name = found.name
+        }
+        item.edits.startTime = format(new Date(updatedItem.startTime), 'yyyy-MM-dd\'T\'HH:mm')
+        item.edits.endTime = format(new Date(updatedItem.endTime), 'yyyy-MM-dd\'T\'HH:mm')
+        updateEndTimeRelativity()
+        menuVisible = false
+        dispatch('update', item)
+        statusProcessing = false
+        statusUpdating = false
+        message.set({
+          text: 'Item updated.',
+          timed: true
+        })
       }
-      item.edits.startTime = format(new Date(data[0].startTime), 'yyyy-MM-dd\'T\'HH:mm')
-      item.edits.endTime = format(new Date(data[0].endTime), 'yyyy-MM-dd\'T\'HH:mm')
-      updateEndTimeRelativity()
-      menuVisible = false
-      dispatch('update', item)
-      statusProcessing = false
-      statusUpdating = false
-      message.set({
-        text: 'Item updated.',
-        timed: true
-      })
     }
   }
 
@@ -366,32 +335,22 @@
   let file
   let itemImagePreview
   const addImage = async() => {
-    if (file) {
-      const { data, error } = await supabase
-        .storage
-        .from('expired')
-        .upload(`${$session.user.id}/${item.id}`, file)
-      if (error) {
-        message.set({
-          text: `Error: ${error.message}`,
-          timed: true
-        })
-        console.error('Error:', error)
-        return
+    if (file && $session.user.id) {
+      const formData = new FormData()
+      formData.append('id', item.id)
+      formData.append('image', file)
+      const res = await fetch('/api/item', {
+        method: 'PATCH',
+        body: formData
+      })
+      // Res.error
+      if (!res.ok) {
+        // message.set({
+        //   text: `Error: ${error.message}`,
+        //   timed: true
+        // })
       }
-      if (data.Key) {
-        const { error } = await supabase
-          .from('items')
-          .update({ imagePath: item.id })
-          .match({ id : item.id })
-        if (error) {
-          message.set({
-            text: `Error: ${error.message}`,
-            timed: true
-          })
-          console.error('Error:', error)
-          return
-        }
+      if (res.ok) {
         file = null
         fileInput = null
         itemImagePreview = null
@@ -401,10 +360,9 @@
           timed: true
         })
         item.imagePath = `${item.id}`
-        buildItemImage(item.imagePath)
+        // buildItemImage(item.imagePath)
       }
     }
-    
   }
   const analyzeFile = () => {
     file = fileInput.files[0]
@@ -542,6 +500,11 @@
     if (itemElement) {
       io.observe(itemElement)
     }
+    image.onload = function() { 
+      // console.log('onload')
+      imageLoaded = true
+      // Do something with 'img.width' here, outside the image onload event handler.
+    }
   })
   onDestroy(() => {
     if (itemElement) {
@@ -563,19 +526,19 @@
     <div class="item__aside">
       {#if item.imagePath}
         <div class="image-block">
-          {#if item.imageLoaded === false}
+          {#if imageLoaded === false}
             <div class="elapser">
               <div class="indication"><div class="node"></div>
               </div>
             </div>
-          {:else}
-            <img 
-              src="{item.image}" 
-              alt="{item.name}" 
-              class="item-image block m-auto"
-              loading="lazy"
-            >
           {/if}
+          <img
+            src="{item.image}" 
+            alt="{item.name}" 
+            class="item-image block m-auto"
+            loading="lazy"
+            bind:this={image}
+          >
         </div>
         {#if menuVisible}
           <button class="btn leading-tight negative mt-4 flex justify-center w-full" on:click="{deleteImage}" disabled="{statusProcessing}">

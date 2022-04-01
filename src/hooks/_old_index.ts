@@ -46,8 +46,7 @@ import { auth, supabase } from '$lib/supabase'
 
 
 export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, resolve: (request: RequestEvent) => Promise<Response> }) => {
-  // console.log('handle')
-  const sbToken = event.request.headers.get('Cookie') ? parse(event.request.headers.get('Cookie'))['supatoken'] : ''
+  const sbToken = event.request.headers.get('Cookie') ? parse(event.request.headers.get('Cookie'))[COOKIE_NAME] : ''
   if (sbToken) {
     // https://supabase.com/docs/reference/javascript/auth-api-getuser
     const { user, error } = await auth.api.getUser(sbToken)
@@ -66,65 +65,33 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
       if (error) {
         console.error('Error:', error)
       }
-      // console.log('user below:')
-      // console.log(user) // Working with account!
       event.locals.user = user
     }
-    else {
-      // Unset Auth
-      event.locals.user = null
-    }
-  }
-  else {
-    // console.log('no auth token')
   }
 
   const response = await resolve(event);
 
-  /*
-  if (event.request.method === 'POST' && new URL(event.request.url).pathname === '/api/auth/login') {
-    console.log('logging in')
-    // console.log('logging out')
-    // const cookieHeader = serialize('supatoken', 'deleted', { ...COOKIE_OPTIONS, maxAge: 0 })
-    // // https://supabase.com/docs/reference/javascript/auth-signout
-    // await supabase.auth.api.signOut(sbToken)
-    // // event.locals.user = null
-    // response.headers.append('Set-Cookie', cookieHeader)
-    // return response
-  }
+  // Handle Auth Change events
+  if (event.request.method === 'POST' && new URL(event.request.url).pathname === API_AUTH) {
+    const { event: authChangeEvent, session } = JSON.parse(await event.request.text()) as { event: AuthChangeEvent, session: AuthSession }
 
-  if (event.request.method === 'POST' && new URL(event.request.url).pathname === '/api/auth/logout') {
-    console.log('logging out')
-    const cookieHeader = serialize('supatoken', 'deleted', { ...COOKIE_OPTIONS, maxAge: 0 })
-    // https://supabase.com/docs/reference/javascript/auth-signout
-    await supabase.auth.api.signOut(sbToken)
-    // event.locals.user = null
-    response.headers.append('Set-Cookie', cookieHeader)
+    if (authChangeEvent === 'SIGNED_IN') {
+      const cookieHeader = serialize(COOKIE_NAME, session.access_token, {
+        ...COOKIE_OPTIONS,
+        expires: new Date(session.expires_at),
+        maxAge: session.expires_in
+      })
+      // https://supabase.com/docs/reference/javascript/auth-setauth
+      auth.setAuth(session.access_token)
+      response.headers.append('Set-Cookie', cookieHeader)
+    } else if (authChangeEvent === 'SIGNED_OUT') {
+      const cookieHeader = serialize(COOKIE_NAME, 'deleted', { ...COOKIE_OPTIONS, maxAge: 0 })
+      // https://supabase.com/docs/reference/javascript/auth-signout
+      await auth.api.signOut(sbToken)
+      response.headers.append('Set-Cookie', cookieHeader)
+    }
     return response
   }
-  */
-
-  // Handle Auth Change events
-  // if (event.request.method === 'POST' && new URL(event.request.url).pathname === API_AUTH) {
-  //   const { event: authChangeEvent, session } = JSON.parse(await event.request.text()) as { event: AuthChangeEvent, session: AuthSession }
-
-  //   if (authChangeEvent === 'SIGNED_IN') {
-  //     const cookieHeader = serialize(COOKIE_NAME, session.access_token, {
-  //       ...COOKIE_OPTIONS,
-  //       expires: new Date(session.expires_at),
-  //       maxAge: session.expires_in
-  //     })
-  //     // https://supabase.com/docs/reference/javascript/auth-setauth
-  //     auth.setAuth(session.access_token)
-  //     response.headers.append('Set-Cookie', cookieHeader)
-  //   } else if (authChangeEvent === 'SIGNED_OUT') {
-  //     const cookieHeader = serialize(COOKIE_NAME, 'deleted', { ...COOKIE_OPTIONS, maxAge: 0 })
-  //     // https://supabase.com/docs/reference/javascript/auth-signout
-  //     await auth.api.signOut(sbToken)
-  //     response.headers.append('Set-Cookie', cookieHeader)
-  //   }
-  //   return response
-  // }
 
   return response
 }
@@ -142,7 +109,6 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
 // export const getSession = ({ locals }) => locals.session
 
 export const getSession = ({ locals }) => {
-  // console.log('getSession')
   const { user } = locals
   // only include the properties that are needed client-side — exclude anything else attached to the user like access tokens etc
   // we know that the `user` object won't have anything sensitive so we're making the entire `user` object available
