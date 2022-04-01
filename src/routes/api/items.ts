@@ -69,7 +69,7 @@ export async function get(event: RequestEvent) {
               const { data: storageData, error: storageError } = await supabase
                 .storage
                 .from('expired')
-                .createSignedUrls(chunk, 60)
+                .createSignedUrls(chunk, 600)
               if (storageError) {
                 console.log('storageError:')
                 console.log(storageError)
