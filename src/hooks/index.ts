@@ -33,8 +33,13 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
     }
   }
   else {
-    event.locals.user = {
-      id: 'Test'
+    if (event.locals.user) {
+      event.locals.user = null
+    }
+    else {
+      event.locals.user = {
+        id: "Test"
+      }
     }
   }
 
