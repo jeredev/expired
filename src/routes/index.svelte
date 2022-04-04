@@ -1,6 +1,7 @@
 <script lang="ts" context="module">
   export async function load({ url, params, fetch, session, stuff }) {
-    if (session && session.user && session.user.id && session.user.account?.active) {
+    const { user } = session
+    if (user && user.id && user.account?.active) {
       let appendage = '?' + new URLSearchParams(url.searchParams)
       const items = await fetch('/api/items' + appendage)
       const categories = await fetch('/api/categories')
@@ -8,7 +9,8 @@
         status: 200,
         props: {
           items: items.ok && (await items.json()),
-          categories: categories.ok && (await categories.json())
+          categories: categories.ok && (await categories.json()),
+          user
         }
         // status: response.status,
       }
@@ -58,6 +60,7 @@
 
   export let categories: Array<CategoryProps> | null = null
   export let items: Array<ItemProps> | null = null
+  export let user
 
   // let categories = null
   // $: categories = null
@@ -103,7 +106,7 @@
         const data = await res.json()
         if (data && data.role === 'authenticated') {
           session.set({ user: data })
-          console.log($session)
+          // console.log($session)
           if ($session && $session.user && $session.user.account?.active) {
             categories = await getCategories()
             clock = window.setInterval(runClock, 1000);
@@ -601,7 +604,7 @@
   }
 
   onMount(async() => {
-    console.log($session)
+    // console.log($session)
     if ($session && $session.user && $session.user.account?.active) {
       clock = window.setInterval(runClock, 1000);
     }
@@ -614,7 +617,7 @@
 <div class="decay mx-auto max-w-50rem p-4 text-white">
   <Messenger />
   <div class="header">
-    {#if $session && !$session.user}
+    {#if !user}
       <form on:submit|preventDefault={logIn} class="form form--login">
         <div class="login-form-fields">
           <input
@@ -642,7 +645,7 @@
       </form>
     {/if}
   </div>
-  {#if $session && $session.user && $session.user.account && $session.user.account.active}
+  {#if user && user.account && user.account.active}
     <div class="homebase">
       <div class="controls pb-4 flex">
         {#if Object.keys(searchQuery).length}
@@ -861,7 +864,7 @@
         <p>Loading...</p>
       {/if}
     </div>
-  {:else if $session && $session.user && $session.user.account && !$session.user.account.active}
+  {:else if user && user.account && !user.account.active}
     <p>Account inactive. Please <a href="/">reactivate your account</a> here.</p>
   {:else}
     <div class="py-4">Authorized users only.</div>
