@@ -31,16 +31,12 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
       }   
       event.locals.user = user
     }
-  }
-  else {
-    if (event.locals.user) {
+    else {
       event.locals.user = null
     }
-    else {
-      event.locals.user = {
-        id: "Test"
-      }
-    }
+  }
+  else {
+    event.locals.user = null
   }
 
   const response = await resolve(event);
