@@ -1,4 +1,5 @@
 import { supabase } from "$lib/supabase"
+import { parse } from 'cookie'
 import type { RequestEvent } from "@sveltejs/kit/types/internal"
 
 export async function get(event: RequestEvent) {

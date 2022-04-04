@@ -148,31 +148,31 @@
   item.precursorBar = getPrecursorBar()
   item.timeBar = getTimeBar()
   item.timeRemaining = getTimeRemainder()
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.remove('unset')
-        // Forcing
-        // item.imageLoaded = false
-        // buildItemImage(item.imagePath)
-        // Build Item Image
-        // if (item.imagePath && !item.image) {
-        // console.log(item.image)
-        // if (item.imagePath && !item.image) {
-        //   console.log('no item.image')
-        //   item.imageLoaded = false
-        //   // item.image = 
-        //   // buildItemImage(item.imagePath)
-        // }
-        io.unobserve(entry.target)
-      }
-    })
-  },
-  {
-    root: null,
-    rootMargin: '0px',
-    threshold: [0],
-  })
+  // const io = new IntersectionObserver((entries) => {
+  //   entries.forEach((entry) => {
+  //     if (entry.isIntersecting) {
+  //       entry.target.classList.remove('unset')
+  //       // Forcing
+  //       // item.imageLoaded = false
+  //       // buildItemImage(item.imagePath)
+  //       // Build Item Image
+  //       // if (item.imagePath && !item.image) {
+  //       // console.log(item.image)
+  //       // if (item.imagePath && !item.image) {
+  //       //   console.log('no item.image')
+  //       //   item.imageLoaded = false
+  //       //   // item.image = 
+  //       //   // buildItemImage(item.imagePath)
+  //       // }
+  //       io.unobserve(entry.target)
+  //     }
+  //   })
+  // },
+  // {
+  //   root: null,
+  //   rootMargin: '0px',
+  //   threshold: [0],
+  // })
 
   let updateValid = false
   const checkUpdateValidity = () => {
@@ -485,6 +485,20 @@
     });
   }
 
+  // const io = new IntersectionObserver((entries) => {
+  //   entries.forEach((entry) => {
+  //     if (entry.isIntersecting) {
+  //       entry.target.classList.remove('unset')
+  //       io.unobserve(entry.target)
+  //     }
+  //   })
+  // },
+  // {
+  //   root: null,
+  //   rootMargin: '0px',
+  //   threshold: [0],
+  // })
+
   onMount(() => {
     updateEndTimeRelativity()
     checkUpdateValidity()
@@ -493,10 +507,19 @@
       // console.log('true') // Chrome needs webkit prefix version
       recognition = new SpeechRecognition()
     }
-    // if (item.imagePath && !item.image) {
-    //   item.imageLoaded = false
-    //   buildItemImage(item.imagePath)
-    // }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.remove('unset')
+          io.unobserve(entry.target)
+        }
+      })
+    },
+    {
+      root: null,
+      rootMargin: '0px',
+      threshold: [0],
+    })
     if (itemElement) {
       io.observe(itemElement)
     }
@@ -510,9 +533,9 @@
     }
   })
   onDestroy(() => {
-    if (itemElement) {
-      io.unobserve(itemElement)
-    }
+    // if (itemElement) {
+    //   io.unobserve(itemElement)
+    // }
   })
   // Reactivity to Time
   $: {

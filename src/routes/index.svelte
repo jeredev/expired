@@ -1,5 +1,26 @@
+<script lang="ts" context="module">
+  export async function load({ url, params, fetch, session, stuff }) {
+    if (session && session.user && session.user.id && session.user.account?.active) {
+      let appendage = '?' + new URLSearchParams(url.searchParams)
+      const items = await fetch('/api/items' + appendage)
+      const categories = await fetch('/api/categories')
+      return {
+        status: 200,
+        props: {
+          items: items.ok && (await items.json()),
+          categories: categories.ok && (await categories.json())
+        }
+        // status: response.status,
+      }
+    }
+    else {
+      return {
+        status: 200
+      }
+    }
+  }
+</script>
 <script lang="ts">
-  // import { supabase } from "$lib/supabase";
   import { page, session } from "$app/stores";
 
   import { onDestroy, onMount } from "svelte";
@@ -35,13 +56,15 @@
   import Messenger from "../components/Messenger.svelte"
   import { displayMode, sortingMode, timeStatusMode, message } from "../stores";
 
-  // export let categories
+  export let categories: Array<CategoryProps> | null = null
+  export let items: Array<ItemProps> | null = null
+
   // let categories = null
   // $: categories = null
-  let categories: Array<CategoryProps> | null = null
+  // let categories: Array<CategoryProps> | null = null
 
-  let allItems: Array<ItemProps> | null = null
-  let items: Array<ItemProps> | null = null
+  // let allItems: Array<ItemProps> | null = null
+  // let items: Array<ItemProps> | null = null
 
   let listings = null
   let time = new Date().getTime()
@@ -83,13 +106,15 @@
           if ($session && $session.user && $session.user.account?.active) {
             categories = await getCategories()
             clock = window.setInterval(runClock, 1000);
-            allItems = await getItems(searchQuery)
-            allItems.forEach(async(item: ItemProps) => {
+            // allItems = await getItems(searchQuery)
+            items = await getItems(searchQuery)
+            // allItems.forEach(async(item: ItemProps) => {
+            items.forEach(async(item: ItemProps) => {
               if (item.imagePath) {
                 const imagePath = $session.user.id + "/" + item.imagePath
               }
             })
-            items = allItems
+            // items = allItems
             generateListings()
           }
         }
@@ -127,6 +152,7 @@
 
   const addItems = async(e: CustomEvent) => {
     const newItems = e.detail
+    // Determine if item should be shown in current list
     categories = await getCategories()
     newItems.forEach(async(item) => {
       const found = categories.find((element: CategoryProps) => element.id === item.category)
@@ -139,43 +165,30 @@
         item.edits.category.id = found.id
         item.edits.category.name = found.name
       }
-      // if (item.imagePath) {
-      //   const imagePath = $session.user.id + "/" + item.imagePath
-      //   item.image = await getItemImage(imagePath)
-      // }
       item.time = time
-      allItems.push(item)
+
+      // allItems.push(item)
+      items.push(item)
       // items = [...items, item]
       generateListings()
     });
   }
 
   const removeItem = (e: CustomEvent) => {
-    allItems = allItems.filter((item: ItemProps) => item.id !== e.detail.id)
     items = items.filter((item: ItemProps) => item.id !== e.detail.id)
-    // Is this part even needed?
-    // const indexListings = listings.findIndex((x) => x.id === e.detail.id)
-    // console.log(`indexListings = ${indexListings}`)
-    // if (indexListings !== -1) {
-    //   listings = [...listings.slice(0, indexListings), ...listings.slice(indexListings + 1)]
-    // }
     generateListings()
   }
 
   const updateItem = (e: CustomEvent) => {
     const updatedItem = e.detail
-    allItems.map(() => {
-      const item = allItems.find(({ id }) => id === updatedItem.id);
-      return item ? item : updatedItem;
-    });
     items.map(() => {
       const item = items.find(({ id }) => id === updatedItem.id);
       return item ? item : updatedItem;
     });
-    listings.map(() => {
-      const item = listings.find(({ id }) => id === updatedItem.id);
-      return item ? item : updatedItem;
-    });
+    // listings.map(() => {
+    //   const item = listings.find(({ id }) => id === updatedItem.id);
+    //   return item ? item : updatedItem;
+    // });
     generateListings()
   }
 
@@ -198,23 +211,21 @@
     return time - new Date(startTime).getTime()
   }
   const filterAll = () => {
-    items = allItems
+    listings = items
   }
-  const filterSafe = () => {
-    const safe = allItems.filter((item: ItemProps) => {
+  const filterSafe = (payload: Array<ItemProps>) => {
+    listings = payload.filter((item: ItemProps) => {
       let timeElapsed = getTimeElapsed(item.startTime)
       let lifespan = getLifespan(item.startTime, item.endTime)
       return timeElapsed < lifespan
     })
-    items = safe
   }
-  const filterExpired = () => {
-    const expired = allItems.filter((item: ItemProps) => {
+  const filterExpired = (payload: Array<ItemProps>) => {
+    listings = payload.filter((item: ItemProps) => {
       let timeElapsed = getTimeElapsed(item.startTime)
       let lifespan = getLifespan(item.startTime, item.endTime)
       return timeElapsed > lifespan
     })
-    items = expired
   }
   const sortAlphaAsc = (payload: Array<ItemProps>) => {
     return payload.sort((a: ItemProps, b: ItemProps) => a.name.localeCompare(b.name))
@@ -356,16 +367,16 @@
     }
   }
 
-  const sortByTimeStatus = () => {
+  const sortByTimeStatus = (payload: Array<ItemProps>) => {
     switch ($timeStatusMode) {
       case 'all':
         filterAll()
         break
       case 'safe':
-        filterSafe()
+        filterSafe(payload)
         break
       case 'expired':
-        filterExpired()
+        filterExpired(payload)
         break
     }
   }
@@ -392,6 +403,8 @@
   }
 
   const generateListings = () => {
+    // console.log('generateListings()')
+    // listItems()
     if ($displayMode === 'categories') {
       categorizeItems()
     }
@@ -401,6 +414,7 @@
   }
 
   const categorizeItems = () => {
+    listings = items
     let categorizedItems = []
     if (categories) {
       categories.forEach((category) => {
@@ -417,8 +431,8 @@
       items: []
     }
     categorizedItems.push(uncategorizedCategory)
-    sortByTimeStatus()
-    items.forEach((item: ItemProps) => {
+    sortByTimeStatus(listings)
+    listings.forEach((item: ItemProps) => {
       if (item.category) {
         const found = categorizedItems.find(element => element.id === item.category.id)
         if (found) found.items.push(item)
@@ -435,9 +449,9 @@
   }
 
   const listItems = () => {
-    sortByTimeStatus()
-    sortItems(items)
     listings = items
+    sortByTimeStatus(items)
+    sortItems(listings)
   }
 
   const getItems = async(query: searchQueryProps) => {
@@ -487,6 +501,7 @@
   //   }
   // }
 
+  // DRY and move this
   interface searchQueryProps {
     name?: string,
     end?: string,
@@ -580,24 +595,14 @@
     history.back()
   }
 
+  if ($session && $session.user && $session.user.account?.active) {
+    generateListings()
+  }
+
   onMount(async() => {
+    console.log($session)
     if ($session && $session.user && $session.user.account?.active) {
-      categories = await getCategories()
-      // console.log('categories mounted below:')
-      // console.log(categories)
       clock = window.setInterval(runClock, 1000);
-      allItems = await getItems(searchQuery)
-      allItems.forEach(async(item: ItemProps) => {
-        // console.log(item.name)
-        // console.log(item.image)
-        // if (item.imagePath) {
-        //   const imagePath = $session.user.id + "/" + item.imagePath
-        //   // console.log(`imagePath from mount is ${imagePath}`)
-        //   // item.image = await getItemImage(imagePath)
-        // }
-      })
-      items = allItems
-      generateListings()
     }
   })
   onDestroy(() => {

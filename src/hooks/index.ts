@@ -28,9 +28,8 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
       }
       if (accountData) {
         user.account = accountData[0]
-        event.locals.user = user
-      }
-      // event.locals.user = user
+      }   
+      event.locals.user = user
     }
   }
   else {
