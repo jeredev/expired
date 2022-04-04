@@ -33,7 +33,9 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
     }
   }
   else {
-    event.locals.user = null
+    event.locals.user = {
+      id: 'Test'
+    }
   }
 
   const response = await resolve(event);
