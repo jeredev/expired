@@ -103,6 +103,7 @@
         const data = await res.json()
         if (data && data.role === 'authenticated') {
           session.set({ user: data })
+          console.log($session)
           if ($session && $session.user && $session.user.account?.active) {
             categories = await getCategories()
             clock = window.setInterval(runClock, 1000);
