@@ -13,7 +13,7 @@ export async function post({ request }) {
         httpOnly: true,
         maxAge: 0
       })
-      await supabase.auth.api.signOut(sbToken)
+      // await supabase.auth.api.signOut(sbToken)
       return {
         status: 200,
         // Set cookies?

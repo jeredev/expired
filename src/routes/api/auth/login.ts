@@ -41,7 +41,7 @@ export async function post({ request }) {
           expires: new Date(session.expires_at),
           maxAge: session.expires_in
         })
-        supabase.auth.setAuth(session.access_token)
+        // supabase.auth.setAuth(session.access_token)
         return {
           status: 200,
           // Set cookies?

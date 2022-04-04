@@ -32,11 +32,11 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
       event.locals.user = user
     }
     else {
-      event.locals.user = null
+      event.locals.user = undefined
     }
   }
   else {
-    event.locals.user = null
+    event.locals.user = undefined
   }
 
   const response = await resolve(event);

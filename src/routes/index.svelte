@@ -617,6 +617,9 @@
 <div class="decay mx-auto max-w-50rem p-4 text-white">
   <Messenger />
   <div class="header">
+    <button on:click={logOut} class="btn ml-2" disabled="{statusProcessing}">
+      <Icon icon="clarity:logout-solid" />
+    </button>
     {#if !user}
       <form on:submit|preventDefault={logIn} class="form form--login">
         <div class="login-form-fields">
