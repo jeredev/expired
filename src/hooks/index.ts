@@ -79,6 +79,7 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
 export const getSession = ({ locals }) => {
   // console.log('getSession')
   const { user } = locals
+  console.log(user)
   // only include the properties that are needed client-side — exclude anything else attached to the user like access tokens etc
   // we know that the `user` object won't have anything sensitive so we're making the entire `user` object available
   // Note: `getSession` runs only when SvelteKit server-renders a page, not for the API handlers.

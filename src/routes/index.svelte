@@ -1,8 +1,9 @@
 <script lang="ts" context="module">
   export async function load({ url, params, fetch, session, stuff }) {
     console.log('load')
+    console.log(session)
     const { user } = session
-    console.log(user)
+    console.log(user) // Null after logging out, undefined after Live reload...
     if (user && user.id && user.account?.active) {
       let appendage = '?' + new URLSearchParams(url.searchParams)
       const items = await fetch('/api/items' + appendage)
