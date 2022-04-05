@@ -1,5 +1,5 @@
 import { supabase } from '$lib/supabase'
-import { serialize, parse } from 'cookie'
+import { serialize } from 'cookie'
 
 export async function post({ request }) {
   try {

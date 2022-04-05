@@ -1,9 +1,6 @@
 <script lang="ts" context="module">
   export async function load({ url, params, fetch, session, stuff }) {
-    console.log('load')
-    console.log(session)
     const { user } = session
-    // console.log(user) // Null after logging out, undefined after Live reload...
     if (user && user.id && user.account?.active) {
       let appendage = '?' + new URLSearchParams(url.searchParams)
       const items = await fetch('/api/items' + appendage)
@@ -421,8 +418,6 @@
   }
 
   const generateListings = () => {
-    // console.log('generateListings()')
-    // listItems()
     if ($displayMode === 'categories') {
       categorizeItems()
     }
@@ -501,23 +496,6 @@
     // }
     
   }
-
-  // const getItemImage = async (path: string) => {
-  //   // path = 'e458a055-3dbc-4fec-91f7-e1c9c31ea930/0e2dc853-10a6-458b-9ddd-0675501ae6bb'
-  //   const { data, error } = await supabase
-  //     .storage
-  //     .from('expired')
-  //     .download(path)
-  //   if (data) return URL.createObjectURL(data)
-  //   if (error) {
-  //     message.set({
-  //       text: `Error: ${error.message}`,
-  //       timed: true
-  //     })
-  //     console.error('Error:', error)
-  //     return
-  //   }
-  // }
 
   // DRY and move this
   interface searchQueryProps {
@@ -631,9 +609,6 @@
 <div class="decay mx-auto max-w-50rem p-4 text-white">
   <Messenger />
   <div class="header">
-    <button on:click={logOut} class="btn ml-2" disabled="{statusProcessing}">
-      <Icon icon="clarity:logout-solid" />
-    </button>
     {#if !user}
       <form on:submit|preventDefault={logIn} class="form form--login">
         <div class="login-form-fields">
