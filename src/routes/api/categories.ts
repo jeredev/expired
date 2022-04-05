@@ -3,13 +3,14 @@ import type { RequestEvent } from "@sveltejs/kit/types/internal"
 
 export async function get(event: RequestEvent) {
   try {
-    if (event.locals.user && event.locals.user.id) {
+    if (event.locals.user && event.locals.user.id && event.locals.user.account.active && event.locals.user.account.id) {
       const { data, error } = await supabase
         .from('categories')
         .select(`
           id,
           name
         `)
+        .eq('account', event.locals.user.account.id)
         .order('name', {ascending: true})
       if (data) {
         return {
@@ -27,7 +28,7 @@ export async function get(event: RequestEvent) {
       return
     }
     else {
-      throw 'No user detected'
+      throw 'Unauthorized.'
     }
   }
   catch (e) {

@@ -3,7 +3,7 @@
     console.log('load')
     console.log(session)
     const { user } = session
-    console.log(user) // Null after logging out, undefined after Live reload...
+    // console.log(user) // Null after logging out, undefined after Live reload...
     if (user && user.id && user.account?.active) {
       let appendage = '?' + new URLSearchParams(url.searchParams)
       const items = await fetch('/api/items' + appendage)
