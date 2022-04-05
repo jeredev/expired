@@ -76,8 +76,6 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
 // 	}
 // });
 
-// export const getSession = ({ locals }) => locals.session
-
 export const getSession = ({ locals }) => {
   // console.log('getSession')
   const { user } = locals

@@ -24,6 +24,14 @@ export async function post({ request }) {
         // body: null
       };
     }
+    else {
+      return {
+        status: 400,
+        body: {
+          message: 'No auth token.'
+        }
+      }
+    }
     // console.log('sbToken below')
     // console.log(sbToken)
     // try {

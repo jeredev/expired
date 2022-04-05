@@ -1,6 +1,8 @@
 <script lang="ts" context="module">
   export async function load({ url, params, fetch, session, stuff }) {
+    console.log('load')
     const { user } = session
+    console.log(user)
     if (user && user.id && user.account?.active) {
       let appendage = '?' + new URLSearchParams(url.searchParams)
       const items = await fetch('/api/items' + appendage)
@@ -63,7 +65,6 @@
   export let user
 
   // let categories = null
-  // $: categories = null
   // let categories: Array<CategoryProps> | null = null
 
   // let allItems: Array<ItemProps> | null = null
@@ -82,7 +83,9 @@
 
   let statusProcessing = false
 
+  // let loginProcessing = false
   const logIn = async () => {
+    statusProcessing = true
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -131,9 +134,11 @@
         timed: true
       })
     }
+    statusProcessing = false
   };
 
   const logOut = async () => {
+    statusProcessing = true
     try {
       const res = await fetch('/api/auth/logout', {
         method: 'POST',
@@ -141,6 +146,13 @@
           'Content-Type': 'application/json'
         }
       })
+      if (!res.ok) {
+        const error = await res.json()
+        message.set({
+          text: `Error: ${error.message}`,
+          timed: true
+        })
+      }
       if (res.ok) {
         session.set({ user: null })
       }
@@ -152,6 +164,7 @@
         timed: true
       })
     }
+    statusProcessing = false
   };
 
   const addItems = async(e: CustomEvent) => {
