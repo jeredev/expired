@@ -1,5 +1,4 @@
 <script lang="ts">
-  // import { supabase } from "$lib/supabase";
   import { session } from "$app/stores";
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { slide } from 'svelte/transition';
@@ -38,7 +37,6 @@
 
   item.expired = null
   item.imminent = false
-  // imageLoaded = false
 
   item.edits = {
     name: item.name,
@@ -148,31 +146,6 @@
   item.precursorBar = getPrecursorBar()
   item.timeBar = getTimeBar()
   item.timeRemaining = getTimeRemainder()
-  // const io = new IntersectionObserver((entries) => {
-  //   entries.forEach((entry) => {
-  //     if (entry.isIntersecting) {
-  //       entry.target.classList.remove('unset')
-  //       // Forcing
-  //       // item.imageLoaded = false
-  //       // buildItemImage(item.imagePath)
-  //       // Build Item Image
-  //       // if (item.imagePath && !item.image) {
-  //       // console.log(item.image)
-  //       // if (item.imagePath && !item.image) {
-  //       //   console.log('no item.image')
-  //       //   item.imageLoaded = false
-  //       //   // item.image = 
-  //       //   // buildItemImage(item.imagePath)
-  //       // }
-  //       io.unobserve(entry.target)
-  //     }
-  //   })
-  // },
-  // {
-  //   root: null,
-  //   rootMargin: '0px',
-  //   threshold: [0],
-  // })
 
   let updateValid = false
   const checkUpdateValidity = () => {
@@ -282,19 +255,14 @@
     formData.append('startTime', item.edits.startTime)
     formData.append('endTime', item.edits.endTime)
     formData.append('category', item.edits.category.id)
-
-    // const payload = {}
-    // payload.id = item.id
-    // payload.name = item.edits.name
-    // payload.startTime = item.edits.startTime
-    // payload.endTime = item.edits.endTime
-    // payload.category = item.edits.category.id
-
     const res = await fetch('/api/item', {
       method: 'PATCH',
       body: formData
     })
     // Res.error
+    if (!res.ok) {
+      return
+    }
     if (res.ok) {
       const processed = await res.json()
       const updatedItem = processed[0]

@@ -1,8 +1,6 @@
 <script lang="ts">
   let email: string
-  email = 'jeremy@jeremywynn.com'
   let password: string
-  password = 'BBBnhtkm1!!!'
   let statusProcessing = false
 
   const logIn = async () => {

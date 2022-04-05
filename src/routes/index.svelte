@@ -27,7 +27,7 @@
 
   import { onDestroy, onMount } from "svelte";
 
-  import { slide } from 'svelte/transition';
+  import { fade, slide } from 'svelte/transition';
   import Icon from '@iconify/svelte'
   import {
     addYears,
@@ -107,19 +107,10 @@
         const data = await res.json()
         if (data && data.role === 'authenticated') {
           session.set({ user: data })
-          // console.log($session)
           if ($session && $session.user && $session.user.account?.active) {
             categories = await getCategories()
             clock = window.setInterval(runClock, 1000);
-            // allItems = await getItems(searchQuery)
             items = await getItems(searchQuery)
-            // allItems.forEach(async(item: ItemProps) => {
-            items.forEach(async(item: ItemProps) => {
-              if (item.imagePath) {
-                const imagePath = $session.user.id + "/" + item.imagePath
-              }
-            })
-            // items = allItems
             generateListings()
           }
         }
@@ -181,8 +172,6 @@
         item.edits.category.name = found.name
       }
       item.time = time
-
-      // allItems.push(item)
       items.push(item)
       // items = [...items, item]
       generateListings()
@@ -207,9 +196,29 @@
     generateListings()
   }
 
-  const resetPwd = () => {
-    console.log('resetting!')
-  };
+  const resetPwd = async() => {
+    if (email && /([^\s])/.test(email)) {
+      const formData = new FormData()
+      formData.append('email', email)
+      const res = await fetch('/api/auth/init-reset', {
+        method: 'POST',
+        body: formData
+      })
+      if (!res.ok) {
+        console.log('!res.ok')
+        const error = await res.json()
+        message.set({
+          text: `Error: ${error.message}`,
+          timed: true
+        })
+        console.log('error initiating reset:', error)
+        return
+      }
+      if (res.ok) {
+        resetRequestSuccessful = true
+      }
+    }
+  }
 
   let clock;
 
@@ -582,10 +591,26 @@
   //   const type = $page.url.searchParams.get('type')
   //   console.log(`type is ${type}`)
   // })
+  
+  let forgot = false
+  let loginValid = false
+  let resetPwdValid = false
+  let resetRequestSuccessful = false
 
-  // Reset Password
-  // https://juvelylevqqyyokxzkkq.supabase.co/auth/v1/verify?token=K38j-Xb11CbncAA716H6lQ&type=recovery&redirect_to=https://localhost:3000
-  // https://localhost:3000/#access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNjQ1MjA1ODU1LCJzdWIiOiJmZGU0YmIxOS0zYzk4LTRkNzEtOGI5Mi01ZjVlMjYxOWMyOTgiLCJlbWFpbCI6ImplcmVteUBqZXJlZGV2LmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnt9LCJyb2xlIjoiYXV0aGVudGljYXRlZCJ9.dFIYnmS5qWEoSg0zeLgWBvEYI3jowCvPTD5cjwWtHO8&expires_in=3600&refresh_token=2u-C-sOOV_Fk-bkVBnpZAQ&token_type=bearer&type=recovery
+  const checkLoginValidity = () => {
+    if (/([^\s])/.test(email)) {
+      resetPwdValid = true
+    }
+    else {
+      resetPwdValid = false
+    }
+    if (email && password && /([^\s])/.test(email) && /([^\s])/.test(password)) {
+      loginValid = true
+    }
+    else {
+      loginValid = false
+    }
+  }
 
   function goBack() {
     history.back()
@@ -611,29 +636,64 @@
   <div class="header">
     {#if !user}
       <form on:submit|preventDefault={logIn} class="form form--login">
-        <div class="login-form-fields">
-          <input
-            bind:value="{email}"
-            type="email"
-            autocomplete="email"
-            placeholder="Email address"
-            required
-            class="bg-black text-white p-2 w-full"
-          >
-          <input
-            bind:value="{password}"
-            type="password" 
-            autocomplete="current-password" 
-            placeholder="Password"
-            class="bg-black text-white my-2 p-2 w-full"
-          > 
-          <button type="submit" class="btn" disabled="{statusProcessing}">
-            Login
-          </button>
-          <!-- <button on:click={resetPwd} type="button" class="btn">
-            Reset
-          </button> -->
+        {#if forgot}
+          <div transition:slide>
+            <h1>Reset your password</h1>
+            <p>Enter the email address associated with your account and you'll receive a link to reset your password.</p>
+          </div>
+        {/if}
+        <div class="login-form-area">
+          <div class="login-form-fields" class:forgot-mode={forgot}>
+            <div class="form-field">
+              <label for="login-email">Email</label>
+              <input
+                bind:value="{email}"
+                on:input="{checkLoginValidity}"
+                type="email"
+                id="login-email"
+                autocomplete="email"
+                required
+                class="bg-black text-white p-2 w-full"
+              >
+            </div>
+            {#if !forgot}
+              <div class="form-field">
+                <div class="label-field">
+                  <label for="login-password">Password</label>
+                  <div class="forgot" on:click={() => { forgot = true }}>Forgot?</div>
+                </div>
+                <input
+                  bind:value="{password}"
+                  on:input="{checkLoginValidity}"
+                  type="password"
+                  id="login-password"
+                  autocomplete="current-password" 
+                  class="bg-black text-white my-2 p-2 w-full"
+                > 
+              </div>
+            {/if}
+          </div>
+          <div class="form-actions">
+            {#if forgot}
+              <button on:click={resetPwd} type="button" class="btn" disabled={!resetPwdValid}>
+                Reset
+              </button>
+              <button on:click={() => { forgot = false }} type="button" class="btn ml-2">
+                Cancel
+              </button>
+            {:else}
+              <button type="submit" class="btn" disabled="{statusProcessing || !loginValid}">
+                Login
+              </button>
+            {/if}
+          </div>
         </div>
+        {#if resetRequestSuccessful}
+          <div transition:fade class="mt-2">
+            <h2>Check your email for instructions to reset your password.</h2>
+            <p>If you haven't received an email in 5 minutes, check your spam or resubmit the form.</p>
+          </div>
+        {/if}
       </form>
     {/if}
   </div>
@@ -864,9 +924,25 @@
 </div>
 
 <style>
+  .label-field {
+    align-items: flex-end;
+    display: flex;
+    justify-content: space-between;
+  }
+  .forgot {
+    color: var(--red);
+    cursor: pointer;
+    font-size: 90%;
+  }
+  /* .login-form-fields {
+    transition: .3s ease;
+  } */
   .login-form-fields input:focus-visible {
     /* outline: 5px solid var(--red); */
     filter: drop-shadow(0 0 0.125rem #fff);
+  }
+  .login-form-fields label {
+    font-size: 90%;
   }
   .form-field input:focus-visible, .form-field select:focus-visible {
     filter: drop-shadow(0 0 0.125rem #fff);
@@ -876,7 +952,18 @@
     .login-form-fields {
       display: grid;
       grid-gap: 1rem;
-      grid-template-columns: 1fr 1fr min-content;
+      grid-template-columns: 1fr 1fr;
+    }
+    .login-form-fields.forgot-mode {
+      display: grid;
+      grid-gap: 1rem;
+      grid-template-columns: 1fr;
+      margin-top: 0.5rem;
+    }
+    .login-form-area {
+      display: grid;
+      grid-gap: 1rem;
+      grid-template-columns: 1fr min-content;
     }
     .login-form-fields input[type="password"] {
       margin: 0;
@@ -902,5 +989,13 @@
   }
   .unit-form-fields label {
     font-size: 80%;
+  }
+  .form-actions {
+    align-items: flex-end;
+    display: flex;
+  }
+  .form-actions .btn {
+    padding-bottom: 0.5rem;
+    padding-top: 0.5rem;
   }
 </style>

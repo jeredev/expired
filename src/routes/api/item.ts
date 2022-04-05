@@ -1,13 +1,6 @@
 import { supabase } from "$lib/supabase"
 import type { RequestEvent } from "@sveltejs/kit/types/internal"
 
-// export async function get(event: RequestEvent) {
-//   return { 
-//     status: 200,
-//     body: 'Hello!'
-//   }
-// }
-
 export async function del(event: RequestEvent) {
   try {
     if (event.locals.user.id) {

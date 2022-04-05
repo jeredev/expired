@@ -16,7 +16,6 @@ export async function post({ request }) {
       // await supabase.auth.api.signOut(sbToken)
       return {
         status: 200,
-        // Set cookies?
         headers: {
           'set-cookie': cookieHeader
         },
@@ -32,16 +31,6 @@ export async function post({ request }) {
         }
       }
     }
-    // console.log('sbToken below')
-    // console.log(sbToken)
-    // try {
-    //   const { error } = await supabase.auth.signOut()
-    //   await auth.api.signOut(sbToken)
-    //   if (error) return
-    // }
-    // catch (error) {
-    //   return error
-    // }
   }
   catch (e) {
     console.log(e)
