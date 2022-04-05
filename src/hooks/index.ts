@@ -19,6 +19,7 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
     }
     if (user) {
       // Link the user to their account
+      supabase.auth.setAuth(sbToken)
       const { data: accountData, error: accountError } = await supabase
         .from('accounts')
         .select()
