@@ -16,6 +16,7 @@
   "devDependencies": {
     "@iconify/svelte": "^2.1.2",
     "@playwright/test": "^1.19.1",
+    "@stripe/stripe-js": "^1.26.0",
     "@sveltejs/adapter-auto": "next",
     "@sveltejs/kit": "next",
     "@types/cookie": "^0.4.1",
@@ -26,6 +27,7 @@
     "eslint-plugin-svelte3": "^3.2.1",
     "prettier": "^2.5.1",
     "prettier-plugin-svelte": "^2.5.0",
+    "stripe": "^8.215.0",
     "svelte": "^3.44.0",
     "svelte-check": "^2.2.6",
     "svelte-preprocess": "^4.10.1",

@@ -697,7 +697,7 @@
       </form>
     {/if}
   </div>
-  {#if user && user.account && user.account.active}
+  {#if user && user.account && user.account.subscription_status === 'active'}
     <div class="homebase">
       <div class="controls pb-4 flex">
         {#if Object.keys(searchQuery).length}
@@ -916,7 +916,7 @@
         <p>Loading...</p>
       {/if}
     </div>
-  {:else if user && user.account && !user.account.active}
+  {:else if user && user.account && user.account.subscription_status !== 'active'}
     <p>Account inactive. Please <a href="/">reactivate your account</a> here.</p>
   {:else}
     <div class="py-4">Authorized users only.</div>

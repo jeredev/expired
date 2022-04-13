@@ -3,7 +3,7 @@ import type { RequestEvent } from "@sveltejs/kit/types/internal"
 
 export async function get(event: RequestEvent) {
   try {
-    if (event.locals.user && event.locals.user.id && event.locals.user.account.active && event.locals.user.account.id) {
+    if (event.locals.user && event.locals.user.id && event.locals.user.account.subscription_status === 'active' && event.locals.user.account.id) {
       const { data, error } = await supabase
         .from('categories')
         .select(`
@@ -42,13 +42,16 @@ export async function get(event: RequestEvent) {
 
 export async function del(event: RequestEvent) {
   try {
-    if (event.locals.user && event.locals.user.id) {
+    if (event.locals.user && event.locals.user.id && event.locals.user.account.id && event.locals.user.account.subscription_status === 'active') {
       const category = await event.request.formData()
       if (category.get('id')) {
         const { data, error } = await supabase
           .from('categories')
           .delete()
-          .match({ id: category.get('id') })
+          .match({ 
+            id: category.get('id'),
+            account: event.locals.user.account.id
+          })
         if (data) {
           return {
             status: 200,
@@ -82,7 +85,7 @@ export async function del(event: RequestEvent) {
 
 export async function patch(event: RequestEvent) {
   try {
-    if (event.locals.user && event.locals.user.id) {
+    if (event.locals.user && event.locals.user.id && event.locals.user.account.subscription_status === 'active') {
       const category = await event.request.formData()
       if (category.get('id')) {
         const update = {}
@@ -126,7 +129,7 @@ export async function patch(event: RequestEvent) {
 
 export async function post(event: RequestEvent) {
   try {
-    if (event.locals.user && event.locals.user.id) {
+    if (event.locals.user && event.locals.user.id && event.locals.user.account.subscription_status === 'active') {
       const category = await event.request.formData()
       if (category.get('name')) {
         const { data, error } = await supabase
@@ -134,7 +137,8 @@ export async function post(event: RequestEvent) {
           .insert([
             {
               name: category.get('name').trim(),
-              creator: event.locals.user.id
+              creator: event.locals.user.id,
+              account: event.locals.user.account.id
             },
           ])
         if (data) {

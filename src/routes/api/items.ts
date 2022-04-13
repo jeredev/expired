@@ -3,7 +3,7 @@ import type { RequestEvent } from "@sveltejs/kit/types/internal"
 
 export async function get(event: RequestEvent) {
   try {
-    if (event.locals.user && event.locals.user.id && event.locals.user.account.active && event.locals.user.account.id) {
+    if (event.locals.user && event.locals.user.id && event.locals.user.account.subscription_status === 'active' && event.locals.user.account.id) {
       const params = event.url.searchParams
       let lookup = supabase
         .from('items')
@@ -34,7 +34,13 @@ export async function get(event: RequestEvent) {
             id,
             name
           `)
-        if (error) return
+        if (error) {
+          console.log(error)
+          return {
+            status: 400, // error.status does not work?
+            body: JSON.stringify(error)
+          }
+        }
         if (data) {
           const category = data.find((category) => category.name === params.get('cat'))
           if (category) {
@@ -70,7 +76,6 @@ export async function get(event: RequestEvent) {
                 .from('expired')
                 .createSignedUrls(chunk, 600)
               if (storageError) {
-                console.log('storageError:')
                 console.log(storageError)
               }
               if (storageData) {

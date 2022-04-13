@@ -3,13 +3,16 @@ import type { RequestEvent } from "@sveltejs/kit/types/internal"
 
 export async function del(event: RequestEvent) {
   try {
-    if (event.locals.user.id) {
+    if (event.locals.user.id && event.locals.user.account.subscription_status === 'active' && event.locals.user.account.id) {
       const item = await event.request.formData()
       if (item.get('id')) {
         const { data, error } = await supabase
           .from('items')
           .delete()
-          .match({ id: item.get('id') })
+          .match({ 
+            id: item.get('id'),
+            account: event.locals.user.account.id
+          })
         if (error) {
           console.error('There was a problem:', error)
           return { 
@@ -58,7 +61,7 @@ export async function del(event: RequestEvent) {
 
 export async function patch(event: RequestEvent) {
   try {
-    if (event.locals.user.id) {
+    if (event.locals.user.id && event.locals.user.account.subscription_status === 'active') {
       const item = await event.request.formData()
       if (item.get('id')) {
         // let fileError
@@ -146,9 +149,9 @@ export async function patch(event: RequestEvent) {
 
 export async function post(event: RequestEvent) {
   try {
-    if (event.locals.user.id) {
+    if (event.locals.user.id && event.locals.user.account.subscription_status === 'active') {
       const item = await event.request.formData()
-      if (item.get('name') && item.get('startTime') && item.get('endTime') && event.locals.user.id) {
+      if (item.get('name') && item.get('startTime') && item.get('endTime') && event.locals.user.id && event.locals.user.account.id) {
         let category = item.get('category')
         // This is weird...
         if (item.get('category') === 'null') {
@@ -162,7 +165,8 @@ export async function post(event: RequestEvent) {
               startTime: item.get('startTime'),
               endTime: item.get('endTime'),
               category: category,
-              creator: event.locals.user.id
+              creator: event.locals.user.id,
+              account: event.locals.user.account.id
             },
           ])
         if (error) {
