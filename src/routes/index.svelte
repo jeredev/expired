@@ -106,6 +106,10 @@
       if (res.ok) {
         const data = await res.json()
         if (data && data.role === 'authenticated') {
+          message.set({
+            text: `Login successful.`,
+            timed: true
+          })
           session.set({ user: data })
           if ($session && $session.user && $session.user.account?.active) {
             categories = await getCategories()
@@ -143,7 +147,11 @@
         })
       }
       if (res.ok) {
-        session.set({ user: null })
+        session.set({ user: null }),
+        message.set({
+          text: `Logout successful.`,
+          timed: true
+        })
       }
     }
     catch(e) {
