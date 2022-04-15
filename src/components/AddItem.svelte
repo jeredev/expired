@@ -166,6 +166,7 @@
     
     if (res.ok) {
       const newItems = await res.json()
+      // console.log(newItems) // This does work
       newItems.forEach((item) => {
         item.edits = {
           name: item.name,

@@ -1,4 +1,5 @@
 import { supabase } from "$lib/supabase"
+import sharp from 'sharp'
 import type { RequestEvent } from "@sveltejs/kit/types/internal"
 
 export async function del(event: RequestEvent) {
@@ -66,22 +67,36 @@ export async function patch(event: RequestEvent) {
       if (item.get('id')) {
         // let fileError
         let filePath
-        if (item.get('image')) {
+        if (item.get('image') && item.get('image') !== null) {
+          // console.log('why')
           // Do Image upload first
           const file = item.get('image')
-          const { data: imageData, error: imageError } = await supabase
-            .storage
-            .from('expired')
-            .upload(`${event.locals.user.id}/${item.get('id')}`, file, {
-              contentType: file.type,
-              upsert: true
+          const arrayBuffer = await file.arrayBuffer()
+          const buffer = Buffer.from(arrayBuffer)
+          await sharp(buffer)
+            .resize({ width: 1024 })
+            .webp()
+            .toBuffer({ resolveWithObject: true })
+            .then(async({ data: sharpData, info }) => { 
+              console.log(sharpData) //  <Buffer ...
+              const { data: imageData, error: imageError } = await supabase
+                .storage
+                .from('expired')
+                .upload(`${event.locals.user.id}/${item.get('id')}`, sharpData, {
+                  contentType: `image/${info.format}`,
+                  upsert: true
+                })
+              if (imageError) {
+                console.error('Error:', imageError)
+                // Notify user that image didn't upload
+              }
+              if (imageData && imageData.Key) {
+                filePath = imageData.Key
+              }
             })
-          if (imageError) {
-            console.error('Error:', imageError)
-          }
-          if (imageData && imageData.Key) {
-            filePath = imageData.Key
-          }
+            .catch(err => {
+              console.log(err)
+            })
         }
         const update = {}
         if (item.get('name')) {
@@ -179,49 +194,58 @@ export async function post(event: RequestEvent) {
         if (data && data[0].id) {
           if (item.get('image')) {
             const file = item.get('image')
-            const { data: imageData, error: imageError } = await supabase
-              .storage
-              .from('expired')
-              .upload(`${event.locals.user.id}/${data[0].id}`, file, {
-                contentType: file.type
-              })
-            if (imageError) {
-              console.error('Error:', imageError)
-              return { 
-                status: 400,
-                body: JSON.stringify(imageError)
-              }
-            }
-            if (imageData && imageData.Key) {
-              const {data: updateData, error: updateError} = await supabase
-                .from('items')
-                .update({ imagePath: `${data[0].id}` })
-                .match({ id: data[0].id })
-              if (updateData) {
-                const path = `${event.locals.user.id}/${data[0].id}`
+            const arrayBuffer = await file.arrayBuffer()
+            const buffer = Buffer.from(arrayBuffer)
+            let response = null
+            await sharp(buffer)
+              .resize({ width: 1024 })
+              .webp()
+              .toBuffer({ resolveWithObject: true })
+              .then(async({ data: sharpData, info }) => { 
+                // console.log(sharpData) //  <Buffer ...
                 const { data: imageData, error: imageError } = await supabase
                   .storage
                   .from('expired')
-                  .createSignedUrl(path, 600)
+                  .upload(`${event.locals.user.id}/${data[0].id}`, sharpData, {
+                    contentType: `image/${info.format}`
+                  })
                 if (imageError) {
-                  console.log('imageError:')
-                  console.log(imageError)
+                  console.error('Error:', imageError)
+                  // Notify user that image didn't upload
+                  response = imageError
                 }
-                if (imageData) {
-                  updateData[0].image = imageData.signedURL
+                if (imageData && imageData.Key) {
+                  const {data: updateData, error: updateError} = await supabase
+                    .from('items')
+                    .update({ imagePath: `${data[0].id}` })
+                    .match({ id: data[0].id })
+                  if (updateData) {
+                    const path = `${event.locals.user.id}/${data[0].id}`
+                    const { data: imageData, error: imageURLError } = await supabase
+                      .storage
+                      .from('expired')
+                      .createSignedUrl(path, 600)
+                    if (imageURLError) {
+                      console.error('imageError:', imageURLError)
+                      response = imageURLError
+                    }
+                    if (imageData) {
+                      updateData[0].image = imageData.signedURL
+                      response = updateData
+                    }
+                  }
+                  if (updateError) {
+                    console.error('Error:', updateError)
+                    response = updateError
+                  }
                 }
-                return { 
-                  status: 200,
-                  body: JSON.stringify(updateData)
-                }
-              }
-              if (updateError) {
-                console.error('Error:', updateError)
-                return { 
-                  status: 400,
-                  body: JSON.stringify(updateError)
-                }
-              }
+              })
+              .catch(err => {
+                console.log(err)
+              })
+            return {
+              status: 200,
+              body: JSON.stringify(response)
             }
           }
           else {
