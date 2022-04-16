@@ -160,6 +160,7 @@
 
   const deleteImage = async() => {
     if (item.imagePath && $session.user.id) {
+      statusProcessing = true
       const formData = new FormData()
       formData.append('id', item.id)
       formData.append('image', null)
@@ -183,6 +184,7 @@
           timed: true 
         })
       }
+      statusProcessing = false
     }
   }
 
@@ -304,6 +306,7 @@
   let itemImagePreview
   const addImage = async() => {
     if (file && $session.user.id) {
+      statusProcessing = true
       const formData = new FormData()
       formData.append('id', item.id)
       formData.append('image', file)
@@ -319,6 +322,8 @@
         // })
       }
       if (res.ok) {
+        const updatedItem = await res.json()
+        console.log(updatedItem)
         file = null
         fileInput = null
         itemImagePreview = null
@@ -328,8 +333,10 @@
           timed: true
         })
         item.imagePath = `${item.id}`
+        item.image = updatedItem[0].image
         // buildItemImage(item.imagePath)
       }
+      statusProcessing = false
     }
   }
   const analyzeFile = () => {
@@ -543,7 +550,7 @@
         <div class="image-upload-region">
           {#if itemImagePreview}
             <img v-if="uploadReady === true" src="{itemImagePreview}" alt="" />
-            <button class="btn my-4 w-full" on:click="{addImage}">
+            <button class="btn my-4 w-full" on:click="{addImage}" disabled="{statusProcessing}">
               Save
             </button>
           {/if}

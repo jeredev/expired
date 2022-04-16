@@ -64,10 +64,12 @@ export async function patch(event: RequestEvent) {
   try {
     if (event.locals.user.id && event.locals.user.account.subscription_status === 'active') {
       const item = await event.request.formData()
+      // console.log(item.get('image'))
+      // console.log(typeof item.get('image'))
       if (item.get('id')) {
         // let fileError
         let filePath
-        if (item.get('image') && item.get('image') !== null) {
+        if (item.get('image') && item.get('image') !== 'null') {
           // console.log('why')
           // Do Image upload first
           const file = item.get('image')
@@ -78,7 +80,7 @@ export async function patch(event: RequestEvent) {
             .webp()
             .toBuffer({ resolveWithObject: true })
             .then(async({ data: sharpData, info }) => { 
-              console.log(sharpData) //  <Buffer ...
+              // console.log(sharpData) //  <Buffer ...
               const { data: imageData, error: imageError } = await supabase
                 .storage
                 .from('expired')
@@ -145,6 +147,20 @@ export async function patch(event: RequestEvent) {
           }
         }
         if (data) {
+          if (item.get('image') && item.get('image') !== 'null') {
+            const path = `${event.locals.user.id}/${data[0].id}`
+            const { data: imageData, error: imageURLError } = await supabase
+              .storage
+              .from('expired')
+              .createSignedUrl(path, 600)
+            if (imageURLError) {
+              console.error('imageError:', imageURLError)
+              // response = imageURLError
+            }
+            if (imageData) {
+              data[0].image = imageData.signedURL
+            }
+          }
           return {
             status: 200,
             body: JSON.stringify(data)
