@@ -47,4 +47,14 @@
     color: white;
     border-color: var(--red);
   }
+  .listener:hover, .listener:focus, .listener:active {
+    background-color: inherit;
+    border-color: rgba(220, 38, 38, 1);
+    color: rgba(220, 38, 38, 1);
+  }
+  .listener.recognizing {
+    background-color: rgba(220, 38, 38, 1);
+    color: white;
+    border-color: rgba(220, 38, 38, 1);
+  }
 </style>

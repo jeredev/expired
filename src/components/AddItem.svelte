@@ -445,6 +445,7 @@
 
   // Speech Recognition
   let recognition = false
+  let recognizing = false
   const listenForName = () => { 
     if (recognition) {
       recognition.abort() // Unsure :: InvalidStateError: Failed to execute 'start' on 'SpeechRecognition': recognition has already started.
@@ -459,6 +460,12 @@
         }
         recognition.stop()
       })
+      recognition.onstart = function () {
+        recognizing = true
+      }
+      recognition.onend = function () {
+        recognizing = false
+      }
     }
   }
 
@@ -516,7 +523,7 @@
       <div class="form-field my-2">
         <label for="new-item--name block mb-1">Item Name</label>
         {#if recognition}
-          <button type="button" class="btn ml-2 px-2 py-1" on:click="{listenForName}">
+          <button type="button" class="btn ml-2 px-2 py-1 listener" class:recognizing = {recognizing} on:click="{listenForName}">
             <Icon icon="clarity:microphone-line" />
           </button>
         {/if}
