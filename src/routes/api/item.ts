@@ -76,6 +76,7 @@ export async function patch(event: RequestEvent) {
           const arrayBuffer = await file.arrayBuffer()
           const buffer = Buffer.from(arrayBuffer)
           await sharp(buffer)
+            .rotate()
             .resize({ width: 1024 })
             .webp()
             .toBuffer({ resolveWithObject: true })
@@ -214,6 +215,7 @@ export async function post(event: RequestEvent) {
             const buffer = Buffer.from(arrayBuffer)
             let response = null
             await sharp(buffer)
+              .rotate()
               .resize({ width: 1024 })
               .webp()
               .toBuffer({ resolveWithObject: true })

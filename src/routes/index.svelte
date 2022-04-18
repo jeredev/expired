@@ -624,6 +624,33 @@
     history.back()
   }
 
+  // Speech Recognition
+  let recognition = false
+  const listenForName = () => { 
+    if (recognition) {
+      recognition.abort() // Unsure :: InvalidStateError: Failed to execute 'start' on 'SpeechRecognition': recognition has already started.
+      recognition.start()
+      recognition.addEventListener('result', (e) => {
+        let text = Array.from(e.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('')
+        if (text) {
+          search.name = camelize(text)
+        }
+        recognition.stop()
+      })
+    }
+  }
+
+  function camelize(str: string) {
+    return str.replace(/[^\s]+/g, function(word) {
+      return word.replace(/^./, function(first) {
+        return first.toUpperCase();
+      });
+    });
+  }
+
   if ($session && $session.user && $session.user.account?.active) {
     generateListings()
   }
@@ -632,6 +659,11 @@
     // console.log($session)
     if ($session && $session.user && $session.user.account?.active) {
       clock = window.setInterval(runClock, 1000);
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (SpeechRecognition) {
+      // console.log('true') // Chrome needs webkit prefix version
+      recognition = new SpeechRecognition()
     }
   })
   onDestroy(() => {
@@ -805,6 +837,11 @@
           <form on:submit={searchItems} class="search">
             <div class="form-field my-2">
               <label for="search-items--text">Name</label>
+              {#if recognition}
+                <button type="button" class="btn ml-2 px-2 py-1" on:click="{listenForName}">
+                  <Icon icon="clarity:microphone-line" />
+                </button>
+              {/if}
               <input
                 name="name"
                 id="search-items--text"

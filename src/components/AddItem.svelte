@@ -447,6 +447,7 @@
   let recognition = false
   const listenForName = () => { 
     if (recognition) {
+      recognition.abort() // Unsure :: InvalidStateError: Failed to execute 'start' on 'SpeechRecognition': recognition has already started.
       recognition.start()
       recognition.addEventListener('result', (e) => {
         let text = Array.from(e.results)
