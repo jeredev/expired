@@ -322,8 +322,10 @@
       })
       // Res.error
       if (!res.ok) {
-        alert('not ok')
+        // alert('not ok')
+        statusProcessing = false
         const error = await res.json()
+        alert(error)
         message.set({
           text: `Error: ${error.message}`,
           timed: true
