@@ -89,16 +89,17 @@ export async function patch(event: RequestEvent) {
                 })
               if (imageError) {
                 console.error('Error:', imageError)
+                throw imageError
                 // return {
                 //   status: imageError.status,
                 //   body: JSON.stringify(imageError)
                 // }
-                return {
-                  status: 400,
-                  body: JSON.stringify({
-                    message: 'Supabase image error'
-                  })
-                }
+                // return {
+                //   status: 400,
+                //   body: JSON.stringify({
+                //     message: 'Supabase image error'
+                //   })
+                // }
               }
               if (imageData && imageData.Key) {
                 filePath = imageData.Key
@@ -107,12 +108,13 @@ export async function patch(event: RequestEvent) {
             .catch(err => {
               // Something went wrong with Sharp
               console.log(err)
-              return {
-                status: 400,
-                body: JSON.stringify({
-                  message: 'Sharp caught error'
-                })
-              }
+              throw err
+              // return {
+              //   status: 400,
+              //   body: JSON.stringify({
+              //     message: 'Sharp caught error'
+              //   })
+              // }
             })
         }
         const update = {}
