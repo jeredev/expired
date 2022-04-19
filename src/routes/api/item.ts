@@ -98,7 +98,14 @@ export async function patch(event: RequestEvent) {
               }
             })
             .catch(err => {
+              // Something went wrong with Sharp
               console.log(err)
+              return {
+                status: 400,
+                body: JSON.stringify({
+                  message: 'Sharp caught error'
+                })
+              }
             })
         }
         const update = {}
