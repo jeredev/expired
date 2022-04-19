@@ -34,16 +34,16 @@ export async function post({ request }) {
         }
       }
       if (session) {
-        if (sbToken) {
-          await supabase.auth.api.signOut(sbToken)
-          const cookieHeader = serialize('supatoken', 'deleted', {
-            domain: '',
-            path: '/',
-            sameSite: 'lax',
-            httpOnly: true,
-            maxAge: 0
-          })
-        }
+        // if (sbToken) {
+        //   await supabase.auth.api.signOut(sbToken)
+        //   const cookieHeader = serialize('supatoken', 'deleted', {
+        //     domain: '',
+        //     path: '/',
+        //     sameSite: 'lax',
+        //     httpOnly: true,
+        //     maxAge: 0
+        //   })
+        // }
         const cookieHeader = serialize('supatoken', session.access_token, {
           domain: '',
           path: '/',
