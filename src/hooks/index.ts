@@ -17,23 +17,22 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
     }
     if (user) {
       // Link the user to their account
-      if (!user.account) {
-        const { data: accountData, error: accountError } = await supabase
-          .from('accounts')
-          .select()
-          .eq('owner', user.id)
-        if (accountError) {
-          user.account = 'error'
-          throw accountError
-        }
-        if (accountData) {
-          // console.log(accountData[0])
-          user.account = null
-          // user.account = accountData[0]
-          // event.locals.user = user
-        }   
+      const { data: accountData, error: accountError } = await supabase
+        .from('accounts')
+        .select()
+        .eq('owner', user.id)
+      if (accountError) {
+        user.account = 'error'
+        throw accountError
       }
-      event.locals.user = user
+      if (accountData[0]) {
+        // console.log(accountData[0])
+        // user.account = {}
+        // user.account = null
+        user.account = accountData[0]
+        event.locals.user = user
+      }
+      // event.locals.user = user
     }
     else {
       event.locals.user = undefined
