@@ -202,6 +202,7 @@ export async function post(event: RequestEvent) {
             },
           ])
         if (error) {
+          // Something went wrong with inserting an item into the database
           console.error('Error:', error)
           return { 
             status: 400,
@@ -244,6 +245,7 @@ export async function post(event: RequestEvent) {
                       .from('expired')
                       .createSignedUrl(path, 600)
                     if (imageURLError) {
+                      // Something went wrong with creating a signed URL for the image
                       console.error('imageError:', imageURLError)
                       response = imageURLError
                     }
@@ -253,13 +255,19 @@ export async function post(event: RequestEvent) {
                     }
                   }
                   if (updateError) {
+                    // Something went wrong with linking the item to its image
                     console.error('Error:', updateError)
                     response = updateError
                   }
                 }
               })
               .catch(err => {
+                // Something went wrong with Sharp
                 console.log(err)
+                return {
+                  status: 400,
+                  body: JSON.stringify(err)
+                }
               })
             return {
               status: 200,

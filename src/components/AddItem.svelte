@@ -156,12 +156,13 @@
     })
 
     if (!res.ok) {
-      console.log('res NOT ok')
-      console.log(await res.json())
-      // message.set({
-      //   text: `Error: ${error.message}`,
-      //   timed: true
-      // })
+      // console.log('res NOT ok')
+      // console.log(await res.json())
+      const error = await res.json()
+      message.set({
+        text: `Error: ${error.message}`,
+        timed: true
+      })
     }
     
     if (res.ok) {
