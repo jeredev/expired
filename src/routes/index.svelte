@@ -127,7 +127,7 @@
             timed: true
           })
           session.set({ user: data })
-          if ($session && $session.user && $session.user.account?.active) {
+          if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
             categories = await getCategories()
             clock = window.setInterval(runClock, 1000);
             items = await getItems(searchQuery)
@@ -686,16 +686,16 @@
     });
   }
 
-  if ($session && $session.user && $session.user.account?.active) {
+  if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
     generateListings()
   }
 
   onMount(async() => {
-    console.log(`$session below:`)
-    console.log($session)
-    console.log(`user below:`)
-    console.log(user)
-    if ($session && $session.user && $session.user.account?.active) {
+    // console.log(`$session below:`)
+    // console.log($session)
+    // console.log(`user below:`)
+    // console.log(user)
+    if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
       clock = window.setInterval(runClock, 1000);
     }
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
