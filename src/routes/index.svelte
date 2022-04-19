@@ -675,7 +675,10 @@
   }
 
   onMount(async() => {
+    console.log(`$session below:`)
     console.log($session)
+    console.log(`user below:`)
+    console.log(user)
     if ($session && $session.user && $session.user.account?.active) {
       clock = window.setInterval(runClock, 1000);
     }
