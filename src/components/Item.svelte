@@ -302,8 +302,8 @@
       }
     })
     .then(data => {
-      // console.log('data below:')
-      // console.log(data)
+      console.log('data below:')
+      console.log(data)
       if (data[0]) {
         const updatedItem = data[0]
         if (updatedItem.id === item.id) {
