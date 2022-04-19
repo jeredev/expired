@@ -17,16 +17,19 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
     }
     if (user) {
       // Link the user to their account
-      const { data: accountData, error: accountError } = await supabase
-        .from('accounts')
-        .select()
-        .eq('owner', user.id)
-      if (accountError) {
-        throw accountError
+      if (!user.account) {
+        const { data: accountData, error: accountError } = await supabase
+          .from('accounts')
+          .select()
+          .eq('owner', user.id)
+        if (accountError) {
+          user.account = null
+          throw accountError
+        }
+        if (accountData) {
+          user.account = accountData[0]
+        }   
       }
-      if (accountData) {
-        user.account = accountData[0]
-      }   
       event.locals.user = user
     }
     else {

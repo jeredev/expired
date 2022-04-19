@@ -1,18 +1,23 @@
 <script lang="ts" context="module">
   export async function load({ url, params, fetch, session, stuff }) {
     const { user } = session
-    if (user && user.id && user.account?.active) {
-      let appendage = '?' + new URLSearchParams(url.searchParams)
-      const items = await fetch('/api/items' + appendage)
-      const categories = await fetch('/api/categories')
-      return {
-        status: 200,
-        props: {
-          items: items.ok && (await items.json()),
-          categories: categories.ok && (await categories.json()),
-          user
+    if (user && user.id) {
+      // if (!user.account) {
+
+      // }
+      if (user.account?.active) {
+        let appendage = '?' + new URLSearchParams(url.searchParams)
+        const items = await fetch('/api/items' + appendage)
+        const categories = await fetch('/api/categories')
+        return {
+          status: 200,
+          props: {
+            items: items.ok && (await items.json()),
+            categories: categories.ok && (await categories.json()),
+            user
+          }
+          // status: response.status,
         }
-        // status: response.status,
       }
     }
     else {
