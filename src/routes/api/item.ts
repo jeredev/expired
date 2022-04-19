@@ -186,12 +186,7 @@ export async function patch(event: RequestEvent) {
       }
     }
     else {
-      return {
-        status: 400,
-        body: JSON.stringify({
-          message: 'Unauthorized'
-        })
-      }
+      throw new Error('Unauthorized')
     }
   }
   catch (e) {
