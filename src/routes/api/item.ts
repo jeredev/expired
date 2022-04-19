@@ -196,15 +196,9 @@ export async function patch(event: RequestEvent) {
   }
   catch (e) {
     console.log(e)
-    // return { 
-    //   status: 400,
-    //   body: JSON.stringify(e)
-    // }
     return { 
       status: 400,
-      body: JSON.stringify({
-        message: 'Main catch error'
-      })
+      body: JSON.stringify(e)
     }
   }
 }
