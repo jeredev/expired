@@ -16,15 +16,15 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
       throw error
     }
     if (user) {
-      // user.account = null // Works, so user works
+      // user.account = null // Works, so user from getUser works...
       // Link the user to their account
       const { data: accountData, error: accountError } = await supabase
         .from('accounts')
         .select()
         .eq('owner', user.id)
       if (accountError) {
-        user.account = null
-        event.locals.user = user
+        // user.account = null
+        // event.locals.user = user
         throw accountError
       }
       if (accountData[0]) {
@@ -37,7 +37,8 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
       // event.locals.user = user
     }
     else {
-      event.locals.user = null
+      // event.locals.user = null
+      event.locals.user = undefined
     }
   }
   else {
