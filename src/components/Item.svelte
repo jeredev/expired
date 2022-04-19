@@ -264,27 +264,20 @@
     formData.append('startTime', item.edits.startTime)
     formData.append('endTime', item.edits.endTime)
     formData.append('category', item.edits.category.id)
-    const res = await fetch('/api/item', {
+    fetch('/api/item', {
       method: 'PATCH',
       body: formData
     })
-    // Res.error
-    if (!res.ok) {
-      statusProcessing = false
-      statusUpdating = false
-      const error = await res.json()
-      if (error.message) {
-        message.set({
-          text: `Error: ${error.message}`,
-          timed: true
-        })
+    .then(async(response) => {
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error)
       }
-    }
-    if (res.ok) {
-      statusProcessing = false
-      statusUpdating = false
-      const processed = await res.json()
-      const updatedItem = processed[0]
+    })
+    .then(data => {
+      console.log('data below:')
+      console.log(data)
+      const updatedItem = data[0]
       if (updatedItem.id === item.id) {
         item.name = updatedItem.name
         item.startTime = updatedItem.startTime
@@ -311,7 +304,67 @@
           timed: true
         })
       }
-    }
+    })
+    .catch((error) => {
+      console.log(error)
+      if (error.message) {
+        message.set({
+          text: `Error: ${error.message}`,
+          timed: true
+        })
+      }
+    })
+    statusProcessing = false
+    statusUpdating = false
+    // const res = await fetch('/api/item', {
+    //   method: 'PATCH',
+    //   body: formData
+    // })
+    // Res.error
+    // if (!res.ok) {
+    //   statusProcessing = false
+    //   statusUpdating = false
+    //   const error = await res.json()
+    //   console.log(error)
+    //   if (error.message) {
+    //     message.set({
+    //       text: `Error: ${error.message}`,
+    //       timed: true
+    //     })
+    //   }
+    // }
+    // if (res.ok) {
+    //   statusProcessing = false
+    //   statusUpdating = false
+    //   const processed = await res.json()
+    //   const updatedItem = processed[0]
+    //   if (updatedItem.id === item.id) {
+    //     item.name = updatedItem.name
+    //     item.startTime = updatedItem.startTime
+    //     item.endTime = updatedItem.endTime
+    //     item.edits.name = updatedItem.name
+    //     // Find category name / Assign category
+    //     const found = categories.find(element => element.id === updatedItem.category)
+    //     if (!found) {
+    //       item.category = {}
+    //     } else {
+    //       item.category = {}
+    //       item.category.id = found.id
+    //       item.category.name = found.name
+    //       item.edits.category.id = found.id
+    //       item.edits.category.name = found.name
+    //     }
+    //     item.edits.startTime = format(new Date(updatedItem.startTime), 'yyyy-MM-dd\'T\'HH:mm')
+    //     item.edits.endTime = format(new Date(updatedItem.endTime), 'yyyy-MM-dd\'T\'HH:mm')
+    //     updateEndTimeRelativity()
+    //     menuVisible = false
+    //     dispatch('update', item)
+    //     message.set({
+    //       text: 'Item updated.',
+    //       timed: true
+    //     })
+    //   }
+    // }
     // statusProcessing = false
     // statusUpdating = false
   }
@@ -368,7 +421,7 @@
       })
       // Res.error
       if (!res.ok) {
-        // alert('not ok')
+        alert('not ok')
         statusProcessing = false
         const error = await res.json()
         // alert(error)

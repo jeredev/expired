@@ -68,6 +68,7 @@ export async function patch(event: RequestEvent) {
         // let fileError
         let filePath
         if (item.get('image') && item.get('image') !== 'null') {
+          console.log('image uploading detected')
           // Do Image upload first
           const file = item.get('image')
           const arrayBuffer = await file.arrayBuffer()
@@ -88,7 +89,7 @@ export async function patch(event: RequestEvent) {
                 })
               if (imageError) {
                 console.error('Error:', imageError)
-                throw new Error('imageError')
+                throw imageError
                 // throw imageError
                 // return {
                 //   status: imageError.status,
@@ -120,7 +121,7 @@ export async function patch(event: RequestEvent) {
             })
         }
         else {
-          throw new Error('test')
+          throw new Error('Image not uploaded')
         }
         const update = {}
         if (item.get('name')) {
@@ -196,10 +197,9 @@ export async function patch(event: RequestEvent) {
     }
   }
   catch (e) {
-    console.log(e)
     return { 
       status: 400,
-      body: JSON.stringify(e)
+      body: JSON.stringify(e.message)
     }
   }
 }
