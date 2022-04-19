@@ -4,7 +4,7 @@ import { serialize } from 'cookie'
 export async function post({ request }) {
   try {
     const payload = await request.json()
-    const sbToken = request.headers.get('Cookie') ? parse(request.headers.get('Cookie'))['supatoken'] : ''
+    // const sbToken = request.headers.get('Cookie') ? parse(request.headers.get('Cookie'))['supatoken'] : ''
     if (payload.email && payload.password) {
       const { user, session, error } = await supabase.auth.signIn({
         email: payload.email,
