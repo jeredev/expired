@@ -270,6 +270,8 @@
     })
     // Res.error
     if (!res.ok) {
+      statusProcessing = false
+      statusUpdating = false
       const error = await res.json()
       if (error.message) {
         message.set({
@@ -279,6 +281,8 @@
       }
     }
     if (res.ok) {
+      statusProcessing = false
+      statusUpdating = false
       const processed = await res.json()
       const updatedItem = processed[0]
       if (updatedItem.id === item.id) {
@@ -308,8 +312,8 @@
         })
       }
     }
-    statusProcessing = false
-    statusUpdating = false
+    // statusProcessing = false
+    // statusUpdating = false
   }
 
   let confirmDelete = false
@@ -702,21 +706,21 @@
                     <div class="py-2">Invalid</div>
                   {/if}
                   <div class="area area--remove">
-                    <button type="button" class="btn edit-item" on:click="{updateItem}" disabled="{!updateValid || statusProcessing}">
+                    <button type="button" class="btn mb-2 edit-item" on:click="{updateItem}" disabled="{!updateValid || statusProcessing}">
                       {#if statusUpdating}
                         Updating...
                       {:else}
                         Update
                       {/if}
                     </button>
-                    <button type="button" class="btn mx-2 edit-item" on:click="{renewItem}" disabled="{statusProcessing}">
+                    <button type="button" class="btn mx-2 mb-2 edit-item" on:click="{renewItem}" disabled="{statusProcessing}">
                       {#if statusRenewing}
                         Renewing...
                       {:else}
                         Renew
                       {/if}
                     </button>
-                    <button type="button" class="btn remove-item negative" on:click={() => { confirmDelete = !confirmDelete }} disabled="{statusProcessing}">
+                    <button type="button" class="btn mb-2 remove-item negative" on:click={() => { confirmDelete = !confirmDelete }} disabled="{statusProcessing}">
                       {#if statusRemoving}
                         Removing...
                       {:else}
