@@ -117,72 +117,78 @@ export async function patch(event: RequestEvent) {
               // }
             })
         }
-        const update = {}
-        if (item.get('name')) {
-          update.name = item.get('name')
+        else {
+          throw new Error('test')
         }
-        if (item.get('startTime')) {
-          update.startTime = item.get('startTime')
-        }
-        if (item.get('endTime')) {
-          update.endTime = item.get('endTime')
-        }
-        if (item.get('category')) {
-          // This is weird...
-          let category = item.get('category')
-          if (category === 'null') {
-            category = null
-          }
-          update.category = category
-        }
-        if (filePath) {
-          update.imagePath = `${item.get('id')}`
-        }
-        if (item.get('image') === 'null' && item.get('imagePath')) {
-          const fromPath = `${event.locals.user.id}/${item.get('imagePath')}`
-          const { data: removalData, error: removalError } = await supabase
-            .storage
-            .from('expired')
-            .remove([fromPath])
-            if (removalError) {
-              console.error('There was a problem with removing an image:', removalError)
-            }
-            if (removalData && removalData.length > 0) {
-              update.imagePath = null
-            }
-        }
-        // Finally after any image/storage work, make the update to the item
-        const { data, error } = await supabase
-          .from('items')
-          .update(update)
-          .match({ id: item.get('id') })
-        if (error) {
-          console.error('There was a problem:', error)
-          return { 
-            status: 400,
-            body: JSON.stringify(error)
-          }
-        }
-        if (data) {
-          if (item.get('image') && item.get('image') !== 'null') {
-            const path = `${event.locals.user.id}/${data[0].id}`
-            const { data: imageData, error: imageURLError } = await supabase
-              .storage
-              .from('expired')
-              .createSignedUrl(path, 600)
-            if (imageURLError) {
-              console.error('imageError:', imageURLError)
-              // response = imageURLError
-            }
-            if (imageData) {
-              data[0].image = imageData.signedURL
-            }
-          }
-          return {
-            status: 200,
-            body: JSON.stringify(data)
-          }
-        }
+        // const update = {}
+        // if (item.get('name')) {
+        //   update.name = item.get('name')
+        // }
+        // if (item.get('startTime')) {
+        //   update.startTime = item.get('startTime')
+        // }
+        // if (item.get('endTime')) {
+        //   update.endTime = item.get('endTime')
+        // }
+        // if (item.get('category')) {
+        //   // This is weird...
+        //   let category = item.get('category')
+        //   if (category === 'null') {
+        //     category = null
+        //   }
+        //   update.category = category
+        // }
+        // if (filePath) {
+        //   update.imagePath = `${item.get('id')}`
+        // }
+        // if (item.get('image') === 'null' && item.get('imagePath')) {
+        //   const fromPath = `${event.locals.user.id}/${item.get('imagePath')}`
+        //   const { data: removalData, error: removalError } = await supabase
+        //     .storage
+        //     .from('expired')
+        //     .remove([fromPath])
+        //     if (removalError) {
+        //       console.error('There was a problem with removing an image:', removalError)
+        //     }
+        //     if (removalData && removalData.length > 0) {
+        //       update.imagePath = null
+        //     }
+        // }
+        // // Finally after any image/storage work, make the update to the item
+        // const { data, error } = await supabase
+        //   .from('items')
+        //   .update(update)
+        //   .match({ id: item.get('id') })
+        // if (error) {
+        //   console.error('There was a problem:', error)
+        //   return { 
+        //     status: 400,
+        //     body: JSON.stringify(error)
+        //   }
+        // }
+        // if (data) {
+        //   if (item.get('image') && item.get('image') !== 'null') {
+        //     const path = `${event.locals.user.id}/${data[0].id}`
+        //     const { data: imageData, error: imageURLError } = await supabase
+        //       .storage
+        //       .from('expired')
+        //       .createSignedUrl(path, 600)
+        //     if (imageURLError) {
+        //       console.error('imageError:', imageURLError)
+        //       // response = imageURLError
+        //     }
+        //     if (imageData) {
+        //       data[0].image = imageData.signedURL
+        //     }
+        //   }
+        //   return {
+        //     status: 200,
+        //     body: JSON.stringify(data)
+        //   }
+        // }
+      }
+      else {
+        throw new Error('No item id')
       }
     }
     else {
