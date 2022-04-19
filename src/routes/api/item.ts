@@ -92,6 +92,10 @@ export async function patch(event: RequestEvent) {
               if (imageError) {
                 console.error('Error:', imageError)
                 // Notify user that image didn't upload
+                return {
+                  status: imageError.status,
+                  body: JSON.stringify(imageError)
+                }
               }
               if (imageData && imageData.Key) {
                 filePath = imageData.Key
