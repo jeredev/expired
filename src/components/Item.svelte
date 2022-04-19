@@ -86,6 +86,7 @@
     })
     if (!res.ok) {
       // Error here
+      alert('failure!')
       const error = await res.json()
       message.set({
         text: `Error: ${error.message}`,
