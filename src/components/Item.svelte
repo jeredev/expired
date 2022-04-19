@@ -330,7 +330,6 @@
         })
       }
       if (res.ok) {
-        alert('ok')
         const updatedItem = await res.json()
         console.log(updatedItem)
         file = null

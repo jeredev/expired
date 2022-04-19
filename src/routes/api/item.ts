@@ -270,7 +270,9 @@ export async function post(event: RequestEvent) {
                 console.log(err)
                 return {
                   status: 400,
-                  body: JSON.stringify(err)
+                  body: JSON.stringify({
+                    message: 'Sharp caught error'
+                  })
                 }
               })
             return {
