@@ -171,25 +171,44 @@
       formData.append('id', item.id)
       formData.append('image', null)
       formData.append('imagePath', item.imagePath)
-      fetch('/api/item', {
+
+      // fetch('/api/item', {
+      //   method: 'PATCH',
+      //   body: formData
+      // })
+      // .then(async(response) => {
+      //   if (!response.ok) {
+      //     const error = await response.json()
+      //     throw new Error(error)
+      //   }
+      // })
+      // .then(data => {
+      //   item.imagePath = null
+      //   item.image = null
+      //   message.set({
+      //     text: 'Successfully deleted item image.',
+      //     timed: true 
+      //   })
+      // })
+      // .catch((error) => {
+      //   console.log(error)
+      //   if (error.message) {
+      //     message.set({
+      //       text: `Error: ${error.message}`,
+      //       timed: true
+      //     })
+      //   }
+      // })
+
+      const res = await fetch('/api/item', {
         method: 'PATCH',
         body: formData
       })
-      .then(async(response) => {
-        if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error)
-        }
-      })
-      .then(data => {
-        item.imagePath = null
-        item.image = null
-        message.set({
-          text: 'Successfully deleted item image.',
-          timed: true 
-        })
-      })
-      .catch((error) => {
+      // Res.error
+      if (!res.ok) {
+        statusProcessing = false
+        statusUpdating = false
+        const error = await res.json()
         console.log(error)
         if (error.message) {
           message.set({
@@ -197,26 +216,21 @@
             timed: true
           })
         }
-      })
-      // const res = await fetch('/api/item', {
-      //   method: 'PATCH',
-      //   body: formData
-      // })
-      // // Res.error
-      // if (!res.ok) {
-      //   // message.set({
-      //   //   text: `Error: ${error.message}`,
-      //   //   timed: true
-      //   // })
-      // }
-      // if (res.ok) {
-      //   item.imagePath = null
-      //   item.image = null
-      //   message.set({
-      //     text: 'Successfully deleted item image.',
-      //     timed: true 
-      //   })
-      // }
+        else {
+          message.set({
+            text: `Error: ${error}`,
+            timed: true
+          })
+        }
+      }
+      if (res.ok) {
+        item.imagePath = null
+        item.image = null
+        message.set({
+          text: 'Successfully deleted item image.',
+          timed: true 
+        })
+      }
       statusProcessing = false
     }
   }
@@ -282,7 +296,7 @@
   }
 
   let statusUpdating = false
-  const updateItem = async () => {
+  const updateItem = async() => {
     statusProcessing = true
     statusUpdating = true
     const formData = new FormData()
@@ -291,72 +305,54 @@
     formData.append('startTime', item.edits.startTime)
     formData.append('endTime', item.edits.endTime)
     formData.append('category', item.edits.category.id)
-    fetch('/api/item', {
-      method: 'PATCH',
-      body: formData
-    })
-    .then(async(response) => {
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error)
-      }
-    })
-    .then(data => {
-      console.log('data below:')
-      console.log(data)
-      if (data[0]) {
-        const updatedItem = data[0]
-        if (updatedItem.id === item.id) {
-          item.name = updatedItem.name
-          item.startTime = updatedItem.startTime
-          item.endTime = updatedItem.endTime
-          item.edits.name = updatedItem.name
-          // Find category name / Assign category
-          const found = categories.find(element => element.id === updatedItem.category)
-          if (!found) {
-            item.category = {}
-          } else {
-            item.category = {}
-            item.category.id = found.id
-            item.category.name = found.name
-            item.edits.category.id = found.id
-            item.edits.category.name = found.name
-          }
-          item.edits.startTime = format(new Date(updatedItem.startTime), 'yyyy-MM-dd\'T\'HH:mm')
-          item.edits.endTime = format(new Date(updatedItem.endTime), 'yyyy-MM-dd\'T\'HH:mm')
-          updateEndTimeRelativity()
-          menuVisible = false
-          dispatch('update', item)
-          message.set({
-            text: 'Item updated.',
-            timed: true
-          })
-        }
-      }
-      else {
-        throw new Error('No valid data was returned')
-      }
-    })
-    .catch((error) => {
-      console.log(error)
-      if (error.message) {
-        message.set({
-          text: `Error: ${error.message}`,
-          timed: true
-        })
-      }
-    })
-    statusProcessing = false
-    statusUpdating = false
-    // const res = await fetch('/api/item', {
+
+    // fetch('/api/item', {
     //   method: 'PATCH',
     //   body: formData
     // })
-    // Res.error
-    // if (!res.ok) {
-    //   statusProcessing = false
-    //   statusUpdating = false
-    //   const error = await res.json()
+    // .then((response) => {
+    //   // if (!response.ok) {
+    //   //   const error = await response.json()
+    //   //   throw new Error(error)
+    //   // }
+    // })
+    // .then(data => {
+    //   console.log('data below:')
+    //   console.log(data)
+    //   if (data && data[0]) {
+    //     const updatedItem = data[0]
+    //     if (updatedItem.id === item.id) {
+    //       item.name = updatedItem.name
+    //       item.startTime = updatedItem.startTime
+    //       item.endTime = updatedItem.endTime
+    //       item.edits.name = updatedItem.name
+    //       // Find category name / Assign category
+    //       const found = categories.find(element => element.id === updatedItem.category)
+    //       if (!found) {
+    //         item.category = {}
+    //       } else {
+    //         item.category = {}
+    //         item.category.id = found.id
+    //         item.category.name = found.name
+    //         item.edits.category.id = found.id
+    //         item.edits.category.name = found.name
+    //       }
+    //       item.edits.startTime = format(new Date(updatedItem.startTime), 'yyyy-MM-dd\'T\'HH:mm')
+    //       item.edits.endTime = format(new Date(updatedItem.endTime), 'yyyy-MM-dd\'T\'HH:mm')
+    //       updateEndTimeRelativity()
+    //       menuVisible = false
+    //       dispatch('update', item)
+    //       message.set({
+    //         text: 'Item updated.',
+    //         timed: true
+    //       })
+    //     }
+    //   }
+    //   else {
+    //     throw new Error('No valid data was returned')
+    //   }
+    // })
+    // .catch((error) => {
     //   console.log(error)
     //   if (error.message) {
     //     message.set({
@@ -364,41 +360,67 @@
     //       timed: true
     //     })
     //   }
-    // }
-    // if (res.ok) {
-    //   statusProcessing = false
-    //   statusUpdating = false
-    //   const processed = await res.json()
-    //   const updatedItem = processed[0]
-    //   if (updatedItem.id === item.id) {
-    //     item.name = updatedItem.name
-    //     item.startTime = updatedItem.startTime
-    //     item.endTime = updatedItem.endTime
-    //     item.edits.name = updatedItem.name
-    //     // Find category name / Assign category
-    //     const found = categories.find(element => element.id === updatedItem.category)
-    //     if (!found) {
-    //       item.category = {}
-    //     } else {
-    //       item.category = {}
-    //       item.category.id = found.id
-    //       item.category.name = found.name
-    //       item.edits.category.id = found.id
-    //       item.edits.category.name = found.name
-    //     }
-    //     item.edits.startTime = format(new Date(updatedItem.startTime), 'yyyy-MM-dd\'T\'HH:mm')
-    //     item.edits.endTime = format(new Date(updatedItem.endTime), 'yyyy-MM-dd\'T\'HH:mm')
-    //     updateEndTimeRelativity()
-    //     menuVisible = false
-    //     dispatch('update', item)
-    //     message.set({
-    //       text: 'Item updated.',
-    //       timed: true
-    //     })
-    //   }
-    // }
+    // })
     // statusProcessing = false
     // statusUpdating = false
+
+    const res = await fetch('/api/item', {
+      method: 'PATCH',
+      body: formData
+    })
+    // Res.error
+    if (!res.ok) {
+      statusProcessing = false
+      statusUpdating = false
+      const error = await res.json()
+      console.log(error)
+      if (error.message) {
+        message.set({
+          text: `Error: ${error.message}`,
+          timed: true
+        })
+      }
+      else {
+        message.set({
+          text: `Error: ${error}`,
+          timed: true
+        })
+      }
+    }
+    if (res.ok) {
+      statusProcessing = false
+      statusUpdating = false
+      const processed = await res.json()
+      const updatedItem = processed[0]
+      if (updatedItem.id === item.id) {
+        item.name = updatedItem.name
+        item.startTime = updatedItem.startTime
+        item.endTime = updatedItem.endTime
+        item.edits.name = updatedItem.name
+        // Find category name / Assign category
+        const found = categories.find(element => element.id === updatedItem.category)
+        if (!found) {
+          item.category = {}
+        } else {
+          item.category = {}
+          item.category.id = found.id
+          item.category.name = found.name
+          item.edits.category.id = found.id
+          item.edits.category.name = found.name
+        }
+        item.edits.startTime = format(new Date(updatedItem.startTime), 'yyyy-MM-dd\'T\'HH:mm')
+        item.edits.endTime = format(new Date(updatedItem.endTime), 'yyyy-MM-dd\'T\'HH:mm')
+        updateEndTimeRelativity()
+        menuVisible = false
+        dispatch('update', item)
+        message.set({
+          text: 'Item updated.',
+          timed: true
+        })
+      }
+    }
+    statusProcessing = false
+    statusUpdating = false
   }
 
   let confirmDelete = false
