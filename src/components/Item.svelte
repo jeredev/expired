@@ -471,6 +471,10 @@
       // })
       const res = await fetch('/api/item', {
         method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+          // 'Content-Type': 'application/x-www-form-urlencoded',
+        },
         body: formData
       })
       // Res.error
