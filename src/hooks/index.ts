@@ -35,7 +35,7 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
       // event.locals.user = user
     }
     else {
-      event.locals.user = undefined
+      event.locals.user = null
     }
   }
   else {
