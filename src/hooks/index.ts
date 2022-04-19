@@ -23,11 +23,13 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
           .select()
           .eq('owner', user.id)
         if (accountError) {
-          user.account = null
+          // user.account = null
           throw accountError
         }
         if (accountData) {
+          // console.log(accountData[0])
           user.account = accountData[0]
+          event.locals.user = user
         }   
       }
       event.locals.user = user
