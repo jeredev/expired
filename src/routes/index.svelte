@@ -30,7 +30,10 @@
     }
     else {
       return {
-        status: 200
+        status: 200,
+        props: {
+          user
+        }
       }
     }
   }

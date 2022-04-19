@@ -12,8 +12,8 @@ export const supabase = createClient(
  * Convenience re-exports for typed selections
  *
  */
- export const auth = supabase.auth
- export const storage = supabase.storage
+//  export const auth = supabase.auth
+//  export const storage = supabase.storage
  /**
   *
   * @param table The Supabase table to act upon

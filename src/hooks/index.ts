@@ -16,6 +16,7 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
       throw error
     }
     if (user) {
+      supabase.auth.setAuth(sbToken)
       // user.account = null // Works, so user from getUser works...
       // Link the user to their account
       const { data: accountData, error: accountError } = await supabase
@@ -28,12 +29,16 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
         throw accountError
       }
       if (accountData[0]) {
+        // console.log(accountData)
         // console.log(accountData[0])
         // user.account = {}
         // user.account = null
         user.account = accountData[0]
-        event.locals.user = user
+        // event.locals.user = user
       }
+      // else {
+      //   event.locals.user = user
+      // }
       event.locals.user = user
     }
     else {
