@@ -86,6 +86,11 @@
     })
     if (!res.ok) {
       // Error here
+      const error = await res.json()
+      message.set({
+        text: `Error: ${error.message}`,
+        timed: true
+      })
     }
     if (res.ok) {
       statusProcessing = false
