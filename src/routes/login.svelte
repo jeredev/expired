@@ -16,9 +16,9 @@
           'Content-Type': 'application/json'
         }
       })
-      const data = await res.json()
-      console.log('data below:')
-      console.log(data)
+      // const data = await res.json()
+      // console.log('data below:')
+      // console.log(data)
     }
     catch(e) {
       console.log('e below:')

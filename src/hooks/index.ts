@@ -16,29 +16,18 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
       throw error
     }
     if (user) {
+      // Necessary for the account lookup function to work
       supabase.auth.setAuth(sbToken)
-      // user.account = null // Works, so user from getUser works...
-      // Link the user to their account
       const { data: accountData, error: accountError } = await supabase
         .from('accounts')
         .select()
         .eq('owner', user.id)
       if (accountError) {
-        // user.account = null
-        // event.locals.user = user
         throw accountError
       }
       if (accountData[0]) {
-        // console.log(accountData)
-        // console.log(accountData[0])
-        // user.account = {}
-        // user.account = null
         user.account = accountData[0]
-        // event.locals.user = user
       }
-      // else {
-      //   event.locals.user = user
-      // }
       event.locals.user = user
     }
     else {
@@ -49,7 +38,6 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
   else {
     event.locals.user = undefined
   }
-
   const response = await resolve(event)
   return response
 }

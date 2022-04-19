@@ -322,10 +322,11 @@
       })
       // Res.error
       if (!res.ok) {
-        // message.set({
-        //   text: `Error: ${error.message}`,
-        //   timed: true
-        // })
+        const error = await res.json()
+        message.set({
+          text: `Error: ${error.message}`,
+          timed: true
+        })
       }
       if (res.ok) {
         const updatedItem = await res.json()

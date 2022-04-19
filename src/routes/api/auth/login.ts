@@ -4,7 +4,6 @@ import { serialize } from 'cookie'
 export async function post({ request }) {
   try {
     const payload = await request.json()
-    // const sbToken = request.headers.get('Cookie') ? parse(request.headers.get('Cookie'))['supatoken'] : ''
     if (payload.email && payload.password) {
       const { user, session, error } = await supabase.auth.signIn({
         email: payload.email,
@@ -34,16 +33,6 @@ export async function post({ request }) {
         }
       }
       if (session) {
-        // if (sbToken) {
-        //   await supabase.auth.api.signOut(sbToken)
-        //   const cookieHeader = serialize('supatoken', 'deleted', {
-        //     domain: '',
-        //     path: '/',
-        //     sameSite: 'lax',
-        //     httpOnly: true,
-        //     maxAge: 0
-        //   })
-        // }
         const cookieHeader = serialize('supatoken', session.access_token, {
           domain: '',
           path: '/',
@@ -52,7 +41,6 @@ export async function post({ request }) {
           expires: new Date(session.expires_at),
           maxAge: session.expires_in
         })
-        // supabase.auth.setAuth(session.access_token)
         return {
           status: 200,
           // Set cookies?
