@@ -7,7 +7,7 @@
       // if (!user.account) {
 
       // }
-      if (user.account.subscription_status === 'active') {
+      if (user.account?.subscription_status === 'active') {
         let appendage = '?' + new URLSearchParams(url.searchParams)
         const items = await fetch('/api/items' + appendage)
         const categories = await fetch('/api/categories')
