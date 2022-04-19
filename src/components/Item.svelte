@@ -322,6 +322,7 @@
       })
       // Res.error
       if (!res.ok) {
+        alert('not ok')
         const error = await res.json()
         message.set({
           text: `Error: ${error.message}`,
@@ -329,6 +330,7 @@
         })
       }
       if (res.ok) {
+        alert('ok')
         const updatedItem = await res.json()
         console.log(updatedItem)
         file = null
