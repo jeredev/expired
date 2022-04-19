@@ -327,6 +327,41 @@
       const formData = new FormData()
       formData.append('id', item.id)
       formData.append('image', file)
+      // fetch('/api/item', {
+      //   method: 'PATCH',
+      //   body: formData
+      // })
+      // .then(response => {
+      //   const updatedItem = response.json()
+      //   console.log(updatedItem)
+      //   file = null
+      //   fileInput = null
+      //   itemImagePreview = null
+      //   menuVisible = false
+      //   message.set({
+      //     text: 'Successfully added image to item.',
+      //     timed: true
+      //   })
+      //   item.imagePath = `${item.id}`
+      //   item.image = updatedItem[0].image
+      // })
+      // .catch((error) => {
+      //   statusProcessing = false
+      //   // const error = await res.json()
+      //   // alert(error)
+      //   if (error.message) {
+      //     message.set({
+      //       text: `Error: ${error.message}`,
+      //       timed: true
+      //     })
+      //   }
+      //   else {
+      //     message.set({
+      //       text: JSON.stringify(error),
+      //       timed: true
+      //     })
+      //   }
+      // })
       const res = await fetch('/api/item', {
         method: 'PATCH',
         body: formData
@@ -366,6 +401,12 @@
         // buildItemImage(item.imagePath)
       }
       statusProcessing = false
+    }
+    else {
+      message.set({
+        text: "No file or $session.user.id",
+        timed: true
+      })
     }
   }
   const analyzeFile = () => {
