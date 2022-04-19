@@ -163,10 +163,7 @@ export async function patch(event: RequestEvent) {
           .match({ id: item.get('id') })
         if (error) {
           console.error('There was a problem:', error)
-          return { 
-            status: 400,
-            body: JSON.stringify(error)
-          }
+          throw error
         }
         if (data) {
           if (item.get('image') && item.get('image') !== 'null') {
@@ -178,6 +175,7 @@ export async function patch(event: RequestEvent) {
             if (imageURLError) {
               console.error('imageError:', imageURLError)
               // response = imageURLError
+              throw imageURLError
             }
             if (imageData) {
               data[0].image = imageData.signedURL
