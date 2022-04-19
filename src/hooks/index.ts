@@ -34,7 +34,7 @@ export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, 
         user.account = accountData[0]
         event.locals.user = user
       }
-      // event.locals.user = user
+      event.locals.user = user
     }
     else {
       // event.locals.user = null
