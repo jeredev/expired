@@ -120,9 +120,6 @@ export async function patch(event: RequestEvent) {
               // }
             })
         }
-        else {
-          throw new Error('Image not uploaded')
-        }
         const update = {}
         if (item.get('name')) {
           update.name = item.get('name')
