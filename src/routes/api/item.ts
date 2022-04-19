@@ -68,7 +68,7 @@ export async function patch(event: RequestEvent) {
         // let fileError
         let filePath
         if (item.get('image') && item.get('image') !== 'null') {
-          console.log('image uploading detected')
+          // console.log('image uploading detected')
           // Do Image upload first
           const file = item.get('image')
           const arrayBuffer = await file.arrayBuffer()

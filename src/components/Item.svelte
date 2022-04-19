@@ -302,34 +302,39 @@
       }
     })
     .then(data => {
-      console.log('data below:')
-      console.log(data)
-      const updatedItem = data[0]
-      if (updatedItem.id === item.id) {
-        item.name = updatedItem.name
-        item.startTime = updatedItem.startTime
-        item.endTime = updatedItem.endTime
-        item.edits.name = updatedItem.name
-        // Find category name / Assign category
-        const found = categories.find(element => element.id === updatedItem.category)
-        if (!found) {
-          item.category = {}
-        } else {
-          item.category = {}
-          item.category.id = found.id
-          item.category.name = found.name
-          item.edits.category.id = found.id
-          item.edits.category.name = found.name
+      // console.log('data below:')
+      // console.log(data)
+      if (data[0]) {
+        const updatedItem = data[0]
+        if (updatedItem.id === item.id) {
+          item.name = updatedItem.name
+          item.startTime = updatedItem.startTime
+          item.endTime = updatedItem.endTime
+          item.edits.name = updatedItem.name
+          // Find category name / Assign category
+          const found = categories.find(element => element.id === updatedItem.category)
+          if (!found) {
+            item.category = {}
+          } else {
+            item.category = {}
+            item.category.id = found.id
+            item.category.name = found.name
+            item.edits.category.id = found.id
+            item.edits.category.name = found.name
+          }
+          item.edits.startTime = format(new Date(updatedItem.startTime), 'yyyy-MM-dd\'T\'HH:mm')
+          item.edits.endTime = format(new Date(updatedItem.endTime), 'yyyy-MM-dd\'T\'HH:mm')
+          updateEndTimeRelativity()
+          menuVisible = false
+          dispatch('update', item)
+          message.set({
+            text: 'Item updated.',
+            timed: true
+          })
         }
-        item.edits.startTime = format(new Date(updatedItem.startTime), 'yyyy-MM-dd\'T\'HH:mm')
-        item.edits.endTime = format(new Date(updatedItem.endTime), 'yyyy-MM-dd\'T\'HH:mm')
-        updateEndTimeRelativity()
-        menuVisible = false
-        dispatch('update', item)
-        message.set({
-          text: 'Item updated.',
-          timed: true
-        })
+      }
+      else {
+        throw new Error('No valid data was returned')
       }
     })
     .catch((error) => {
