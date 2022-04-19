@@ -1,5 +1,7 @@
 <script lang="ts" context="module">
   export async function load({ url, params, fetch, session, stuff }) {
+    console.log('session from load below:')
+    console.log(session)
     const { user } = session
     if (user && user.id) {
       // if (!user.account) {
@@ -18,6 +20,9 @@
           }
           // status: response.status,
         }
+      }
+      return {
+        status: 200
       }
     }
     else {
