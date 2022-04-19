@@ -171,25 +171,52 @@
       formData.append('id', item.id)
       formData.append('image', null)
       formData.append('imagePath', item.imagePath)
-      const res = await fetch('/api/item', {
+      fetch('/api/item', {
         method: 'PATCH',
         body: formData
       })
-      // Res.error
-      if (!res.ok) {
-        // message.set({
-        //   text: `Error: ${error.message}`,
-        //   timed: true
-        // })
-      }
-      if (res.ok) {
+      .then(async(response) => {
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error)
+        }
+      })
+      .then(data => {
         item.imagePath = null
         item.image = null
         message.set({
           text: 'Successfully deleted item image.',
           timed: true 
         })
-      }
+      })
+      .catch((error) => {
+        console.log(error)
+        if (error.message) {
+          message.set({
+            text: `Error: ${error.message}`,
+            timed: true
+          })
+        }
+      })
+      // const res = await fetch('/api/item', {
+      //   method: 'PATCH',
+      //   body: formData
+      // })
+      // // Res.error
+      // if (!res.ok) {
+      //   // message.set({
+      //   //   text: `Error: ${error.message}`,
+      //   //   timed: true
+      //   // })
+      // }
+      // if (res.ok) {
+      //   item.imagePath = null
+      //   item.image = null
+      //   message.set({
+      //     text: 'Successfully deleted item image.',
+      //     timed: true 
+      //   })
+      // }
       statusProcessing = false
     }
   }
