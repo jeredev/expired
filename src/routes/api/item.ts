@@ -89,7 +89,6 @@ export async function patch(event: RequestEvent) {
                 })
               if (imageError) {
                 console.error('Error:', imageError)
-                // Notify user that image didn't upload
                 // return {
                 //   status: imageError.status,
                 //   body: JSON.stringify(imageError)
@@ -187,9 +186,15 @@ export async function patch(event: RequestEvent) {
   }
   catch (e) {
     console.log(e)
+    // return { 
+    //   status: 400,
+    //   body: JSON.stringify(e)
+    // }
     return { 
       status: 400,
-      body: JSON.stringify(e)
+      body: JSON.stringify({
+        message: 'Main catch error'
+      })
     }
   }
 }
