@@ -256,7 +256,8 @@
 
   let statusUpdating = false
   const updateItem = async () => {
-
+    statusProcessing = true
+    statusUpdating = true
     const formData = new FormData()
     formData.append('id', item.id)
     formData.append('name', item.edits.name)
@@ -269,7 +270,13 @@
     })
     // Res.error
     if (!res.ok) {
-      return
+      const error = await res.json()
+      if (error.message) {
+        message.set({
+          text: `Error: ${error.message}`,
+          timed: true
+        })
+      }
     }
     if (res.ok) {
       const processed = await res.json()
@@ -295,14 +302,14 @@
         updateEndTimeRelativity()
         menuVisible = false
         dispatch('update', item)
-        statusProcessing = false
-        statusUpdating = false
         message.set({
           text: 'Item updated.',
           timed: true
         })
       }
     }
+    statusProcessing = false
+    statusUpdating = false
   }
 
   let confirmDelete = false
