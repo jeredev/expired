@@ -345,7 +345,7 @@
         }
         else {
           message.set({
-            text: `Error: ${error}`,
+            text: JSON.stringify(error),
             timed: true
           })
         }
