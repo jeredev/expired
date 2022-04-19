@@ -110,7 +110,7 @@ export async function get(event: RequestEvent) {
       return
     }
     else {
-      throw 'Unauthorized'
+      throw new Error('Unauthorized')
     }
   }
   catch (e) {

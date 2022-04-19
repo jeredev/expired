@@ -7,7 +7,7 @@ import { supabase } from '$lib/supabase'
 // import type { Session } from '@ory/kratos-client';
 
 export const handle: Handle = async ({ event, resolve }: { event: RequestEvent, resolve: (request: RequestEvent) => Promise<Response> }) => {
-  console.log('handle')
+  // console.log('handle')
   const sbToken = event.request.headers.get('Cookie') ? parse(event.request.headers.get('Cookie'))['supatoken'] : ''
   if (sbToken) {
     // https://supabase.com/docs/reference/javascript/auth-api-getuser

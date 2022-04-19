@@ -68,7 +68,6 @@ export async function patch(event: RequestEvent) {
         // let fileError
         let filePath
         if (item.get('image') && item.get('image') !== 'null') {
-          // console.log('why')
           // Do Image upload first
           const file = item.get('image')
           const arrayBuffer = await file.arrayBuffer()
@@ -108,7 +107,8 @@ export async function patch(event: RequestEvent) {
             .catch(err => {
               // Something went wrong with Sharp
               console.log(err)
-              throw err
+              // throw err
+              throw new Error(err)
               // return {
               //   status: 400,
               //   body: JSON.stringify({
