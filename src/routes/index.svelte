@@ -998,6 +998,9 @@
     </div>
   {:else if user && user.account && user.account.subscription_status !== 'active'}
     <p>Account inactive. Please <a href="/">reactivate your account</a> here.</p>
+  <!-- Really not supposed to be here -->
+  {:else if user && !user.account}
+    <p>No account found.</p>
   {:else}
     <div class="py-4">Authorized users only.</div>
   {/if}
