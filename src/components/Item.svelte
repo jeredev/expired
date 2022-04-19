@@ -326,10 +326,18 @@
         statusProcessing = false
         const error = await res.json()
         // alert(error)
-        message.set({
-          text: `Error: ${error.message}`,
-          timed: true
-        })
+        if (error.message) {
+          message.set({
+            text: `Error: ${error.message}`,
+            timed: true
+          })
+        }
+        else {
+          message.set({
+            text: `Error: ${error}`,
+            timed: true
+          })
+        }
       }
       if (res.ok) {
         const updatedItem = await res.json()
