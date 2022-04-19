@@ -183,6 +183,14 @@ export async function patch(event: RequestEvent) {
         // }
       }
     }
+    else {
+      return {
+        status: 400,
+        body: JSON.stringify({
+          message: 'Unauthorized'
+        })
+      }
+    }
   }
   catch (e) {
     console.log(e)
