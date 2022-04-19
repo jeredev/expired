@@ -231,7 +231,11 @@ export async function post(event: RequestEvent) {
                 if (imageError) {
                   console.error('Error:', imageError)
                   // Notify user that image didn't upload
-                  response = imageError
+                  // response = imageError
+                  return {
+                    status: imageError.status,
+                    body: JSON.stringify(imageError)
+                  }
                 }
                 if (imageData && imageData.Key) {
                   const {data: updateData, error: updateError} = await supabase
