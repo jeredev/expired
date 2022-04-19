@@ -88,7 +88,8 @@ export async function patch(event: RequestEvent) {
                 })
               if (imageError) {
                 console.error('Error:', imageError)
-                throw imageError
+                throw new Error('imageError')
+                // throw imageError
                 // return {
                 //   status: imageError.status,
                 //   body: JSON.stringify(imageError)
@@ -108,7 +109,8 @@ export async function patch(event: RequestEvent) {
               // Something went wrong with Sharp
               console.log(err)
               // throw err
-              throw new Error(err)
+              throw new Error('Sharp error!')
+              // throw new Error(err)
               // return {
               //   status: 400,
               //   body: JSON.stringify({
