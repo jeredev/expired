@@ -431,7 +431,18 @@
   // let categories = []
   const getCategories = async() => {
     const res = await fetch('/api/categories')
-    return await res.json()
+    if (!res.ok) {
+      const error = await res.json()
+      console.log('error with getCategories():')
+      console.log(error)
+      message.set({
+        text: `Error: ${error.message}`,
+        timed: true
+      })
+    }
+    if (res.ok) {
+      return await res.json()
+    } 
   }
 
   const generateListings = () => {
@@ -492,6 +503,7 @@
     const res = await fetch('/api/items' + appendage)
     if (!res.ok) {
       const error = await res.json()
+      console.log('error from getItems():')
       console.log(error)
       message.set({
         text: `Error: ${error.message}`,
