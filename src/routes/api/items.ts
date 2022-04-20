@@ -4,6 +4,7 @@ import type { RequestEvent } from "@sveltejs/kit/types/internal"
 export async function get(event: RequestEvent) {
   try {
     if (event.locals.user && event.locals.user.id && event.locals.user.account.subscription_status === 'active' && event.locals.user.account.id) {
+      console.log(event.locals.user.account.id)
       const params = event.url.searchParams
       let lookup = supabase
         .from('items')
