@@ -216,7 +216,9 @@
       if (!res.ok) {
         statusProcessing = false
         statusUpdating = false
+        console.log(`!res.ok and before error await`)
         const error = await res.json()
+        console.log('after await error which should be logged below:')
         console.log(error)
         if (error.message) {
           message.set({
