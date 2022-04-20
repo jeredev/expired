@@ -1,5 +1,9 @@
 import { supabase } from "$lib/supabase"
-// import sharp from 'sharp'
+// const sharp = require('sharp')
+import sharp from 'sharp'
+
+// import { resolve } from 'mlly'
+
 import type { RequestEvent } from "@sveltejs/kit/types/internal"
 
 export async function del(event: RequestEvent) {
@@ -69,56 +73,58 @@ export async function patch(event: RequestEvent) {
       const itemEndTime = item.get('endTime')
       const itemId = item.get('id')
       const itemImage = item.get('image')
+      // console.log(itemImage)
       const itemImagePath = item.get('imagePath')
+      // console.log(itemImagePath)
       const itemName = item.get('name')
       const itemStartTime = item.get('startTime')
       if (itemId) {
         // let fileError
         let filePath
-        // if (itemImage && itemImage !== null) {
-        //   console.log('image uploading detected')
-        //   // Do Image upload first
-        //   const file = itemImage
-        //   const arrayBuffer = await file.arrayBuffer()
-        //   const buffer = Buffer.from(arrayBuffer)
-        //   await sharp(buffer)
-        //     .rotate()
-        //     .resize({ width: 1024 })
-        //     .webp()
-        //     .toBuffer({ resolveWithObject: true })
-        //     .then(async({ data: sharpData, info }) => { 
-        //       // console.log(sharpData) //  <Buffer ...
-        //       const { data: imageData, error: imageError } = await supabase
-        //         .storage
-        //         .from('expired')
-        //         .upload(`${event.locals.user.id}/${itemId}`, sharpData, {
-        //           contentType: `image/${info.format}`,
-        //           upsert: true
-        //         })
-        //       if (imageError) {
-        //         console.error('Error:', imageError)
-        //         throw imageError
-        //         // throw imageError
-        //         // return {
-        //         //   status: imageError.status,
-        //         //   body: JSON.stringify(imageError)
-        //         // }
-        //         // return {
-        //         //   status: 400,
-        //         //   body: JSON.stringify({
-        //         //     message: 'Supabase image error'
-        //         //   })
-        //         // }
-        //       }
-        //       if (imageData && imageData.Key) {
-        //         filePath = imageData.Key
-        //       }
-        //     })
-        //     .catch(err => {
-        //       console.log(err)
-        //       throw new Error('Sharp error!')
-        //     })
-        // }
+        if (itemImage) {
+          console.log('image uploading detected')
+          // Do Image upload first
+          const file = itemImage
+          const arrayBuffer = await file.arrayBuffer()
+          const buffer = Buffer.from(arrayBuffer)
+          await sharp(buffer)
+            .rotate()
+            .resize({ width: 1024 })
+            .webp()
+            .toBuffer({ resolveWithObject: true })
+            .then(async({ data: sharpData, info }) => { 
+              // console.log(sharpData) //  <Buffer ...
+              const { data: imageData, error: imageError } = await supabase
+                .storage
+                .from('expired')
+                .upload(`${event.locals.user.id}/${itemId}`, sharpData, {
+                  contentType: `image/${info.format}`,
+                  upsert: true
+                })
+              if (imageError) {
+                console.error('Error:', imageError)
+                throw imageError
+                // throw imageError
+                // return {
+                //   status: imageError.status,
+                //   body: JSON.stringify(imageError)
+                // }
+                // return {
+                //   status: 400,
+                //   body: JSON.stringify({
+                //     message: 'Supabase image error'
+                //   })
+                // }
+              }
+              if (imageData && imageData.Key) {
+                filePath = imageData.Key
+              }
+            })
+            .catch(err => {
+              console.log(err)
+              throw new Error('Sharp error!')
+            })
+        }
         // else {
         //   throw new Error('Image not uploaded')
         // }
@@ -138,7 +144,7 @@ export async function patch(event: RequestEvent) {
         if (filePath) {
           update.imagePath = itemId
         }
-        if (itemImage === null && itemImagePath) {
+        if (!itemImage && itemImagePath) {
           console.log('image deletion detected!')
           const fromPath = `${event.locals.user.id}/${itemImagePath}`
           const { data: removalData, error: removalError } = await supabase
