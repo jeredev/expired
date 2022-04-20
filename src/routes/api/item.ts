@@ -138,7 +138,6 @@ export async function patch(event: RequestEvent) {
         if (filePath) {
           update.imagePath = itemId
         }
-        // console.log(update)
         if (itemImage === null && itemImagePath) {
           console.log('image deletion detected!')
           const fromPath = `${event.locals.user.id}/${itemImagePath}`
