@@ -63,14 +63,22 @@ export async function del(event: RequestEvent) {
 export async function patch(event: RequestEvent) {
   try {
     if (event.locals.user.id && event.locals.user.account.subscription_status === 'active') {
-      const item = await event.request.json()
-      if (item.id) {
+      // const item = await event.request.json()
+      const item = await event.request.formData()
+      const itemCategory = item.get('category')
+      const itemEndTime = item.get('endTime')
+      const itemId = item.get('id')
+      const itemImage = item.get('image')
+      const itemImagePath = item.get('imagePath')
+      const itemName = item.get('name')
+      const itemStartTime = item.get('startTime')
+      if (itemId) {
         // let fileError
         let filePath
-        if (item.image && item.image !== null) {
+        if (itemImage && itemImage !== null) {
           console.log('image uploading detected')
           // Do Image upload first
-          const file = item.image
+          const file = itemImage
           const arrayBuffer = await file.arrayBuffer()
           const buffer = Buffer.from(arrayBuffer)
           await sharp(buffer)
@@ -83,7 +91,7 @@ export async function patch(event: RequestEvent) {
               const { data: imageData, error: imageError } = await supabase
                 .storage
                 .from('expired')
-                .upload(`${event.locals.user.id}/${item.id}`, sharpData, {
+                .upload(`${event.locals.user.id}/${itemId}`, sharpData, {
                   contentType: `image/${info.format}`,
                   upsert: true
                 })
@@ -107,7 +115,6 @@ export async function patch(event: RequestEvent) {
               }
             })
             .catch(err => {
-              // Something went wrong with Sharp
               console.log(err)
               throw new Error('Sharp error!')
             })
@@ -116,28 +123,25 @@ export async function patch(event: RequestEvent) {
         //   throw new Error('Image not uploaded')
         // }
         const update = {}
-        if (item.name) {
-          update.name = item.name
+        if (itemName) {
+          update.name = itemName
         }
-        if (item.startTime) {
-          update.startTime = item.startTime
+        if (itemStartTime) {
+          update.startTime = itemStartTime
         }
-        if (item.endTime) {
-          update.endTime = item.endTime
+        if (itemEndTime) {
+          update.endTime = itemEndTime
         }
-        if (item.category) {
-          // This is weird...
-          let category = item.category
-          if (category === 'null') {
-            category = null
-          }
-          update.category = category
+        if (itemCategory) {
+          update.category = itemCategory
         }
         if (filePath) {
-          update.imagePath = `${item.id}`
+          update.imagePath = itemId
         }
-        if (item.image === null && item.imagePath) {
-          const fromPath = `${event.locals.user.id}/${item.imagePath}`
+        // console.log(update)
+        if (itemImage === null && itemImagePath) {
+          console.log('image deletion detected!')
+          const fromPath = `${event.locals.user.id}/${itemImagePath}`
           const { data: removalData, error: removalError } = await supabase
             .storage
             .from('expired')
@@ -154,13 +158,12 @@ export async function patch(event: RequestEvent) {
         const { data, error } = await supabase
           .from('items')
           .update(update)
-          .match({ id: item.id })
+          .match({ id: itemId })
         if (error) {
-          console.error('There was a problem:', error)
           throw error
         }
         if (data) {
-          if (item.image && item.image !== null) {
+          if (itemImage && itemImage !== null) {
             const path = `${event.locals.user.id}/${data[0].id}`
             const { data: imageData, error: imageURLError } = await supabase
               .storage
@@ -194,7 +197,7 @@ export async function patch(event: RequestEvent) {
     console.log(e)
     return { 
       status: 400,
-      body: JSON.stringify(e.message)
+      body: JSON.stringify(e)
     }
   }
 }

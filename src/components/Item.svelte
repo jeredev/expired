@@ -58,7 +58,8 @@
   }
   else {
     item.edits.category = {}
-    item.edits.category.id = null
+    item.edits.category.id = ''
+    // item.edits.category.id = null
   }
 
   let itemElement
@@ -167,10 +168,16 @@
   const deleteImage = async() => {
     if (item.imagePath && $session.user.id) {
       statusProcessing = true
+
       const formData = new FormData()
       formData.append('id', item.id)
-      formData.append('image', null)
+      formData.append('image', '')
       formData.append('imagePath', item.imagePath)
+
+      // const payload = {}
+      // payload.id = item.id
+      // payload.image = null
+      // payload.imagePath = item.imagePath
 
       // fetch('/api/item', {
       //   method: 'PATCH',
@@ -202,6 +209,7 @@
 
       const res = await fetch('/api/item', {
         method: 'PATCH',
+        // body: JSON.stringify(payload)
         body: formData
       })
       // Res.error
@@ -299,19 +307,20 @@
   const updateItem = async() => {
     statusProcessing = true
     statusUpdating = true
-    const payload = {}
-    payload.id = item.id
-    payload.name = item.edits.name
-    payload.startTime = item.edits.startTime
-    payload.endTime = item.edits.endTime
-    payload.category = item.edits.category.id
 
-    // const formData = new FormData()
-    // formData.append('id', item.id)
-    // formData.append('name', item.edits.name)
-    // formData.append('startTime', item.edits.startTime)
-    // formData.append('endTime', item.edits.endTime)
-    // formData.append('category', item.edits.category.id)
+    // const payload = {}
+    // payload.id = item.id
+    // payload.name = item.edits.name
+    // payload.startTime = item.edits.startTime
+    // payload.endTime = item.edits.endTime
+    // payload.category = item.edits.category.id
+
+    const formData = new FormData()
+    formData.append('id', item.id)
+    formData.append('name', item.edits.name)
+    formData.append('startTime', item.edits.startTime)
+    formData.append('endTime', item.edits.endTime)
+    formData.append('category', item.edits.category.id)
 
     // fetch('/api/item', {
     //   method: 'PATCH',
@@ -373,15 +382,12 @@
 
     const res = await fetch('/api/item', {
       method: 'PATCH',
-      headers : { 
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      // headers: {
-      //   'Content-Type': 'application/json'
-      //   // 'Content-Type': 'application/x-www-form-urlencoded',
+      // headers : { 
+      //   'Content-Type': 'application/json',
+      //   'Accept': 'application/json'
       // },
-      body: JSON.stringify(payload)
+      body: formData
+      // body: JSON.stringify(payload)
     })
     // Res.error
     if (!res.ok) {
@@ -449,9 +455,15 @@
   const addImage = async() => {
     if (file && $session.user.id) {
       statusProcessing = true
+      
       const formData = new FormData()
       formData.append('id', item.id)
       formData.append('image', file)
+
+      // const payload = {}
+      // payload.id = item.id
+      // payload.image = file
+
       // fetch('/api/item', {
       //   method: 'PATCH',
       //   body: formData
@@ -494,6 +506,7 @@
         //   // 'Content-Type': 'application/x-www-form-urlencoded',
         // },
         body: formData
+        // body: payload
       })
       // Res.error
       if (!res.ok) {
