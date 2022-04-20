@@ -19,7 +19,6 @@ export async function get(event: RequestEvent) {
           imagePath
         `)
         .eq('account', event.locals.user.account.id)
-        // .limit(1)
       if (params.get('name')) {
         lookup = lookup.ilike('name', `%${params.get('name')}%`)
       }
