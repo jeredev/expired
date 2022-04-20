@@ -67,15 +67,12 @@ export async function del(event: RequestEvent) {
 export async function patch(event: RequestEvent) {
   try {
     if (event.locals.user.id && event.locals.user.account.subscription_status === 'active') {
-      // const item = await event.request.json()
       const item = await event.request.formData()
       const itemCategory = item.get('category')
       const itemEndTime = item.get('endTime')
       const itemId = item.get('id')
       const itemImage = item.get('image')
-      // console.log(itemImage)
       const itemImagePath = item.get('imagePath')
-      // console.log(itemImagePath)
       const itemName = item.get('name')
       const itemStartTime = item.get('startTime')
       if (itemId) {
@@ -238,82 +235,82 @@ export async function post(event: RequestEvent) {
           }
         }
         if (data && data[0].id) {
-          // if (item.get('image')) {
-          //   const file = item.get('image')
-          //   const arrayBuffer = await file.arrayBuffer()
-          //   const buffer = Buffer.from(arrayBuffer)
-          //   let response = null
-          //   await sharp(buffer)
-          //     .rotate()
-          //     .resize({ width: 1024 })
-          //     .webp()
-          //     .toBuffer({ resolveWithObject: true })
-          //     .then(async({ data: sharpData, info }) => { 
-          //       // console.log(sharpData) //  <Buffer ...
-          //       const { data: imageData, error: imageError } = await supabase
-          //         .storage
-          //         .from('expired')
-          //         .upload(`${event.locals.user.id}/${data[0].id}`, sharpData, {
-          //           contentType: `image/${info.format}`
-          //         })
-          //       if (imageError) {
-          //         console.error('Error:', imageError)
-          //         // Notify user that image didn't upload
-          //         // response = imageError
-          //         return {
-          //           status: imageError.status,
-          //           body: JSON.stringify(imageError)
-          //         }
-          //       }
-          //       if (imageData && imageData.Key) {
-          //         const {data: updateData, error: updateError} = await supabase
-          //           .from('items')
-          //           .update({ imagePath: `${data[0].id}` })
-          //           .match({ id: data[0].id })
-          //         if (updateData) {
-          //           const path = `${event.locals.user.id}/${data[0].id}`
-          //           const { data: imageData, error: imageURLError } = await supabase
-          //             .storage
-          //             .from('expired')
-          //             .createSignedUrl(path, 600)
-          //           if (imageURLError) {
-          //             // Something went wrong with creating a signed URL for the image
-          //             console.error('imageError:', imageURLError)
-          //             response = imageURLError
-          //           }
-          //           if (imageData) {
-          //             updateData[0].image = imageData.signedURL
-          //             response = updateData
-          //           }
-          //         }
-          //         if (updateError) {
-          //           // Something went wrong with linking the item to its image
-          //           console.error('Error:', updateError)
-          //           response = updateError
-          //         }
-          //       }
-          //     })
-          //     .catch(err => {
-          //       // Something went wrong with Sharp
-          //       console.log(err)
-          //       return {
-          //         status: 400,
-          //         body: JSON.stringify({
-          //           message: 'Sharp caught error'
-          //         })
-          //       }
-          //     })
-          //   return {
-          //     status: 200,
-          //     body: JSON.stringify(response)
-          //   }
-          // }
-          // else {
+          if (item.get('image')) {
+            const file = item.get('image')
+            const arrayBuffer = await file.arrayBuffer()
+            const buffer = Buffer.from(arrayBuffer)
+            let response = null
+            await sharp(buffer)
+              .rotate()
+              .resize({ width: 1024 })
+              .webp()
+              .toBuffer({ resolveWithObject: true })
+              .then(async({ data: sharpData, info }) => { 
+                // console.log(sharpData) //  <Buffer ...
+                const { data: imageData, error: imageError } = await supabase
+                  .storage
+                  .from('expired')
+                  .upload(`${event.locals.user.id}/${data[0].id}`, sharpData, {
+                    contentType: `image/${info.format}`
+                  })
+                if (imageError) {
+                  console.error('Error:', imageError)
+                  // Notify user that image didn't upload
+                  // response = imageError
+                  return {
+                    status: imageError.status,
+                    body: JSON.stringify(imageError)
+                  }
+                }
+                if (imageData && imageData.Key) {
+                  const {data: updateData, error: updateError} = await supabase
+                    .from('items')
+                    .update({ imagePath: `${data[0].id}` })
+                    .match({ id: data[0].id })
+                  if (updateData) {
+                    const path = `${event.locals.user.id}/${data[0].id}`
+                    const { data: imageData, error: imageURLError } = await supabase
+                      .storage
+                      .from('expired')
+                      .createSignedUrl(path, 600)
+                    if (imageURLError) {
+                      // Something went wrong with creating a signed URL for the image
+                      console.error('imageError:', imageURLError)
+                      response = imageURLError
+                    }
+                    if (imageData) {
+                      updateData[0].image = imageData.signedURL
+                      response = updateData
+                    }
+                  }
+                  if (updateError) {
+                    // Something went wrong with linking the item to its image
+                    console.error('Error:', updateError)
+                    response = updateError
+                  }
+                }
+              })
+              .catch(err => {
+                // Something went wrong with Sharp
+                console.log(err)
+                return {
+                  status: 400,
+                  body: JSON.stringify({
+                    message: 'Sharp caught error'
+                  })
+                }
+              })
+            return {
+              status: 200,
+              body: JSON.stringify(response)
+            }
+          }
+          else {
             return { 
               status: 200,
               body: JSON.stringify(data)
             }
-          // }
+          }
         }
       }
     }
