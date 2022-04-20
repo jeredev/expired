@@ -299,12 +299,19 @@
   const updateItem = async() => {
     statusProcessing = true
     statusUpdating = true
-    const formData = new FormData()
-    formData.append('id', item.id)
-    formData.append('name', item.edits.name)
-    formData.append('startTime', item.edits.startTime)
-    formData.append('endTime', item.edits.endTime)
-    formData.append('category', item.edits.category.id)
+    const payload = {}
+    payload.id = item.id
+    payload.name = item.edits.name
+    payload.startTime = item.edits.startTime
+    payload.endTime = item.edits.endTime
+    payload.category = item.edits.category.id
+
+    // const formData = new FormData()
+    // formData.append('id', item.id)
+    // formData.append('name', item.edits.name)
+    // formData.append('startTime', item.edits.startTime)
+    // formData.append('endTime', item.edits.endTime)
+    // formData.append('category', item.edits.category.id)
 
     // fetch('/api/item', {
     //   method: 'PATCH',
@@ -369,12 +376,12 @@
       headers : { 
         'Content-Type': 'application/json',
         'Accept': 'application/json'
-       },
+      },
       // headers: {
       //   'Content-Type': 'application/json'
       //   // 'Content-Type': 'application/x-www-form-urlencoded',
       // },
-      body: formData
+      body: JSON.stringify(payload)
     })
     // Res.error
     if (!res.ok) {

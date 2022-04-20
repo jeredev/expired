@@ -63,14 +63,14 @@ export async function del(event: RequestEvent) {
 export async function patch(event: RequestEvent) {
   try {
     if (event.locals.user.id && event.locals.user.account.subscription_status === 'active') {
-      const item = await event.request.formData()
-      if (item.get('id')) {
+      const item = await event.request.json()
+      if (item.id) {
         // let fileError
         let filePath
-        if (item.get('image') && item.get('image') !== 'null') {
+        if (item.image && item.image !== null) {
           console.log('image uploading detected')
           // Do Image upload first
-          const file = item.get('image')
+          const file = item.image
           const arrayBuffer = await file.arrayBuffer()
           const buffer = Buffer.from(arrayBuffer)
           await sharp(buffer)
@@ -83,7 +83,7 @@ export async function patch(event: RequestEvent) {
               const { data: imageData, error: imageError } = await supabase
                 .storage
                 .from('expired')
-                .upload(`${event.locals.user.id}/${item.get('id')}`, sharpData, {
+                .upload(`${event.locals.user.id}/${item.id}`, sharpData, {
                   contentType: `image/${info.format}`,
                   upsert: true
                 })
@@ -124,28 +124,28 @@ export async function patch(event: RequestEvent) {
         //   throw new Error('Image not uploaded')
         // }
         const update = {}
-        if (item.get('name')) {
-          update.name = item.get('name')
+        if (item.name) {
+          update.name = item.name
         }
-        if (item.get('startTime')) {
-          update.startTime = item.get('startTime')
+        if (item.startTime) {
+          update.startTime = item.startTime
         }
-        if (item.get('endTime')) {
-          update.endTime = item.get('endTime')
+        if (item.endTime) {
+          update.endTime = item.endTime
         }
-        if (item.get('category')) {
+        if (item.category) {
           // This is weird...
-          let category = item.get('category')
+          let category = item.category
           if (category === 'null') {
             category = null
           }
           update.category = category
         }
         if (filePath) {
-          update.imagePath = `${item.get('id')}`
+          update.imagePath = `${item.id}`
         }
-        if (item.get('image') === 'null' && item.get('imagePath')) {
-          const fromPath = `${event.locals.user.id}/${item.get('imagePath')}`
+        if (item.image === null && item.imagePath) {
+          const fromPath = `${event.locals.user.id}/${item.imagePath}`
           const { data: removalData, error: removalError } = await supabase
             .storage
             .from('expired')
@@ -161,13 +161,13 @@ export async function patch(event: RequestEvent) {
         const { data, error } = await supabase
           .from('items')
           .update(update)
-          .match({ id: item.get('id') })
+          .match({ id: item.id })
         if (error) {
           console.error('There was a problem:', error)
           throw error
         }
         if (data) {
-          if (item.get('image') && item.get('image') !== 'null') {
+          if (item.image && item.image !== null) {
             const path = `${event.locals.user.id}/${data[0].id}`
             const { data: imageData, error: imageURLError } = await supabase
               .storage
@@ -197,8 +197,8 @@ export async function patch(event: RequestEvent) {
     }
   }
   catch (e) {
-    // console.log('catch')
-    // console.log(e)
+    console.log('catch')
+    console.log(e)
     return { 
       status: 400,
       body: JSON.stringify(e.message)
