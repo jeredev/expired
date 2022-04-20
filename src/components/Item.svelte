@@ -388,8 +388,9 @@
       console.log('!res.ok')
       statusProcessing = false
       statusUpdating = false
+      console.log('error before await')
       const error = await res.json()
-      console.log('error below:')
+      console.log('error after await below:')
       console.log(error)
       if (error.message) {
         message.set({
