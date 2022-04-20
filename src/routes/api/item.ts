@@ -109,15 +109,7 @@ export async function patch(event: RequestEvent) {
             .catch(err => {
               // Something went wrong with Sharp
               console.log(err)
-              // throw err
               throw new Error('Sharp error!')
-              // throw new Error(err)
-              // return {
-              //   status: 400,
-              //   body: JSON.stringify({
-              //     message: 'Sharp caught error'
-              //   })
-              // }
             })
         }
         // else {
@@ -152,6 +144,7 @@ export async function patch(event: RequestEvent) {
             .remove([fromPath])
             if (removalError) {
               console.error('There was a problem with removing an image:', removalError)
+              throw removalError
             }
             if (removalData && removalData.length > 0) {
               update.imagePath = null
