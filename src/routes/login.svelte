@@ -17,8 +17,6 @@
         }
       })
       // const data = await res.json()
-      // console.log('data below:')
-      // console.log(data)
     }
     catch(e) {
       console.log('e below:')
