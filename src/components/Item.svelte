@@ -378,6 +378,7 @@
     })
     // Res.error
     if (!res.ok) {
+      console.log('!res.ok')
       statusProcessing = false
       statusUpdating = false
       const error = await res.json()
@@ -390,7 +391,7 @@
       }
       else {
         message.set({
-          text: `Error: ${error}`,
+          text: `Error (else): ${error}`,
           timed: true
         })
       }
