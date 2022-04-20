@@ -389,6 +389,7 @@
       statusProcessing = false
       statusUpdating = false
       const error = await res.json()
+      console.log('error below:')
       console.log(error)
       if (error.message) {
         message.set({
