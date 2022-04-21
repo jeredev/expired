@@ -18,6 +18,7 @@
     differenceInDays,
     differenceInHours,
     differenceInMinutes,
+    endOfMonth,
     format,
     subYears,
     subMonths,
@@ -40,6 +41,7 @@
     endTime: null,
     image: null,
     category: null,
+    // endTimeTranscription: null,
   }
 
   let newItemValid = false
@@ -485,13 +487,41 @@
           .map(result => result.transcript)
           .join('')
         if (text) {
+          // newItem.endTimeTranscription = text
           const words = text.split(' ')
-          // Find month
-          const monthIndex = months.findIndex(month => month === words[0])
-          // Process day
-          const day = words[1].replace(/\D/g,'')
-          newItem.endTime = format(new Date(parseInt(words[2]), monthIndex, parseInt(day)), 'yyyy-MM-dd\'T\'HH:mm')
-          updateEndTimeRelativity()
+          // Determine if first word is 'end'
+          if (words[0].localeCompare('end', undefined, { sensitivity: 'accent' }) === 0) {
+            // Find month
+            const monthIndex = months.findIndex(month => month === words[2])
+            // Process year
+            let year
+            if (words[3]) {
+              year = parseInt(words[3])
+            }
+            else {
+              year = new Date().getFullYear()
+            }
+            const processedDate = endOfMonth(new Date(year, monthIndex, 1, 0, 0, 0))
+            console.log(processedDate)
+            newItem.endTime = format(new Date(processedDate), 'yyyy-MM-dd\'T\'HH:mm')
+            updateEndTimeRelativity()
+          }
+          else {
+            // Find month
+            const monthIndex = months.findIndex(month => month === words[0])
+            // Process day
+            const day = words[1].replace(/\D/g,'')
+            // Process year
+            let year
+            if (words[2]) {
+              year = parseInt(words[2])
+            }
+            else {
+              year = new Date().getFullYear()
+            }
+            newItem.endTime = format(new Date(parseInt(year), monthIndex, parseInt(day)), 'yyyy-MM-dd\'T\'HH:mm')
+            updateEndTimeRelativity()
+          }
         }
         recognitionExpiration.stop()
       })
@@ -608,6 +638,8 @@
             <Icon icon="clarity:microphone-line" />
           </button>
         {/if}
+        <!-- <input type="text" style="background-color: black; color: white;"
+        class="mb-2 px-2 py-1 w-full" bind:value="{newItem.endTimeTranscription}"> -->
         <div class="date-picker">
           <input
             bind:value={newItem.endTime}
