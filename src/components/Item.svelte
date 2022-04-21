@@ -19,6 +19,7 @@
     differenceInDays,
     differenceInHours,
     differenceInMinutes,
+    endOfMonth,
     format,
     subYears,
     subMonths,
@@ -650,10 +651,14 @@
 
   // Speech Recognition
   let recognition = false
+  let recognitionExpiration = false
+  let recognitionName = false
+  let recognizing = false
+
   const listenForName = () => { 
-    if (recognition) {
-      recognition.start()
-      recognition.addEventListener('result', (e) => {
+    if (recognitionName) {
+      recognitionName.start()
+      recognitionName.addEventListener('result', (e) => {
         let text = Array.from(e.results)
           .map(result => result[0])
           .map(result => result.transcript)
@@ -661,8 +666,73 @@
         if (text) {
           item.edits.name = camelize(text)
         }
-        recognition.stop()
+        recognitionName.stop()
       })
+      recognitionName.onstart = function () {
+        recognizing = true
+      }
+      recognitionName.onend = function () {
+        recognizing = false
+      }
+    }
+  }
+
+  const months = [ 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' ]
+  // const grammarExpiration = '#JSGF V1.0; grammar months; public <month> = ' + months.join(' | ') + ' ;'
+  
+  const listenForEndTime = () => { 
+    if (recognitionExpiration) {
+      recognitionExpiration.abort() // Unsure :: InvalidStateError: Failed to execute 'start' on 'SpeechRecognition': recognition has already started.
+      recognitionExpiration.start()
+      recognitionExpiration.addEventListener('result', (e) => {
+        let text = Array.from(e.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('')
+        if (text) {
+          // newItem.endTimeTranscription = text
+          const words = text.split(' ')
+          // Determine if first word is 'end'
+          if (words[0].localeCompare('end', undefined, { sensitivity: 'accent' }) === 0) {
+            // Find month
+            const monthIndex = months.findIndex(month => month === words[2])
+            // Process year
+            let year
+            if (words[3]) {
+              year = parseInt(words[3])
+            }
+            else {
+              year = new Date().getFullYear()
+            }
+            const processedDate = endOfMonth(new Date(year, monthIndex, 1, 0, 0, 0))
+            item.edits.endTime = format(new Date(processedDate), 'yyyy-MM-dd\'T\'HH:mm')
+            updateEndTimeRelativity()
+          }
+          else {
+            // Find month
+            const monthIndex = months.findIndex(month => month === words[0])
+            // Process day
+            const day = words[1].replace(/\D/g,'')
+            // Process year
+            let year
+            if (words[2]) {
+              year = parseInt(words[2])
+            }
+            else {
+              year = new Date().getFullYear()
+            }
+            item.edits.endTime = format(new Date(parseInt(year), monthIndex, parseInt(day)), 'yyyy-MM-dd\'T\'HH:mm')
+            updateEndTimeRelativity()
+          }
+        }
+        recognitionExpiration.stop()
+      })
+      recognitionExpiration.onstart = function () {
+        recognizing = true
+      }
+      recognitionExpiration.onend = function () {
+        recognizing = false
+      }
     }
   }
 
@@ -694,7 +764,9 @@
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (SpeechRecognition) {
       // console.log('true') // Chrome needs webkit prefix version
-      recognition = new SpeechRecognition()
+      // recognition = new SpeechRecognition()
+      recognitionName = new SpeechRecognition()
+      recognitionExpiration = new SpeechRecognition()
     }
     const io = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
@@ -803,7 +875,7 @@
                 <div class="area area--name">
                   <div class="form-field mb-2">
                     <label for="edit-{item.id}--name">Name</label>
-                    {#if recognition}
+                    {#if recognitionName}
                       <button type="button" class="btn ml-2 px-2 py-1" on:click="{listenForName}">
                         <Icon icon="clarity:microphone-line" />
                       </button>
@@ -840,7 +912,12 @@
                   </div>
                   <div class="area area--end-time">
                     <div class="form-field mb-2">
-                      <label for="edit-{item.id}--end-time" class="block">End Time</label>
+                      <label for="edit-{item.id}--end-time">End Time</label>
+                      {#if recognitionExpiration}
+                        <button type="button" class="btn ml-2 px-2 py-1 listener" class:recognizing = {recognizing} on:click="{listenForEndTime}">
+                          <Icon icon="clarity:microphone-line" />
+                        </button>
+                      {/if}
                       <div class="relative">
                         <input
                           bind:value="{item.edits.endTime}"

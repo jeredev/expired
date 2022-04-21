@@ -1,5 +1,4 @@
 <script lang="ts">
-  // import { supabase } from "$lib/supabase";
   import { session } from "$app/stores";
   import { message } from "../stores";
   import { onMount } from "svelte";
@@ -28,8 +27,6 @@
     subMinutes,
   } from 'date-fns'
   import { createEventDispatcher } from "svelte";
-  // import { dataset_dev } from "svelte/internal";
-  // import Item from "./Item.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -502,7 +499,6 @@
               year = new Date().getFullYear()
             }
             const processedDate = endOfMonth(new Date(year, monthIndex, 1, 0, 0, 0))
-            console.log(processedDate)
             newItem.endTime = format(new Date(processedDate), 'yyyy-MM-dd\'T\'HH:mm')
             updateEndTimeRelativity()
           }
