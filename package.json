@@ -2,7 +2,7 @@
   "name": "expired",
   "version": "0.0.1",
   "scripts": {
-    "dev": "svelte-kit dev",
+    "dev": "svelte-kit dev --https --host",
     "dev:https": "svelte-kit dev --https --host",
     "build": "svelte-kit build",
     "package": "svelte-kit package",

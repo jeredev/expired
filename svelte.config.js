@@ -11,7 +11,9 @@ const config = {
     windi({})
   ],
 	kit: {
-		adapter: adapter()
+		adapter: adapter({
+      edge: true
+    })
 	}
 };
 

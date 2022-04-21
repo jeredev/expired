@@ -446,12 +446,14 @@
 
   // Speech Recognition
   let recognition = false
+  let recognitionExpiration = false
+  let recognitionName = false
   let recognizing = false
   const listenForName = () => { 
-    if (recognition) {
-      recognition.abort() // Unsure :: InvalidStateError: Failed to execute 'start' on 'SpeechRecognition': recognition has already started.
-      recognition.start()
-      recognition.addEventListener('result', (e) => {
+    if (recognitionName) {
+      recognitionName.abort() // Unsure :: InvalidStateError: Failed to execute 'start' on 'SpeechRecognition': recognition has already started.
+      recognitionName.start()
+      recognitionName.addEventListener('result', (e) => {
         let text = Array.from(e.results)
           .map(result => result[0])
           .map(result => result.transcript)
@@ -459,12 +461,44 @@
         if (text) {
           newItem.name = camelize(text)
         }
-        recognition.stop()
+        recognitionName.stop()
       })
-      recognition.onstart = function () {
+      recognitionName.onstart = function () {
         recognizing = true
       }
-      recognition.onend = function () {
+      recognitionName.onend = function () {
+        recognizing = false
+      }
+    }
+  }
+
+  const months = [ 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' ]
+  // const grammarExpiration = '#JSGF V1.0; grammar months; public <month> = ' + months.join(' | ') + ' ;'
+  
+  const listenForEndTime = () => { 
+    if (recognitionExpiration) {
+      recognitionExpiration.abort() // Unsure :: InvalidStateError: Failed to execute 'start' on 'SpeechRecognition': recognition has already started.
+      recognitionExpiration.start()
+      recognitionExpiration.addEventListener('result', (e) => {
+        let text = Array.from(e.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('')
+        if (text) {
+          const words = text.split(' ')
+          // Find month
+          const monthIndex = months.findIndex(month => month === words[0])
+          // Process day
+          const day = words[1].replace(/\D/g,'')
+          newItem.endTime = format(new Date(parseInt(words[2]), monthIndex, parseInt(day)), 'yyyy-MM-dd\'T\'HH:mm')
+          updateEndTimeRelativity()
+        }
+        recognitionExpiration.stop()
+      })
+      recognitionExpiration.onstart = function () {
+        recognizing = true
+      }
+      recognitionExpiration.onend = function () {
         recognizing = false
       }
     }
@@ -486,7 +520,8 @@
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (SpeechRecognition) {
       // console.log('true') // Chrome needs webkit prefix version
-      recognition = new SpeechRecognition()
+      recognitionName = new SpeechRecognition()
+      recognitionExpiration = new SpeechRecognition()
     }
     
   })
@@ -523,7 +558,7 @@
     <form on:submit|preventDefault class="form form--add-item" autocomplete="off">
       <div class="form-field my-2">
         <label for="new-item--name block mb-1">Item Name</label>
-        {#if recognition}
+        {#if recognitionName}
           <button type="button" class="btn ml-2 px-2 py-1 listener" class:recognizing = {recognizing} on:click="{listenForName}">
             <Icon icon="clarity:microphone-line" />
           </button>
@@ -568,6 +603,11 @@
       </div>
       <div v-show="newItem.startTime" class="form-field my-2">
         <label for="new-item--end-time block mb-1">Expiration Time</label>
+        {#if recognitionExpiration}
+          <button type="button" class="btn ml-2 px-2 py-1 listener" class:recognizing = {recognizing} on:click="{listenForEndTime}">
+            <Icon icon="clarity:microphone-line" />
+          </button>
+        {/if}
         <div class="date-picker">
           <input
             bind:value={newItem.endTime}
