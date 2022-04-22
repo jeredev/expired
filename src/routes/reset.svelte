@@ -1,93 +1,134 @@
+<script lang="ts" context="module">
+  export async function load({ url, params, fetch, session, stuff }) {
+    const res = await fetch('/api/auth/user', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ access_token: url.hash.slice(14, url.hash.indexOf('&')) })
+    })
+    if (!res.ok) {
+      return {
+        status: 200,
+        props: {
+          access_token: null
+        }
+      }
+    }
+    if (res.ok) {
+      // console.log(await res.json())
+      return {
+        status: 200,
+        props: {
+          access_token: url.hash.slice(14, url.hash.indexOf('&'))
+        }
+      }
+    }
+    // console.log(url.searchParams.get('type'))
+    // https://juvelylevqqyyokxzkkq.supabase.co/auth/v1/verify?token=jS1Ypf4BuubLH-nZMtHtfA&type=recovery&redirect_to=https://localhost:3000/reset
+    // Search for token and type
+    // #access_token
+    // expires_in
+    // refresh_token
+    // token_type
+    // type
+    // https://localhost:3000/reset#access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNjQ5NzgzNTM2LCJzdWIiOiJlNDU4YTA1NS0zZGJjLTRmZWMtOTFmNy1lMWM5YzMxZWE5MzAiLCJlbWFpbCI6ImplcmVteUBqZXJlbXl3eW5uLmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwifSwidXNlcl9tZXRhZGF0YSI6e30sInJvbGUiOiJhdXRoZW50aWNhdGVkIn0.Cpkdu7bXx6eK192HPUXvOPKJsbjjJnKvH6xraSPst3o&expires_in=604800&refresh_token=3YaTLJ8xCf4ALqgXCXdiwQ&token_type=bearer&type=recovery
+    // console.log(url)
+    // // console.log(url.searchParams.get('token')) // null
+    // // console.log(url.searchParams.get('type')) // null
+    // console.log(url.hash)
+    // console.log(url.hash.slice(14, url.hash.indexOf('&')))
+    // return {
+    //   status: 200,
+    //   props: {
+    //     access_token: url.hash.slice(14, url.hash.indexOf('&'))
+    //   }
+    // }
+  }
+</script>
+
 <script lang="ts">
-  import { supabase } from "$lib/supabase"
 
-  // https://juvelylevqqyyokxzkkq.supabase.co/auth/v1/verify?token=J3d5QjjIjKPG1Glxpf3wwA&type=recovery&redirect_to=https://localhost:3000/reset
+  export let access_token
 
-  // TODO :: Password strength checker!
+  let pwd
+  let confirmPwd
 
-  let accessToken = null
+  let statusProcessing = false
+  let resetPwdValid = false
 
-  let email
-  let recoverPasswordValid = false
-  const checkEmailValidity = () => {
-    if (/([^\s])/.test(email)) recoverPasswordValid = true
-    else recoverPasswordValid = false
+  let resetSuccess = false
+
+  const validatePwd = () => {
+    if (access_token && /([^\s])/.test(pwd) && /([^\s])/.test(pwd) && pwd.length >= 6 && pwd === confirmPwd) {
+      resetPwdValid = true
+    }
+    else {
+      resetPwdValid = false
+    }
   }
-  const recoverPassword = async() => {
-    console.log('resetting!')
-    // const { data, error } = supabase.auth.api
-    //   .resetPasswordForEmail(email)
-  }
-
-  let password
-  let passwordConfirmation
-  let resetPasswordValid = false
-  const checkPasswordValidity = () => {
-    if (/([^\s])/.test(password) && /([^\s])/.test(passwordConfirmation) && password === passwordConfirmation) resetPasswordValid = true
-    else resetPasswordValid = false
-  }
-  const resetPassword = async() => {
-    console.log('resetting!')
-    // const { error, data } = await supabase.auth.api
-    //   .updateUser(access_token, { password })
+  const resetPwd = async() => {
+    const formData = new FormData()
+    formData.append('access_token', access_token)
+    formData.append('pwd', pwd)
+    const res = await fetch('/api/auth/reset', {
+      method: 'PATCH',
+      body: formData
+    })
+    if (!res.ok) {
+      console.log(await res.json())
+    }
+    if (res.ok) {
+      resetSuccess = true
+      // console.log(await res.json())
+    }
   }
 </script>
 
 <div class="decay mx-auto max-w-50rem p-4 text-white">
-  <h1 class="mb-4">Reset your password</h1>
-  {#if accessToken}
-    <div>
-      <form on:submit|preventDefault={resetPassword}>
-        <fieldset>
-          <div class="form-field my-2">
-            <label for="password" class="block">New password</label>
+  {#if access_token}
+    {#if resetSuccess}
+      Password successfully reset!
+    {:else}
+      <h1>Reset your password</h1>
+      <form on:submit|preventDefault={resetPwd} class="form form--login">
+        <div class="login-form-fields">
+          <div class="form-field">
+            <label for="password">New password</label>
             <input
+              bind:value="{pwd}"
+              on:input="{validatePwd}"
               type="password"
               id="password"
+              required
               class="bg-black text-white p-2 w-full"
-              bind:value="{password}"
-              on:input={checkPasswordValidity}
             >
           </div>
-          <div class="form-field my-2">
-            <label for="confirm-password" class="block">Confirm your password</label>
+          <div class="form-field">
+            <label for="confirmPassword">Confirm your password</label>
             <input
+              bind:value="{confirmPwd}"
+              on:input="{validatePwd}"
               type="password"
-              id="confirm-password"
-              class="bg-black text-white p-2 w-full"
-              bind:value="{passwordConfirmation}"
-              on:input={checkPasswordValidity}
+              id="confirmPassword"
+              class="bg-black text-white my-2 p-2 w-full"
             >
           </div>
-        </fieldset>
-        <button type="submit" class="btn mt-4" disabled={!resetPasswordValid}>Continue</button>
+          <button type="submit" class="btn" disabled="{statusProcessing || !resetPwdValid}">
+            Continue
+          </button>
+        </div>
       </form>
-    </div>
+    {/if}
+  {:else if access_token === null}
+    Not valid.
+    <!-- Your password reset request couldn't be processed. Make sure cookies are enabled in your browser and try again. -->
   {:else}
-    <div>
-      <p>Enter the email address associated with your account and we'll send you a link to reset your password.</p>
-      <form on:submit|preventDefault={recoverPassword}>
-        <fieldset>
-          <div class="form-field my-2">
-            <label for="email" class="block">Email</label>
-            <input
-              type="email"
-              id="email"
-              class="bg-black text-white p-2 w-full"
-              bind:value="{email}"
-              on:input={checkEmailValidity}
-            >
-          </div>
-        </fieldset>
-        <button type="submit" class="btn mt-4" disabled={!recoverPasswordValid}>Continue</button>
-      </form>
-    </div>
+    Loading...
   {/if}
 </div>
 
 <style>
-  .form-field input:focus-visible {
-    /* outline: 5px solid var(--red); */
-    filter: drop-shadow(0 0 0.125rem #fff);
-  }
+
 </style>

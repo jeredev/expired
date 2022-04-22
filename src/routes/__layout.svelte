@@ -1,75 +1,6 @@
-
-<script context="module">
-	export async function load({ session }) {
-    // console.log('session from load below:')
-    // console.log(session)
-    // // console.log(url.href) // This is correct and matches input
-    // const params = new URLSearchParams(url.href)
-    // for(var pair of params.entries()) {
-    //   console.log(pair[0]+ ', '+ pair[1]);
-    // }
-    // // if (new URLSearchParams(url.href).get('access_token')) {
-    // //   console.log('access')
-    // // }
-    // if (params.get('type') === 'recovery') {
-    //   console.log('go to reset page')
-    //   return {
-    //     status: 302,
-    //     redirect: '/reset'
-    //   }
-    // }
-
-    return {}
-    // if (params.get('type') === 'recovery') {
-    //   // Redirect to Password Reset page
-    // }
-		
-
-		// ...
-	}
-</script>
 <script>
-  import { supabase } from "$lib/supabase";
-  import { session } from "$app/stores";
-  import { browser } from "$app/env";
   import * as Sentry from "@sentry/browser";
   import { BrowserTracing } from "@sentry/tracing";
-
-  if (browser) {
-    // $session = supabase.auth.session()
-    supabase.auth.onAuthStateChange(async(event, sesh) => {
-      // console.log('$session below:')
-      // console.log($session)
-      await handleAuthChange(event, sesh)
-      const res = await fetch('/api/auth', {
-        method: 'GET',
-        credentials: 'same-origin'
-      })
-      // console.log(await res.json())
-      $session = await res.json()
-      // $session = sesh
-    })
-    // const user = supabase.auth.user()
-    // console.log(user)
-  }
-
-  const handleAuthChange = async(event, session) => {
-    // console.log('handleAuthChange')
-    const res = await fetch('/api/auth', {
-      method: 'POST',
-      headers: new Headers({ 'Content-Type': 'application/json' }),
-      credentials: 'same-origin',
-      body: JSON.stringify({ event, session })
-    })
-    // const results = await res.json()
-    // console.log('results below:')
-    // console.log(results)
-    // if (!response.ok) {
-    //   throw new Error(`HTTP error! status: ${response.status}`);
-    // }
-  }
-
-  // console.log(supabase.auth.session())
 
   Sentry.init({
     dsn: "https://6bc5561aeb964cc69945653710add9a2@o998740.ingest.sentry.io/6198797",
@@ -115,5 +46,15 @@
     background-color: var(--red);
     color: white;
     border-color: var(--red);
+  }
+  .listener:hover, .listener:focus, .listener:active {
+    background-color: inherit;
+    border-color: rgba(220, 38, 38, 1);
+    color: rgba(220, 38, 38, 1);
+  }
+  .listener.recognizing {
+    background-color: rgba(220, 38, 38, 1);
+    color: white;
+    border-color: rgba(220, 38, 38, 1);
   }
 </style>

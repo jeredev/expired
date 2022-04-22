@@ -1,8 +1,47 @@
+<script lang="ts" context="module">
+  export async function load({ url, params, fetch, session, stuff }) {
+    const { user } = session
+    if (user && user.id) {
+      // if (!user.account) {
+
+      // }
+      if (user.account?.subscription_status === 'active') {
+        let appendage = '?' + new URLSearchParams(url.searchParams)
+        const items = await fetch('/api/items' + appendage)
+        const categories = await fetch('/api/categories')
+        return {
+          status: 200,
+          props: {
+            items: items.ok && (await items.json()),
+            categories: categories.ok && (await categories.json()),
+            user
+          }
+          // status: response.status,
+        }
+      }
+      return {
+        status: 200,
+        props: {
+          user
+        }
+      }
+    }
+    else {
+      return {
+        status: 200,
+        props: {
+          user
+        }
+      }
+    }
+  }
+</script>
 <script lang="ts">
-  import { supabase } from "$lib/supabase";
   import { page, session } from "$app/stores";
+
   import { onDestroy, onMount } from "svelte";
-  import { slide } from 'svelte/transition';
+
+  import { fade, slide } from 'svelte/transition';
   import Icon from '@iconify/svelte'
   import {
     addYears,
@@ -33,11 +72,15 @@
   import Messenger from "../components/Messenger.svelte"
   import { displayMode, sortingMode, timeStatusMode, message } from "../stores";
 
-  // export let categories
-  let categories = null
+  export let categories: Array<CategoryProps> | null = null
+  export let items: Array<ItemProps> | null = null
+  export let user
 
-  let allItems: Array<ItemProps> | null = null
-  let items: Array<ItemProps> | null = null
+  // let categories = null
+  // let categories: Array<CategoryProps> | null = null
+
+  // let allItems: Array<ItemProps> | null = null
+  // let items: Array<ItemProps> | null = null
 
   let listings = null
   let time = new Date().getTime()
@@ -50,166 +93,153 @@
   let searchMenuActive = false
   let sortingMenuActive = false
 
-  // const sendMsg = () => {
-  //   message.set({
-  //     text: 'Message',
-  //     timed: true
-  //   })
-  // }
-
   let statusProcessing = false
 
+  // let loginProcessing = false
   const logIn = async () => {
     statusProcessing = true
-    const { user, error } = await supabase.auth.signIn({
-      email: email,
-      password: password,
-    });
-    if (user) {
-      statusProcessing = false
-      message.set({
-        text: 'Successfully logged in.',
-        timed: true
-      })
-      // Get account information
-      // const { data, error } = await supabase
-      //   .from('accounts')
-      //   .select()
-      //   .eq('owner', user.id)
-      // if (data) {
-      //   console.log(`data from account below: (looking up ${user.id})`)
-      //   console.log(data)
-      // }
-      // if (error) {
-      //   message.set({
-      //     text: `Error: ${error.message}`,
-      //     timed: true
-      //   })
-      //   console.error('Error:', error)
-      //   return
-      // }
-      // Perform mount operations
-      categories = await getCategories()
-      const params = new URLSearchParams(location.search)
-      if (params.get('name')) {
-        searchQuery.name = params.get('name')
-        search.name = params.get('name')
-      }
-      if (params.get('end')) {
-        searchQuery.end = params.get('end')
-        search.endTime = params.get('end')
-      }
-      if (params.get('cat')) {
-        searchQuery.cat = params.get('cat')
-        search.category = params.get('cat')
-      }
-      clock = window.setInterval(runClock, 1000);
-      allItems = await getItems(searchQuery)
-      allItems.forEach(async(item: ItemProps) => {
-        if (item.imagePath) {
-          const imagePath = user.id + "/" + item.imagePath
-          item.image = await getItemImage(imagePath)
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email,
+          password
+        }),
+        headers: {
+          'Content-Type': 'application/json'
         }
       })
-      items = allItems
-      generateListings()
+      if (!res.ok) {
+        const error = await res.json()
+        console.log(error)
+        message.set({
+          text: `Error: ${error.message}`,
+          timed: true
+        })
+      }
+      if (res.ok) {
+        const data = await res.json()
+        if (data && data.role === 'authenticated') {
+          message.set({
+            text: `Login successful.`,
+            timed: true
+          })
+          session.set({ user: data })
+          if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
+            categories = await getCategories()
+            clock = window.setInterval(runClock, 1000);
+            items = await getItems(searchQuery)
+            generateListings()
+          }
+        }
+      }
     }
-    if (error) {
-      statusProcessing = false
+    catch(e) {
+      console.log(e)
       message.set({
-        text: `Error: ${error.message}`,
+        text: `Error: ${e}`,
         timed: true
       })
-      console.error('There was a problem:', error)
-      return
     }
+    statusProcessing = false
   };
 
   const logOut = async () => {
     statusProcessing = true
-    const { error } = await supabase.auth.signOut();
+    try {
+      const res = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        message.set({
+          text: `Error: ${error.message}`,
+          timed: true
+        })
+      }
+      if (res.ok) {
+        session.set({ user: null }),
+        message.set({
+          text: `Logout successful.`,
+          timed: true
+        })
+      }
+    }
+    catch(e) {
+      console.log(e)
+      message.set({
+        text: `Error: ${e}`,
+        timed: true
+      })
+    }
     statusProcessing = false
-    if (error) {
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('There was a problem:', error)
-      return
-    }
-    else {
-      message.set({
-        text: 'Successfully logged out.',
-        timed: true
-      })
-    }
   };
 
   const addItems = async(e: CustomEvent) => {
     const newItems = e.detail
-    categories = await getCategories()
-    newItems.forEach(async(item) => {
-      const found = categories.find((element: CategoryProps) => element.id === item.category)
-      if (!found) {
-        item.category = {}
-      } else {
-        item.category = {}
-        item.category.id = found.id
-        item.category.name = found.name
-        item.edits.category.id = found.id
-        item.edits.category.name = found.name
-      }
-      if (item.imagePath) {
-        const imagePath = $session.user.id + "/" + item.imagePath
-        item.image = await getItemImage(imagePath)
-      }
-      item.time = time
-      allItems.push(item)
-      // items = [...items, item]
-      generateListings()
-    });
+    // Determine if item should be shown in current list
+    categories = await getCategories() // In the case that a new category was created when the item was added
+    // if ($timeStatusMode !== 'expired') {
+      newItems.forEach(async(item) => {
+        const found = categories.find((element: CategoryProps) => element.id === item.category)
+        if (!found) {
+          item.category = {}
+        } else {
+          item.category = {}
+          item.category.id = found.id
+          item.category.name = found.name
+          item.edits.category.id = found.id
+          item.edits.category.name = found.name
+        }
+        item.time = time
+        items.push(item)
+        // items = [...items, item]
+        // generateListings()
+      });
+    // }
+    generateListings()
   }
 
   const removeItem = (e: CustomEvent) => {
-    const indexAllItems = allItems.findIndex((x) => x.id === e.detail.id)
-    // console.log(`indexAllItems = ${indexAllItems}`)
-    if ( indexAllItems !== -1) {
-      allItems = [...allItems.slice(0, indexAllItems), ...allItems.slice(indexAllItems + 1)]
-    }
-    const indexItems = items.findIndex((x) => x.id === e.detail.id)
-    // console.log(`indexItems = ${indexItems}`)
-    if ( indexItems !== -1) {
-      items = [...items.slice(0, indexItems), ...items.slice(indexItems + 1)]
-    }
-    // Is this part even needed?
-    // const indexListings = listings.findIndex((x) => x.id === e.detail.id)
-    // console.log(`indexListings = ${indexListings}`)
-    // if (indexListings !== -1) {
-    //   listings = [...listings.slice(0, indexListings), ...listings.slice(indexListings + 1)]
-    // }
+    items = items.filter((item: ItemProps) => item.id !== e.detail.id)
     generateListings()
   }
 
   const updateItem = (e: CustomEvent) => {
     const updatedItem = e.detail
-    allItems.map(() => {
-      const item = allItems.find(({ id }) => id === updatedItem.id);
-      return item ? item : updatedItem;
-    });
     items.map(() => {
       const item = items.find(({ id }) => id === updatedItem.id);
-      return item ? item : updatedItem;
-    });
-    listings.map(() => {
-      const item = listings.find(({ id }) => id === updatedItem.id);
       return item ? item : updatedItem;
     });
     generateListings()
   }
 
-  const resetPwd = () => {
-    console.log('resetting!')
-  };
+  const resetPwd = async() => {
+    if (email && /([^\s])/.test(email)) {
+      const formData = new FormData()
+      formData.append('email', email)
+      const res = await fetch('/api/auth/init-reset', {
+        method: 'POST',
+        body: formData
+      })
+      if (!res.ok) {
+        console.log('!res.ok')
+        const error = await res.json()
+        message.set({
+          text: `Error: ${error.message}`,
+          timed: true
+        })
+        console.log('error initiating reset:', error)
+        return
+      }
+      if (res.ok) {
+        resetRequestSuccessful = true
+      }
+    }
+  }
 
   let clock;
 
@@ -226,29 +256,30 @@
     return time - new Date(startTime).getTime()
   }
   const filterAll = () => {
-    items = allItems
+    listings = items
   }
-  const filterSafe = () => {
-    const safe = allItems.filter((item: ItemProps) => {
+  const filterSafe = (payload: Array<ItemProps>) => {
+    listings = payload.filter((item: ItemProps) => {
       let timeElapsed = getTimeElapsed(item.startTime)
       let lifespan = getLifespan(item.startTime, item.endTime)
       return timeElapsed < lifespan
     })
-    items = safe
   }
-  const filterExpired = () => {
-    const expired = allItems.filter((item: ItemProps) => {
+  const filterExpired = (payload: Array<ItemProps>) => {
+    listings = payload.filter((item: ItemProps) => {
       let timeElapsed = getTimeElapsed(item.startTime)
       let lifespan = getLifespan(item.startTime, item.endTime)
       return timeElapsed > lifespan
     })
-    items = expired
   }
   const sortAlphaAsc = (payload: Array<ItemProps>) => {
     return payload.sort((a: ItemProps, b: ItemProps) => a.name.localeCompare(b.name))
   }
   const sortAlphaDesc = (payload: Array<ItemProps>) => {
     return payload.sort((a: ItemProps, b: ItemProps) => b.name.localeCompare(a.name))
+  }
+  const sortCatsAlphaAsc = (payload: Array<CategoryProps>) => {
+    return payload.sort((a: CategoryProps, b: CategoryProps) => a.name.localeCompare(b.name))
   }
   const sortEndtimeAsc = (payload: Array<ItemProps>) => {
     return payload.sort((a: ItemProps, b: ItemProps) => {
@@ -381,16 +412,16 @@
     }
   }
 
-  const sortByTimeStatus = () => {
+  const sortByTimeStatus = (payload: Array<ItemProps>) => {
     switch ($timeStatusMode) {
       case 'all':
         filterAll()
         break
       case 'safe':
-        filterSafe()
+        filterSafe(payload)
         break
       case 'expired':
-        filterExpired()
+        filterExpired(payload)
         break
     }
   }
@@ -412,24 +443,19 @@
 
   // let categories = []
   const getCategories = async() => {
-    const { data, error } = await supabase
-      .from('categories')
-      .select(`
-        id,
-        name
-      `)
-      .order('name', {ascending: true})
-    if (data) return data
-    if (error) {
+    const res = await fetch('/api/categories')
+    if (!res.ok) {
+      const error = await res.json()
+      console.log('error with getCategories():')
+      console.log(error)
       message.set({
         text: `Error: ${error.message}`,
         timed: true
       })
-      console.error('Error:', error)
-      return
     }
-    // const res = await fetch('/api/categories')
-    // return await res.json()
+    if (res.ok) {
+      return await res.json()
+    } 
   }
 
   const generateListings = () => {
@@ -442,6 +468,7 @@
   }
 
   const categorizeItems = () => {
+    listings = items
     let categorizedItems = []
     if (categories) {
       categories.forEach((category) => {
@@ -458,8 +485,8 @@
       items: []
     }
     categorizedItems.push(uncategorizedCategory)
-    sortByTimeStatus()
-    items.forEach((item: ItemProps) => {
+    sortByTimeStatus(listings)
+    listings.forEach((item: ItemProps) => {
       if (item.category) {
         const found = categorizedItems.find(element => element.id === item.category.id)
         if (found) found.items.push(item)
@@ -476,56 +503,29 @@
   }
 
   const listItems = () => {
-    sortByTimeStatus()
-    sortItems(items)
     listings = items
+    sortByTimeStatus(items)
+    sortItems(listings)
   }
 
   const getItems = async(query: searchQueryProps) => {
-    // https://supabase.com/docs/reference/javascript/using-filters
-    let fetch = supabase
-      .from('items')
-      .select(`
-        id,
-        name,
-        startTime,
-        endTime,
-        category (
-          id,
-          name
-        ),
-        imagePath
-      `)
-    // .limit(1)
-    if (query.name && /([^\s])/.test(query.name)) {
-      fetch = fetch.ilike('name', `%${query.name}%`)
-    }
-    if (query.end && /([^\s])/.test(query.end)) {
-      const endDate = new Date(query.end).toISOString()
-      console.log(typeof endDate)
-      fetch = fetch.lte('endTime', endDate)
-    }
-    if (query.cat && /([^\s])/.test(query.cat)) {
-      const category = categories.find((category) => category.name === query.cat)
-      fetch = fetch.eq('category', `${category.id}`)
-    }
-    const { data, error } = await fetch
-    if (data) return data
-    if (error) {
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('Error:', error)
-      return
-    }
-    /*
     let appendage = ''
     if (query) {
       appendage = '?' + new URLSearchParams(query)
     }
     const res = await fetch('/api/items' + appendage)
-    return await res.json()
+    if (!res.ok) {
+      const error = await res.json()
+      console.log('error from getItems():')
+      console.log(error)
+      message.set({
+        text: `Error: ${error.message}`,
+        timed: true
+      })
+    }
+    if (res.ok) {
+      return await res.json()
+    }
     // Error handling needed here
     // if (data) return data
     // if (error) {
@@ -536,25 +536,10 @@
     //   console.error('Error:', error)
     //   return
     // }
-    */
+    
   }
 
-  const getItemImage = async (path: string) => {
-    const { data, error } = await supabase
-      .storage
-      .from('expired')
-      .download(path)
-    if (data) return URL.createObjectURL(data)
-    if (error) {
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('Error:', error)
-      return
-    }
-  }
-
+  // DRY and move this
   interface searchQueryProps {
     name?: string,
     end?: string,
@@ -577,23 +562,27 @@
   }
   const addNewCategory = async() => {
     addingCategory = true
-    const { data, error } = await supabase
-      .from('categories')
-      .insert([
-        {
-          name: newCategory.trim(),
-        },
-      ])
-    if (error) {
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.log('error adding new category:', error)
+    const formData = new FormData()
+    formData.append('name', newCategory.trim())
+    const res = await fetch('/api/categories', {
+      method: 'POST',
+      body: formData
+    })
+    if (!res.ok) {
+      // message.set({
+      //   text: `Error: ${error.message}`,
+      //   timed: true
+      // })
+      // console.log('error adding new category:', error)
       return
     }
-    if (data) {
-      categories = await getCategories()
+    if (res.ok) {
+      const processed = await res.json()
+      const returnedCategory = processed[0]
+
+      categories = [...categories, returnedCategory]
+      categories = sortCatsAlphaAsc(categories)
+
       generateListings()
       newCategory = null
       addingCategory = false
@@ -601,11 +590,8 @@
   }
 
   const removeCategory = (e: CustomEvent) => {
-    const indexCategories = categories.findIndex((x: CategoryProps) => x.id === e.detail.id)
-    if ( indexCategories !== -1) {
-      categories = [...categories.slice(0, indexCategories), ...categories.slice(indexCategories + 1)]
-    }
-    generateListings()
+    categories = categories.filter((category: CategoryProps) => category.id !== e.detail.id)
+    generateListings() // Why?
   }
 
   const updateCategory = (e: CustomEvent) => {
@@ -638,50 +624,83 @@
   //   const type = $page.url.searchParams.get('type')
   //   console.log(`type is ${type}`)
   // })
+  
+  let forgot = false
+  let loginValid = false
+  let resetPwdValid = false
+  let resetRequestSuccessful = false
 
-  // Reset Password
-  // https://juvelylevqqyyokxzkkq.supabase.co/auth/v1/verify?token=K38j-Xb11CbncAA716H6lQ&type=recovery&redirect_to=https://localhost:3000
-  // https://localhost:3000/#access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNjQ1MjA1ODU1LCJzdWIiOiJmZGU0YmIxOS0zYzk4LTRkNzEtOGI5Mi01ZjVlMjYxOWMyOTgiLCJlbWFpbCI6ImplcmVteUBqZXJlZGV2LmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnt9LCJyb2xlIjoiYXV0aGVudGljYXRlZCJ9.dFIYnmS5qWEoSg0zeLgWBvEYI3jowCvPTD5cjwWtHO8&expires_in=3600&refresh_token=2u-C-sOOV_Fk-bkVBnpZAQ&token_type=bearer&type=recovery
-
-  // export async function load({ session }) {
-  //   const { user } = session
-  //   return {
-  //     props: {
-  //       user
-  //     }
-  //   };
-  // }
+  const checkLoginValidity = () => {
+    if (/([^\s])/.test(email)) {
+      resetPwdValid = true
+    }
+    else {
+      resetPwdValid = false
+    }
+    if (email && password && /([^\s])/.test(email) && /([^\s])/.test(password)) {
+      loginValid = true
+    }
+    else {
+      loginValid = false
+    }
+  }
 
   function goBack() {
     history.back()
   }
 
-  // console.log($session)
-  // console.log($session.user)
-  // console.log($session.user.account)
-  // console.log($session.user.account.active)
+  // Speech Recognition
+  let recognition = false
+  let recognizing = false
+  const listenForName = () => { 
+    if (recognition) {
+      recognition.abort() // Unsure :: InvalidStateError: Failed to execute 'start' on 'SpeechRecognition': recognition has already started.
+      recognition.start()
+      recognition.addEventListener('result', (e) => {
+        let text = Array.from(e.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('')
+        if (text) {
+          search.name = camelize(text)
+        }
+        recognition.stop()
+      })
+      recognition.onstart = function () {
+        recognizing = true
+      }
+      recognition.onend = function () {
+        recognizing = false
+      }
+    }
+  }
+
+  function camelize(str: string) {
+    return str.replace(/[^\s]+/g, function(word) {
+      return word.replace(/^./, function(first) {
+        return first.toUpperCase();
+      });
+    });
+  }
+
+  if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
+    generateListings()
+  }
 
   onMount(async() => {
-    // console.log('onMount()')
+    // console.log(`$session below:`)
     // console.log($session)
-    // console.log($session.user)
-    // console.log($session.user.account)
-    // console.log($session.user.account.active)
-    if ($session && $session.user && $session.user.account?.active) {
-      categories = await getCategories()
+    // console.log(`user below:`)
+    // console.log(user)
+    if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
       clock = window.setInterval(runClock, 1000);
-      allItems = await getItems(searchQuery)
-      allItems.forEach(async(item: ItemProps) => {
-        if (item.imagePath) {
-          const imagePath = $session.user.id + "/" + item.imagePath
-          item.image = await getItemImage(imagePath)
-        }
-      })
-      items = allItems
-      generateListings()
     }
-    
-  });
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (SpeechRecognition) {
+      // console.log('true') // Chrome needs webkit prefix version
+      recognition = new SpeechRecognition()
+    }
+  })
   onDestroy(() => {
     clearInterval(clock)
   })
@@ -690,36 +709,70 @@
 <div class="decay mx-auto max-w-50rem p-4 text-white">
   <Messenger />
   <div class="header">
-    <!-- <button type="button" class="btn" on:click="{sendMsg}">Message</button> -->
-    {#if $session && !$session.user}
+    {#if !user}
       <form on:submit|preventDefault={logIn} class="form form--login">
-        <div class="login-form-fields">
-          <input
-            bind:value="{email}"
-            type="email"
-            autocomplete="email"
-            placeholder="Email address"
-            required
-            class="bg-black text-white p-2 w-full"
-          >
-          <input
-            bind:value="{password}"
-            type="password" 
-            autocomplete="current-password" 
-            placeholder="Password"
-            class="bg-black text-white my-2 p-2 w-full"
-          > 
-          <button type="submit" class="btn" disabled="{statusProcessing}">
-            Login
-          </button>
-          <!-- <button on:click={resetPwd} type="button" class="btn">
-            Reset
-          </button> -->
+        {#if forgot}
+          <div transition:slide>
+            <h1>Reset your password</h1>
+            <p>Enter the email address associated with your account and you'll receive a link to reset your password.</p>
+          </div>
+        {/if}
+        <div class="login-form-area">
+          <div class="login-form-fields" class:forgot-mode={forgot}>
+            <div class="form-field">
+              <label for="login-email">Email</label>
+              <input
+                bind:value="{email}"
+                on:input="{checkLoginValidity}"
+                type="email"
+                id="login-email"
+                autocomplete="email"
+                required
+                class="bg-black text-white p-2 w-full"
+              >
+            </div>
+            {#if !forgot}
+              <div class="form-field">
+                <div class="label-field">
+                  <label for="login-password">Password</label>
+                  <div class="forgot" on:click={() => { forgot = true }}>Forgot?</div>
+                </div>
+                <input
+                  bind:value="{password}"
+                  on:input="{checkLoginValidity}"
+                  type="password"
+                  id="login-password"
+                  autocomplete="current-password" 
+                  class="bg-black text-white my-2 p-2 w-full"
+                > 
+              </div>
+            {/if}
+          </div>
+          <div class="form-actions">
+            {#if forgot}
+              <button on:click={resetPwd} type="button" class="btn" disabled={!resetPwdValid}>
+                Reset
+              </button>
+              <button on:click={() => { forgot = false }} type="button" class="btn ml-2">
+                Cancel
+              </button>
+            {:else}
+              <button type="submit" class="btn" disabled="{statusProcessing || !loginValid}">
+                Login
+              </button>
+            {/if}
+          </div>
         </div>
+        {#if resetRequestSuccessful}
+          <div transition:fade class="mt-2">
+            <h2>Check your email for instructions to reset your password.</h2>
+            <p>If you haven't received an email in 5 minutes, check your spam or resubmit the form.</p>
+          </div>
+        {/if}
       </form>
     {/if}
   </div>
-  {#if $session && $session.user && $session.user.account && $session.user.account.active}
+  {#if user && user.account && user.account.subscription_status === 'active'}
     <div class="homebase">
       <div class="controls pb-4 flex">
         {#if Object.keys(searchQuery).length}
@@ -767,7 +820,7 @@
             </div>
           </div>
           <div class="categories-list mt-2">
-            {#each categories as category}
+            {#each categories as category (category.id)}
               <CategoryBar category="{category}" on:updateCategory={updateCategory} on:removeCategory={removeCategory} />
             {/each}
           </div>
@@ -819,6 +872,11 @@
           <form on:submit={searchItems} class="search">
             <div class="form-field my-2">
               <label for="search-items--text">Name</label>
+              {#if recognition}
+                <button type="button" class="btn ml-2 px-2 py-1" class:recognizing = {recognizing} on:click="{listenForName}">
+                  <Icon icon="clarity:microphone-line" />
+                </button>
+              {/if}
               <input
                 name="name"
                 id="search-items--text"
@@ -938,17 +996,36 @@
         <p>Loading...</p>
       {/if}
     </div>
-  {:else if $session && $session.user && $session.user.account && !$session.user.account.active}
+  {:else if user && user.account && user.account.subscription_status !== 'active'}
     <p>Account inactive. Please <a href="/">reactivate your account</a> here.</p>
+  <!-- Really not supposed to be here -->
+  {:else if user && !user.account}
+    <p>No account found.</p>
   {:else}
     <div class="py-4">Authorized users only.</div>
   {/if}
 </div>
 
 <style>
+  .label-field {
+    align-items: flex-end;
+    display: flex;
+    justify-content: space-between;
+  }
+  .forgot {
+    color: var(--red);
+    cursor: pointer;
+    font-size: 90%;
+  }
+  /* .login-form-fields {
+    transition: .3s ease;
+  } */
   .login-form-fields input:focus-visible {
     /* outline: 5px solid var(--red); */
     filter: drop-shadow(0 0 0.125rem #fff);
+  }
+  .login-form-fields label {
+    font-size: 90%;
   }
   .form-field input:focus-visible, .form-field select:focus-visible {
     filter: drop-shadow(0 0 0.125rem #fff);
@@ -958,7 +1035,18 @@
     .login-form-fields {
       display: grid;
       grid-gap: 1rem;
-      grid-template-columns: 1fr 1fr min-content;
+      grid-template-columns: 1fr 1fr;
+    }
+    .login-form-fields.forgot-mode {
+      display: grid;
+      grid-gap: 1rem;
+      grid-template-columns: 1fr;
+      margin-top: 0.5rem;
+    }
+    .login-form-area {
+      display: grid;
+      grid-gap: 1rem;
+      grid-template-columns: 1fr min-content;
     }
     .login-form-fields input[type="password"] {
       margin: 0;
@@ -984,5 +1072,13 @@
   }
   .unit-form-fields label {
     font-size: 80%;
+  }
+  .form-actions {
+    align-items: flex-end;
+    display: flex;
+  }
+  .form-actions .btn {
+    padding-bottom: 0.5rem;
+    padding-top: 0.5rem;
   }
 </style>

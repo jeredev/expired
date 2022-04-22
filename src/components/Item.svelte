@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { supabase } from "$lib/supabase";
   import { session } from "$app/stores";
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { slide } from 'svelte/transition';
@@ -20,6 +19,7 @@
     differenceInDays,
     differenceInHours,
     differenceInMinutes,
+    endOfMonth,
     format,
     subYears,
     subMonths,
@@ -33,9 +33,11 @@
   export let item
   export let time
 
+  let image: HTMLImageElement
+  let imageLoaded = false
+
   item.expired = null
   item.imminent = false
-  item.imageLoaded = true
 
   item.edits = {
     name: item.name,
@@ -57,7 +59,8 @@
   }
   else {
     item.edits.category = {}
-    item.edits.category.id = null
+    item.edits.category.id = ''
+    // item.edits.category.id = null
   }
 
   let itemElement
@@ -77,29 +80,22 @@
   const removeItem = async() => {
     statusProcessing = true
     statusRemoving = true
-    const { data, error } = await supabase
-      .from('items')
-      .delete()
-      .match({ id: item.id })
-    if (error) {
-      statusProcessing = false
-      statusRemoving = false
+    const formData = new FormData()
+    formData.append('id', item.id)
+    const res = await fetch('/api/item', {
+      method: 'DELETE',
+      body: formData
+    })
+    if (!res.ok) {
+      // Error here
+      alert('failure!')
+      const error = await res.json()
       message.set({
         text: `Error: ${error.message}`,
         timed: true
       })
-      console.error('There was a problem:', error)
-      return
     }
-    if (data) {
-      if (data[0] && data[0].imagePath) {
-        const fromPath = `${$session.user.id}/${data[0].imagePath}`
-        // Ideally, this should be done behind the scenes or in a housekeeping like fashion // Worked
-        await supabase
-          .storage
-          .from('expired')
-          .remove([fromPath])
-      }
+    if (res.ok) {
       statusProcessing = false
       statusRemoving = false
       menuVisible = false
@@ -158,49 +154,6 @@
   item.precursorBar = getPrecursorBar()
   item.timeBar = getTimeBar()
   item.timeRemaining = getTimeRemainder()
-  const getItemImage = async (path) => {
-    // console.log('getting image from supabase')
-    const { data, error } = await supabase
-      .storage
-      .from('expired')
-      .download(path)
-    if (data) {
-      item.imageLoaded = true
-      return URL.createObjectURL(data)
-    }
-    if (error) {
-      console.log(`error from ${path}`)
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('Error:', error)
-      return
-    }
-  }
-  const buildItemImage = async (path) => {
-    // console.log('building')
-    const imagePath = $session.user.id + "/" + item.imagePath
-    item.image = await getItemImage(imagePath)
-  }
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.remove('unset')
-        // Build Item Image
-        if (item.imagePath && !item.image) {
-          item.imageLoaded = false
-          buildItemImage(item.imagePath)
-        }
-        io.unobserve(entry.target)
-      }
-    })
-  },
-  {
-    root: null,
-    rootMargin: '0px',
-    threshold: [0],
-  })
 
   let updateValid = false
   const checkUpdateValidity = () => {
@@ -215,42 +168,81 @@
 
   const deleteImage = async() => {
     if (item.imagePath && $session.user.id) {
-      const fromPath = `${$session.user.id}/${item.imagePath}`
-      const { data, error } = await supabase
-        .storage
-        .from('expired')
-        .remove([fromPath])
-      if (error) {
-        message.set({
-          text: `Error: ${error.message}`,
-          timed: true
-        })
-        console.error('Error:', error)
-        return
-      }
-      if (data && data.length > 0) {
-        // Edit item to remove imagePath
-        const { error } = await supabase
-          .from('items')
-          .update({ imagePath: null })
-          .match({ id: item.id })
-        item.imagePath = null
-        item.image = null
-        if (error) {
+      statusProcessing = true
+
+      const formData = new FormData()
+      formData.append('id', item.id)
+      formData.append('image', '')
+      formData.append('imagePath', item.imagePath)
+
+      // const payload = {}
+      // payload.id = item.id
+      // payload.image = null
+      // payload.imagePath = item.imagePath
+
+      // fetch('/api/item', {
+      //   method: 'PATCH',
+      //   body: formData
+      // })
+      // .then(async(response) => {
+      //   if (!response.ok) {
+      //     const error = await response.json()
+      //     throw new Error(error)
+      //   }
+      // })
+      // .then(data => {
+      //   item.imagePath = null
+      //   item.image = null
+      //   message.set({
+      //     text: 'Successfully deleted item image.',
+      //     timed: true 
+      //   })
+      // })
+      // .catch((error) => {
+      //   console.log(error)
+      //   if (error.message) {
+      //     message.set({
+      //       text: `Error: ${error.message}`,
+      //       timed: true
+      //     })
+      //   }
+      // })
+
+      const res = await fetch('/api/item', {
+        method: 'PATCH',
+        // body: JSON.stringify(payload)
+        body: formData
+      })
+      // Res.error
+      if (!res.ok) {
+        statusProcessing = false
+        statusUpdating = false
+        console.log(`!res.ok and before error await`)
+        const error = await res.json()
+        console.log('after await error which should be logged below:')
+        console.log(error)
+        if (error.message) {
           message.set({
             text: `Error: ${error.message}`,
             timed: true
           })
-          console.error('Error:', error)
-          return
         }
         else {
           message.set({
-            text: 'Successfully deleted item image.',
-            timed: true 
+            text: `Error: ${error}`,
+            timed: true
           })
         }
       }
+      if (res.ok) {
+        item.imagePath = null
+        item.image = null
+        message.set({
+          text: 'Successfully deleted item image.',
+          timed: true 
+        })
+      }
+      statusProcessing = false
     }
   }
 
@@ -260,30 +252,37 @@
     statusProcessing = true
     // Calculate new endTime
     let renewedEndTime = updateEndTimeRelativelyForRenewal()
-    const { data, error } = await supabase
-      .from('items')
-      .update({
-        startTime: new Date(),
-        endTime: new Date(renewedEndTime),
-      })
-      .match({ id: item.id })
-    if (error) {
+
+    const formData = new FormData()
+    formData.append('id', item.id)
+    formData.append('startTime', new Date().toISOString())
+    formData.append('endTime', new Date(renewedEndTime).toISOString())
+
+    const res = await fetch('/api/item', {
+      method: 'PATCH',
+      body: formData
+    })
+
+    if (!res.ok) {
       statusProcessing = false
-      statusUpdating = false
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('There was a problem:', error)
+      statusRenewing = false
+      // message.set({
+      //   text: `Error: ${error.message}`,
+      //   timed: true
+      // })
+      // console.error('There was a problem:', error)
       return
     }
-    if (data && data[0]) {
-      item.name = data[0].name
-      item.startTime = data[0].startTime
-      item.endTime = data[0].endTime
-      item.edits.name = data[0].name
+    if (res.ok) {
+      const processed = await res.json()
+      const renewedItem = processed[0]
+
+      item.name = renewedItem.name
+      item.startTime = renewedItem.startTime
+      item.endTime = renewedItem.endTime
+      item.edits.name = renewedItem.name
       // Find category name / Assign category
-      const found = categories.find(element => element.id === data[0].category)
+      const found = categories.find(element => element.id === renewedItem.category)
       if (!found) {
         item.category = {}
       } else {
@@ -293,13 +292,13 @@
         item.edits.category.id = found.id
         item.edits.category.name = found.name
       }
-      item.edits.startTime = format(new Date(data[0].startTime), 'yyyy-MM-dd\'T\'HH:mm')
-      item.edits.endTime = format(new Date(data[0].endTime), 'yyyy-MM-dd\'T\'HH:mm')
+      item.edits.startTime = format(new Date(renewedItem.startTime), 'yyyy-MM-dd\'T\'HH:mm')
+      item.edits.endTime = format(new Date(renewedItem.endTime), 'yyyy-MM-dd\'T\'HH:mm')
       updateEndTimeRelativity()
       menuVisible = false
       dispatch('update', item)
       statusProcessing = false
-      statusUpdating = false
+      statusRenewing = false
       message.set({
         text: 'Item renewed.',
         timed: true
@@ -308,56 +307,147 @@
   }
 
   let statusUpdating = false
-  const updateItem = async () => {
+  const updateItem = async() => {
     statusProcessing = true
     statusUpdating = true
-    const { data, error } = await supabase
-      .from('items')
-      .update({
-        name: item.edits.name,
-        startTime: item.edits.startTime,
-        endTime: item.edits.endTime,
-        category: item.edits.category.id,
-      })
-      .match({ id: item.id })
-    if (error) {
+
+    // const payload = {}
+    // payload.id = item.id
+    // payload.name = item.edits.name
+    // payload.startTime = item.edits.startTime
+    // payload.endTime = item.edits.endTime
+    // payload.category = item.edits.category.id
+
+    const formData = new FormData()
+    formData.append('id', item.id)
+    formData.append('name', item.edits.name)
+    formData.append('startTime', item.edits.startTime)
+    formData.append('endTime', item.edits.endTime)
+    formData.append('category', item.edits.category.id)
+
+    // fetch('/api/item', {
+    //   method: 'PATCH',
+    //   body: formData
+    // })
+    // .then((response) => {
+    //   // if (!response.ok) {
+    //   //   const error = await response.json()
+    //   //   throw new Error(error)
+    //   // }
+    // })
+    // .then(data => {
+    //   console.log('data below:')
+    //   console.log(data)
+    //   if (data && data[0]) {
+    //     const updatedItem = data[0]
+    //     if (updatedItem.id === item.id) {
+    //       item.name = updatedItem.name
+    //       item.startTime = updatedItem.startTime
+    //       item.endTime = updatedItem.endTime
+    //       item.edits.name = updatedItem.name
+    //       // Find category name / Assign category
+    //       const found = categories.find(element => element.id === updatedItem.category)
+    //       if (!found) {
+    //         item.category = {}
+    //       } else {
+    //         item.category = {}
+    //         item.category.id = found.id
+    //         item.category.name = found.name
+    //         item.edits.category.id = found.id
+    //         item.edits.category.name = found.name
+    //       }
+    //       item.edits.startTime = format(new Date(updatedItem.startTime), 'yyyy-MM-dd\'T\'HH:mm')
+    //       item.edits.endTime = format(new Date(updatedItem.endTime), 'yyyy-MM-dd\'T\'HH:mm')
+    //       updateEndTimeRelativity()
+    //       menuVisible = false
+    //       dispatch('update', item)
+    //       message.set({
+    //         text: 'Item updated.',
+    //         timed: true
+    //       })
+    //     }
+    //   }
+    //   else {
+    //     throw new Error('No valid data was returned')
+    //   }
+    // })
+    // .catch((error) => {
+    //   console.log(error)
+    //   if (error.message) {
+    //     message.set({
+    //       text: `Error: ${error.message}`,
+    //       timed: true
+    //     })
+    //   }
+    // })
+    // statusProcessing = false
+    // statusUpdating = false
+
+    const res = await fetch('/api/item', {
+      method: 'PATCH',
+      // headers : { 
+      //   'Content-Type': 'application/json',
+      //   'Accept': 'application/json'
+      // },
+      body: formData
+      // body: JSON.stringify(payload)
+    })
+    // Res.error
+    if (!res.ok) {
+      console.log('!res.ok')
       statusProcessing = false
       statusUpdating = false
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('There was a problem:', error)
-      return
-    }
-    if (data && data[0]) {
-      item.name = data[0].name
-      item.startTime = data[0].startTime
-      item.endTime = data[0].endTime
-      item.edits.name = data[0].name
-      // Find category name / Assign category
-      const found = categories.find(element => element.id === data[0].category)
-      if (!found) {
-        item.category = {}
-      } else {
-        item.category = {}
-        item.category.id = found.id
-        item.category.name = found.name
-        item.edits.category.id = found.id
-        item.edits.category.name = found.name
+      console.log('error before await')
+      const error = await res.json()
+      console.log('error after await below:')
+      console.log(error)
+      if (error.message) {
+        message.set({
+          text: `Error: ${error.message}`,
+          timed: true
+        })
       }
-      item.edits.startTime = format(new Date(data[0].startTime), 'yyyy-MM-dd\'T\'HH:mm')
-      item.edits.endTime = format(new Date(data[0].endTime), 'yyyy-MM-dd\'T\'HH:mm')
-      updateEndTimeRelativity()
-      menuVisible = false
-      dispatch('update', item)
+      else {
+        message.set({
+          text: `Error (else): ${error}`,
+          timed: true
+        })
+      }
+    }
+    if (res.ok) {
       statusProcessing = false
       statusUpdating = false
-      message.set({
-        text: 'Item updated.',
-        timed: true
-      })
+      const processed = await res.json()
+      const updatedItem = processed[0]
+      if (updatedItem.id === item.id) {
+        item.name = updatedItem.name
+        item.startTime = updatedItem.startTime
+        item.endTime = updatedItem.endTime
+        item.edits.name = updatedItem.name
+        // Find category name / Assign category
+        const found = categories.find(element => element.id === updatedItem.category)
+        if (!found) {
+          item.category = {}
+        } else {
+          item.category = {}
+          item.category.id = found.id
+          item.category.name = found.name
+          item.edits.category.id = found.id
+          item.edits.category.name = found.name
+        }
+        item.edits.startTime = format(new Date(updatedItem.startTime), 'yyyy-MM-dd\'T\'HH:mm')
+        item.edits.endTime = format(new Date(updatedItem.endTime), 'yyyy-MM-dd\'T\'HH:mm')
+        updateEndTimeRelativity()
+        menuVisible = false
+        dispatch('update', item)
+        message.set({
+          text: 'Item updated.',
+          timed: true
+        })
+      }
     }
+    statusProcessing = false
+    statusUpdating = false
   }
 
   let confirmDelete = false
@@ -366,32 +456,83 @@
   let file
   let itemImagePreview
   const addImage = async() => {
-    if (file) {
-      const { data, error } = await supabase
-        .storage
-        .from('expired')
-        .upload(`${$session.user.id}/${item.id}`, file)
-      if (error) {
-        message.set({
-          text: `Error: ${error.message}`,
-          timed: true
-        })
-        console.error('Error:', error)
-        return
-      }
-      if (data.Key) {
-        const { error } = await supabase
-          .from('items')
-          .update({ imagePath: item.id })
-          .match({ id : item.id })
-        if (error) {
+    if (file && $session.user.id) {
+      statusProcessing = true
+      
+      const formData = new FormData()
+      formData.append('id', item.id)
+      formData.append('image', file)
+
+      // const payload = {}
+      // payload.id = item.id
+      // payload.image = file
+
+      // fetch('/api/item', {
+      //   method: 'PATCH',
+      //   body: formData
+      // })
+      // .then(response => {
+      //   const updatedItem = response.json()
+      //   console.log(updatedItem)
+      //   file = null
+      //   fileInput = null
+      //   itemImagePreview = null
+      //   menuVisible = false
+      //   message.set({
+      //     text: 'Successfully added image to item.',
+      //     timed: true
+      //   })
+      //   item.imagePath = `${item.id}`
+      //   item.image = updatedItem[0].image
+      // })
+      // .catch((error) => {
+      //   statusProcessing = false
+      //   // const error = await res.json()
+      //   // alert(error)
+      //   if (error.message) {
+      //     message.set({
+      //       text: `Error: ${error.message}`,
+      //       timed: true
+      //     })
+      //   }
+      //   else {
+      //     message.set({
+      //       text: JSON.stringify(error),
+      //       timed: true
+      //     })
+      //   }
+      // })
+      const res = await fetch('/api/item', {
+        method: 'PATCH',
+        // headers: {
+        //   'Content-Type': 'application/json'
+        //   // 'Content-Type': 'application/x-www-form-urlencoded',
+        // },
+        body: formData
+        // body: payload
+      })
+      // Res.error
+      if (!res.ok) {
+        alert('not ok')
+        statusProcessing = false
+        const error = await res.json()
+        // alert(error)
+        if (error.message) {
           message.set({
             text: `Error: ${error.message}`,
             timed: true
           })
-          console.error('Error:', error)
-          return
         }
+        else {
+          message.set({
+            text: JSON.stringify(error),
+            timed: true
+          })
+        }
+      }
+      if (res.ok) {
+        const updatedItem = await res.json()
+        console.log(updatedItem)
         file = null
         fileInput = null
         itemImagePreview = null
@@ -401,10 +542,17 @@
           timed: true
         })
         item.imagePath = `${item.id}`
-        buildItemImage(item.imagePath)
+        item.image = updatedItem[0].image
+        // buildItemImage(item.imagePath)
       }
+      statusProcessing = false
     }
-    
+    else {
+      message.set({
+        text: "No file or $session.user.id",
+        timed: true
+      })
+    }
   }
   const analyzeFile = () => {
     file = fileInput.files[0]
@@ -502,11 +650,15 @@
   }
 
   // Speech Recognition
-  let recognition
+  let recognition = false
+  let recognitionExpiration = false
+  let recognitionName = false
+  let recognizing = false
+
   const listenForName = () => { 
-    if (recognition) {
-      recognition.start()
-      recognition.addEventListener('result', (e) => {
+    if (recognitionName) {
+      recognitionName.start()
+      recognitionName.addEventListener('result', (e) => {
         let text = Array.from(e.results)
           .map(result => result[0])
           .map(result => result.transcript)
@@ -514,8 +666,73 @@
         if (text) {
           item.edits.name = camelize(text)
         }
-        recognition.stop()
+        recognitionName.stop()
       })
+      recognitionName.onstart = function () {
+        recognizing = true
+      }
+      recognitionName.onend = function () {
+        recognizing = false
+      }
+    }
+  }
+
+  const months = [ 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' ]
+  // const grammarExpiration = '#JSGF V1.0; grammar months; public <month> = ' + months.join(' | ') + ' ;'
+  
+  const listenForEndTime = () => { 
+    if (recognitionExpiration) {
+      recognitionExpiration.abort() // Unsure :: InvalidStateError: Failed to execute 'start' on 'SpeechRecognition': recognition has already started.
+      recognitionExpiration.start()
+      recognitionExpiration.addEventListener('result', (e) => {
+        let text = Array.from(e.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('')
+        if (text) {
+          // newItem.endTimeTranscription = text
+          const words = text.split(' ')
+          // Determine if first word is 'end'
+          if (words[0].localeCompare('end', undefined, { sensitivity: 'accent' }) === 0) {
+            // Find month
+            const monthIndex = months.findIndex(month => month === words[2])
+            // Process year
+            let year
+            if (words[3]) {
+              year = parseInt(words[3])
+            }
+            else {
+              year = new Date().getFullYear()
+            }
+            const processedDate = endOfMonth(new Date(year, monthIndex, 1, 0, 0, 0))
+            item.edits.endTime = format(new Date(processedDate), 'yyyy-MM-dd\'T\'HH:mm')
+            updateEndTimeRelativity()
+          }
+          else {
+            // Find month
+            const monthIndex = months.findIndex(month => month === words[0])
+            // Process day
+            const day = words[1].replace(/\D/g,'')
+            // Process year
+            let year
+            if (words[2]) {
+              year = parseInt(words[2])
+            }
+            else {
+              year = new Date().getFullYear()
+            }
+            item.edits.endTime = format(new Date(parseInt(year), monthIndex, parseInt(day)), 'yyyy-MM-dd\'T\'HH:mm')
+            updateEndTimeRelativity()
+          }
+        }
+        recognitionExpiration.stop()
+      })
+      recognitionExpiration.onstart = function () {
+        recognizing = true
+      }
+      recognitionExpiration.onend = function () {
+        recognizing = false
+      }
     }
   }
 
@@ -527,26 +744,59 @@
     });
   }
 
+  // const io = new IntersectionObserver((entries) => {
+  //   entries.forEach((entry) => {
+  //     if (entry.isIntersecting) {
+  //       entry.target.classList.remove('unset')
+  //       io.unobserve(entry.target)
+  //     }
+  //   })
+  // },
+  // {
+  //   root: null,
+  //   rootMargin: '0px',
+  //   threshold: [0],
+  // })
+
   onMount(() => {
     updateEndTimeRelativity()
     checkUpdateValidity()
     const SpeechRecognition = (<any>window).SpeechRecognition || (<any>window).webkitSpeechRecognition
     if (SpeechRecognition) {
       // console.log('true') // Chrome needs webkit prefix version
-      recognition = new SpeechRecognition()
+      // recognition = new SpeechRecognition()
+      recognitionName = new SpeechRecognition()
+      recognitionExpiration = new SpeechRecognition()
     }
-    // if (item.imagePath && !item.image) {
-    //   item.imageLoaded = false
-    //   buildItemImage(item.imagePath)
-    // }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.remove('unset')
+          io.unobserve(entry.target)
+        }
+      })
+    },
+    {
+      root: null,
+      rootMargin: '0px',
+      threshold: [0],
+    })
     if (itemElement) {
       io.observe(itemElement)
     }
+    if (image) {
+      image.onload = function() { 
+        imageLoaded = true
+      }
+      image.onerror = function() {
+        imageLoaded = true
+      }
+    }
   })
   onDestroy(() => {
-    if (itemElement) {
-      io.unobserve(itemElement)
-    }
+    // if (itemElement) {
+    //   io.unobserve(itemElement)
+    // }
   })
   // Reactivity to Time
   $: {
@@ -563,19 +813,19 @@
     <div class="item__aside">
       {#if item.imagePath}
         <div class="image-block">
-          {#if item.imageLoaded === false}
+          {#if imageLoaded === false}
             <div class="elapser">
               <div class="indication"><div class="node"></div>
               </div>
             </div>
-          {:else}
-            <img 
-              src="{item.image}" 
-              alt="{item.name}" 
-              class="item-image block m-auto"
-              loading="lazy"
-            >
           {/if}
+          <img
+            src="{item.image}" 
+            alt="{item.name}" 
+            class="item-image block m-auto"
+            loading="lazy"
+            bind:this={image}
+          >
         </div>
         {#if menuVisible}
           <button class="btn leading-tight negative mt-4 flex justify-center w-full" on:click="{deleteImage}" disabled="{statusProcessing}">
@@ -586,7 +836,7 @@
         <div class="image-upload-region">
           {#if itemImagePreview}
             <img v-if="uploadReady === true" src="{itemImagePreview}" alt="" />
-            <button class="btn my-4 w-full" on:click="{addImage}">
+            <button class="btn my-4 w-full" on:click="{addImage}" disabled="{statusProcessing}">
               Save
             </button>
           {/if}
@@ -625,7 +875,7 @@
                 <div class="area area--name">
                   <div class="form-field mb-2">
                     <label for="edit-{item.id}--name">Name</label>
-                    {#if recognition}
+                    {#if recognitionName}
                       <button type="button" class="btn ml-2 px-2 py-1" on:click="{listenForName}">
                         <Icon icon="clarity:microphone-line" />
                       </button>
@@ -662,7 +912,12 @@
                   </div>
                   <div class="area area--end-time">
                     <div class="form-field mb-2">
-                      <label for="edit-{item.id}--end-time" class="block">End Time</label>
+                      <label for="edit-{item.id}--end-time">End Time</label>
+                      {#if recognitionExpiration}
+                        <button type="button" class="btn ml-2 px-2 py-1 listener" class:recognizing = {recognizing} on:click="{listenForEndTime}">
+                          <Icon icon="clarity:microphone-line" />
+                        </button>
+                      {/if}
                       <div class="relative">
                         <input
                           bind:value="{item.edits.endTime}"
@@ -713,21 +968,21 @@
                     <div class="py-2">Invalid</div>
                   {/if}
                   <div class="area area--remove">
-                    <button type="button" class="btn edit-item" on:click="{updateItem}" disabled="{!updateValid || statusProcessing}">
+                    <button type="button" class="btn mb-2 edit-item" on:click="{updateItem}" disabled="{!updateValid || statusProcessing}">
                       {#if statusUpdating}
                         Updating...
                       {:else}
                         Update
                       {/if}
                     </button>
-                    <button type="button" class="btn mx-2 edit-item" on:click="{renewItem}" disabled="{statusProcessing}">
+                    <button type="button" class="btn mx-2 mb-2 edit-item" on:click="{renewItem}" disabled="{statusProcessing}">
                       {#if statusRenewing}
                         Renewing...
                       {:else}
                         Renew
                       {/if}
                     </button>
-                    <button type="button" class="btn remove-item negative" on:click={() => { confirmDelete = !confirmDelete }} disabled="{statusProcessing}">
+                    <button type="button" class="btn mb-2 remove-item negative" on:click={() => { confirmDelete = !confirmDelete }} disabled="{statusProcessing}">
                       {#if statusRemoving}
                         Removing...
                       {:else}

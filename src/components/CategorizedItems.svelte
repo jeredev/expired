@@ -34,7 +34,7 @@
     </div>
   </div>
   {#if itemsVisible}
-    <div transition:slide class="items-list">
+    <div transition:slide|local class="items-list">
       {#each items as item}
         <Item item={item} time={time} categories={categories} on:remove on:update />
       {/each}

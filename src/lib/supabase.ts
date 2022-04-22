@@ -12,17 +12,17 @@ export const supabase = createClient(
  * Convenience re-exports for typed selections
  *
  */
- export const auth = supabase.auth
- export const storage = supabase.storage
+//  export const auth = supabase.auth
+//  export const storage = supabase.storage
  /**
   *
   * @param table The Supabase table to act upon
   * @returns
   */
- export const from = (table: SupaTable) => supabase.from(table)
+//  export const from = (table: SupaTable) => supabase.from(table)
  /**
   *
   * @param bucket The Supabase storage bucket to act upon
   * @returns
   */
- export const fromBucket = (bucket: SupaStorageBucket) => supabase.storage.from(bucket)
+//  export const fromBucket = (bucket: SupaStorageBucket) => supabase.storage.from(bucket)

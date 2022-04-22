@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { supabase } from "$lib/supabase";
   import { session } from "$app/stores";
   import { message } from "../stores";
   import { onMount } from "svelte";
@@ -18,6 +17,7 @@
     differenceInDays,
     differenceInHours,
     differenceInMinutes,
+    endOfMonth,
     format,
     subYears,
     subMonths,
@@ -27,8 +27,6 @@
     subMinutes,
   } from 'date-fns'
   import { createEventDispatcher } from "svelte";
-  // import { dataset_dev } from "svelte/internal";
-  // import Item from "./Item.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -40,6 +38,7 @@
     endTime: null,
     image: null,
     category: null,
+    // endTimeTranscription: null,
   }
 
   let newItemValid = false
@@ -136,31 +135,39 @@
   let addNewItemProcessing = false
   const addNewItem = async() => {
     addNewItemProcessing = true
-    const { data, error } = await supabase
-      .from('items')
-      .insert([
-        {
-          name: newItem.name.trim(),
-          startTime: new Date(newItem.startTime),
-          endTime: new Date(newItem.endTime),
-          category: newItem.category,
-        },
-      ])
-    if (error) {
-      addNewItemProcessing = false
+    const formData = new FormData()
+    formData.append('name', newItem.name.trim())
+    if (newItem.image) {
+      formData.append('image', newItem.image)
+    }
+    // payload.startTime = new Date(newItem.startTime)
+    const startTimeStr = new Date(newItem.startTime).toISOString()
+    formData.append('startTime', startTimeStr)
+    // payload.endTime = new Date(newItem.endTime)
+    const endTimeStr = new Date(newItem.endTime).toISOString()
+    formData.append('endTime', endTimeStr)
+    formData.append('category', newItem.category)
+    formData.append('creator', $session.user.id)
+    
+    const res = await fetch('/api/item', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!res.ok) {
+      // console.log('res NOT ok')
+      // console.log(await res.json())
+      const error = await res.json()
       message.set({
         text: `Error: ${error.message}`,
         timed: true
       })
-      console.error('Error:', error)
-      return
     }
-    if (data) {
-      if (newItem.image) {
-        const newItemWithImg = await addNewItemImage(data)
-        if (newItemWithImg) data[0].imagePath = newItemWithImg[0].imagePath
-      }
-      data.forEach((item) => {
+    
+    if (res.ok) {
+      const newItems = await res.json()
+      // console.log(newItems) // This does work
+      newItems.forEach((item) => {
         item.edits = {
           name: item.name,
           category: {},
@@ -219,41 +226,13 @@
       noImageFound = false
       addNewItemProcessing = false
       checkNewItemValidity()
-      dispatch('add', data)
+      dispatch('add', newItems)
       message.set({
         text: 'Successfully added new item.',
         timed: true
       })
     }
-  }
-
-  const addNewItemImage = async(item) => {
-    const { data, error } = await supabase
-      .storage
-      .from('expired')
-      .upload(`${$session.user.id}/${item[0].id}`, newItem.image)
-    if (error) {
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('Error:', error)
-      return
-    }
-    if (data && data.Key) {
-      const {data, error} = await supabase
-        .from('items')
-        .update({ imagePath: `${item[0].id}` })
-        .match({ id: item[0].id })
-      if (data) return data
-      if (error) {
-        message.set({
-          text: `Error: ${error.message}`,
-          timed: true
-        })
-        console.error('Error:', error)
-      }
-    }
+    addNewItemProcessing = false
   }
 
   let fileInput
@@ -289,26 +268,59 @@
     }
   }
 
+  // addingCategory = true
+  // const formData = new FormData()
+  // formData.append('name', newCategory.trim())
+  // const res = await fetch('/api/categories', {
+  //   method: 'POST',
+  //   body: formData
+  // })
+  // if (!res.ok) {
+  //   // message.set({
+  //   //   text: `Error: ${error.message}`,
+  //   //   timed: true
+  //   // })
+  //   // console.log('error adding new category:', error)
+  //   return
+  // }
+  // if (res.ok) {
+  //   const processed = await res.json()
+  //   const returnedCategory = processed[0]
+
+  //   categories = [...categories, returnedCategory]
+  //   categories = sortCatsAlphaAsc(categories)
+
+  //   generateListings()
+  //   newCategory = null
+  //   addingCategory = false
+  // }
+
   let addNewCategoryProcessing = false
   const addNewCategory = async() => {
     addNewCategoryProcessing = true
-    const { data, error } = await supabase
-      .from('categories')
-      .insert([
-        {
-          name: newCategory.trim(),
-        },
-      ])
-    if (error) {
+    const formData = new FormData()
+    formData.append('name', newCategory.trim())
+    // const { data, error } = await supabase
+    //   .from('categories')
+    //   .insert([
+    //     {
+    //       name: newCategory.trim(),
+    //     },
+    //   ])
+    const res = await fetch('/api/categories', {
+      method: 'POST',
+      body: formData
+    })
+    if (!res.ok) {
       addNewCategoryProcessing = false
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.log('error adding new category:', error)
+      // message.set({
+      //   text: `Error: ${error.message}`,
+      //   timed: true
+      // })
+      // console.log('error adding new category:', error)
       return
     }
-    if (data) {
+    if (res.ok) {
       addNewCategoryProcessing = false
       categories = await getCategories()
       newCategory = null
@@ -318,17 +330,16 @@
   }
 
   const getCategories = async() => {
-    const { data, error } = await supabase
-      .from('categories')
-      .select()
-      .order('name', { ascending: true })
-    if (data) return data
-    if (error) {
-      message.set({
-        text: `Error: ${error.message}`,
-        timed: true
-      })
-      console.error('Error:', error)
+    const res = await fetch('/api/categories')
+    if (!res.ok) {
+      //   message.set({
+      //     text: `Error: ${error.message}`,
+      //     timed: true
+      //   })
+      //   console.error('Error:', error)
+    }
+    if (res.ok) {
+      return await res.json()
     }
   }
   let categories: Array<CategoryProps> | null
@@ -438,11 +449,15 @@
   }
 
   // Speech Recognition
-  let recognition
+  let recognition = false
+  let recognitionExpiration = false
+  let recognitionName = false
+  let recognizing = false
   const listenForName = () => { 
-    if (recognition) {
-      recognition.start()
-      recognition.addEventListener('result', (e) => {
+    if (recognitionName) {
+      recognitionName.abort() // Unsure :: InvalidStateError: Failed to execute 'start' on 'SpeechRecognition': recognition has already started.
+      recognitionName.start()
+      recognitionName.addEventListener('result', (e) => {
         let text = Array.from(e.results)
           .map(result => result[0])
           .map(result => result.transcript)
@@ -450,8 +465,73 @@
         if (text) {
           newItem.name = camelize(text)
         }
-        recognition.stop()
+        recognitionName.stop()
       })
+      recognitionName.onstart = function () {
+        recognizing = true
+      }
+      recognitionName.onend = function () {
+        recognizing = false
+      }
+    }
+  }
+
+  const months = [ 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' ]
+  // const grammarExpiration = '#JSGF V1.0; grammar months; public <month> = ' + months.join(' | ') + ' ;'
+  
+  const listenForEndTime = () => { 
+    if (recognitionExpiration) {
+      recognitionExpiration.abort() // Unsure :: InvalidStateError: Failed to execute 'start' on 'SpeechRecognition': recognition has already started.
+      recognitionExpiration.start()
+      recognitionExpiration.addEventListener('result', (e) => {
+        let text = Array.from(e.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('')
+        if (text) {
+          // newItem.endTimeTranscription = text
+          const words = text.split(' ')
+          // Determine if first word is 'end'
+          if (words[0].localeCompare('end', undefined, { sensitivity: 'accent' }) === 0) {
+            // Find month
+            const monthIndex = months.findIndex(month => month === words[2])
+            // Process year
+            let year
+            if (words[3]) {
+              year = parseInt(words[3])
+            }
+            else {
+              year = new Date().getFullYear()
+            }
+            const processedDate = endOfMonth(new Date(year, monthIndex, 1, 0, 0, 0))
+            newItem.endTime = format(new Date(processedDate), 'yyyy-MM-dd\'T\'HH:mm')
+            updateEndTimeRelativity()
+          }
+          else {
+            // Find month
+            const monthIndex = months.findIndex(month => month === words[0])
+            // Process day
+            const day = words[1].replace(/\D/g,'')
+            // Process year
+            let year
+            if (words[2]) {
+              year = parseInt(words[2])
+            }
+            else {
+              year = new Date().getFullYear()
+            }
+            newItem.endTime = format(new Date(parseInt(year), monthIndex, parseInt(day)), 'yyyy-MM-dd\'T\'HH:mm')
+            updateEndTimeRelativity()
+          }
+        }
+        recognitionExpiration.stop()
+      })
+      recognitionExpiration.onstart = function () {
+        recognizing = true
+      }
+      recognitionExpiration.onend = function () {
+        recognizing = false
+      }
     }
   }
 
@@ -470,7 +550,9 @@
     }
     const SpeechRecognition = (<any>window).SpeechRecognition || (<any>window).webkitSpeechRecognition
     if (SpeechRecognition) {
-      recognition = new SpeechRecognition()
+      // console.log('true') // Chrome needs webkit prefix version
+      recognitionName = new SpeechRecognition()
+      recognitionExpiration = new SpeechRecognition()
     }
     
   })
@@ -507,8 +589,8 @@
     <form on:submit|preventDefault class="form form--add-item" autocomplete="off">
       <div class="form-field my-2">
         <label for="new-item--name block mb-1">Item Name</label>
-        {#if recognition}
-          <button type="button" class="btn ml-2 px-2 py-1" on:click="{listenForName}">
+        {#if recognitionName}
+          <button type="button" class="btn ml-2 px-2 py-1 listener" class:recognizing = {recognizing} on:click="{listenForName}">
             <Icon icon="clarity:microphone-line" />
           </button>
         {/if}
@@ -552,6 +634,13 @@
       </div>
       <div v-show="newItem.startTime" class="form-field my-2">
         <label for="new-item--end-time block mb-1">Expiration Time</label>
+        {#if recognitionExpiration}
+          <button type="button" class="btn ml-2 px-2 py-1 listener" class:recognizing = {recognizing} on:click="{listenForEndTime}">
+            <Icon icon="clarity:microphone-line" />
+          </button>
+        {/if}
+        <!-- <input type="text" style="background-color: black; color: white;"
+        class="mb-2 px-2 py-1 w-full" bind:value="{newItem.endTimeTranscription}"> -->
         <div class="date-picker">
           <input
             bind:value={newItem.endTime}
