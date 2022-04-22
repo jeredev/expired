@@ -175,42 +175,8 @@
       formData.append('image', '')
       formData.append('imagePath', item.imagePath)
 
-      // const payload = {}
-      // payload.id = item.id
-      // payload.image = null
-      // payload.imagePath = item.imagePath
-
-      // fetch('/api/item', {
-      //   method: 'PATCH',
-      //   body: formData
-      // })
-      // .then(async(response) => {
-      //   if (!response.ok) {
-      //     const error = await response.json()
-      //     throw new Error(error)
-      //   }
-      // })
-      // .then(data => {
-      //   item.imagePath = null
-      //   item.image = null
-      //   message.set({
-      //     text: 'Successfully deleted item image.',
-      //     timed: true 
-      //   })
-      // })
-      // .catch((error) => {
-      //   console.log(error)
-      //   if (error.message) {
-      //     message.set({
-      //       text: `Error: ${error.message}`,
-      //       timed: true
-      //     })
-      //   }
-      // })
-
       const res = await fetch('/api/item', {
         method: 'PATCH',
-        // body: JSON.stringify(payload)
         body: formData
       })
       // Res.error
@@ -311,13 +277,6 @@
     statusProcessing = true
     statusUpdating = true
 
-    // const payload = {}
-    // payload.id = item.id
-    // payload.name = item.edits.name
-    // payload.startTime = item.edits.startTime
-    // payload.endTime = item.edits.endTime
-    // payload.category = item.edits.category.id
-
     const formData = new FormData()
     formData.append('id', item.id)
     formData.append('name', item.edits.name)
@@ -325,72 +284,9 @@
     formData.append('endTime', item.edits.endTime)
     formData.append('category', item.edits.category.id)
 
-    // fetch('/api/item', {
-    //   method: 'PATCH',
-    //   body: formData
-    // })
-    // .then((response) => {
-    //   // if (!response.ok) {
-    //   //   const error = await response.json()
-    //   //   throw new Error(error)
-    //   // }
-    // })
-    // .then(data => {
-    //   console.log('data below:')
-    //   console.log(data)
-    //   if (data && data[0]) {
-    //     const updatedItem = data[0]
-    //     if (updatedItem.id === item.id) {
-    //       item.name = updatedItem.name
-    //       item.startTime = updatedItem.startTime
-    //       item.endTime = updatedItem.endTime
-    //       item.edits.name = updatedItem.name
-    //       // Find category name / Assign category
-    //       const found = categories.find(element => element.id === updatedItem.category)
-    //       if (!found) {
-    //         item.category = {}
-    //       } else {
-    //         item.category = {}
-    //         item.category.id = found.id
-    //         item.category.name = found.name
-    //         item.edits.category.id = found.id
-    //         item.edits.category.name = found.name
-    //       }
-    //       item.edits.startTime = format(new Date(updatedItem.startTime), 'yyyy-MM-dd\'T\'HH:mm')
-    //       item.edits.endTime = format(new Date(updatedItem.endTime), 'yyyy-MM-dd\'T\'HH:mm')
-    //       updateEndTimeRelativity()
-    //       menuVisible = false
-    //       dispatch('update', item)
-    //       message.set({
-    //         text: 'Item updated.',
-    //         timed: true
-    //       })
-    //     }
-    //   }
-    //   else {
-    //     throw new Error('No valid data was returned')
-    //   }
-    // })
-    // .catch((error) => {
-    //   console.log(error)
-    //   if (error.message) {
-    //     message.set({
-    //       text: `Error: ${error.message}`,
-    //       timed: true
-    //     })
-    //   }
-    // })
-    // statusProcessing = false
-    // statusUpdating = false
-
     const res = await fetch('/api/item', {
       method: 'PATCH',
-      // headers : { 
-      //   'Content-Type': 'application/json',
-      //   'Accept': 'application/json'
-      // },
       body: formData
-      // body: JSON.stringify(payload)
     })
     // Res.error
     if (!res.ok) {
@@ -463,53 +359,9 @@
       formData.append('id', item.id)
       formData.append('image', file)
 
-      // const payload = {}
-      // payload.id = item.id
-      // payload.image = file
-
-      // fetch('/api/item', {
-      //   method: 'PATCH',
-      //   body: formData
-      // })
-      // .then(response => {
-      //   const updatedItem = response.json()
-      //   console.log(updatedItem)
-      //   file = null
-      //   fileInput = null
-      //   itemImagePreview = null
-      //   menuVisible = false
-      //   message.set({
-      //     text: 'Successfully added image to item.',
-      //     timed: true
-      //   })
-      //   item.imagePath = `${item.id}`
-      //   item.image = updatedItem[0].image
-      // })
-      // .catch((error) => {
-      //   statusProcessing = false
-      //   // const error = await res.json()
-      //   // alert(error)
-      //   if (error.message) {
-      //     message.set({
-      //       text: `Error: ${error.message}`,
-      //       timed: true
-      //     })
-      //   }
-      //   else {
-      //     message.set({
-      //       text: JSON.stringify(error),
-      //       timed: true
-      //     })
-      //   }
-      // })
       const res = await fetch('/api/item', {
         method: 'PATCH',
-        // headers: {
-        //   'Content-Type': 'application/json'
-        //   // 'Content-Type': 'application/x-www-form-urlencoded',
-        // },
         body: formData
-        // body: payload
       })
       // Res.error
       if (!res.ok) {
@@ -543,7 +395,6 @@
         })
         item.imagePath = `${item.id}`
         item.image = updatedItem[0].image
-        // buildItemImage(item.imagePath)
       }
       statusProcessing = false
     }
