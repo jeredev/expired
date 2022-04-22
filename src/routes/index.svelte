@@ -181,23 +181,26 @@
   const addItems = async(e: CustomEvent) => {
     const newItems = e.detail
     // Determine if item should be shown in current list
-    categories = await getCategories()
-    newItems.forEach(async(item) => {
-      const found = categories.find((element: CategoryProps) => element.id === item.category)
-      if (!found) {
-        item.category = {}
-      } else {
-        item.category = {}
-        item.category.id = found.id
-        item.category.name = found.name
-        item.edits.category.id = found.id
-        item.edits.category.name = found.name
-      }
-      item.time = time
-      items.push(item)
-      // items = [...items, item]
-      generateListings()
-    });
+    categories = await getCategories() // In the case that a new category was created when the item was added
+    // if ($timeStatusMode !== 'expired') {
+      newItems.forEach(async(item) => {
+        const found = categories.find((element: CategoryProps) => element.id === item.category)
+        if (!found) {
+          item.category = {}
+        } else {
+          item.category = {}
+          item.category.id = found.id
+          item.category.name = found.name
+          item.edits.category.id = found.id
+          item.edits.category.name = found.name
+        }
+        item.time = time
+        items.push(item)
+        // items = [...items, item]
+        // generateListings()
+      });
+    // }
+    generateListings()
   }
 
   const removeItem = (e: CustomEvent) => {
@@ -211,10 +214,6 @@
       const item = items.find(({ id }) => id === updatedItem.id);
       return item ? item : updatedItem;
     });
-    // listings.map(() => {
-    //   const item = listings.find(({ id }) => id === updatedItem.id);
-    //   return item ? item : updatedItem;
-    // });
     generateListings()
   }
 
