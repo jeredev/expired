@@ -407,6 +407,8 @@
 
     searchMenuActive = false
 
+    listings = null
+
     await invalidate('/api/items')
 
     const url = $page.url

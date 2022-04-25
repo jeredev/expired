@@ -63,6 +63,8 @@
     // item.edits.category.id = null
   }
 
+  // console.log(item.edits)
+
   let itemElement
   let menuVisible = false
 
@@ -138,11 +140,13 @@
       return percentLeftCSS
     }
   }
+  // Refactor
   const getTimeRemainder = () => {
     let timeElapsed = getTimeElapsed(item.startTime)
     let lifespan = getLifespan(item.startTime, item.endTime)
     if (timeElapsed > lifespan) {
       item.expired = true
+      return 'Expired'
     }
     else {
       item.expired = false
@@ -621,7 +625,7 @@
     }
     const io = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
-        if (entry.isIntersecting) {
+        if (entry.isIntersecting && entry.target.classList.contains('calculated')) {
           entry.target.classList.remove('unset')
           io.unobserve(entry.target)
         }
@@ -659,7 +663,7 @@
   }
 </script>
 
-<div bind:this="{itemElement}" class="item unset" class:expired = {item.expired} class:imminent = {item.imminent}>
+<div bind:this="{itemElement}" class="item unset" class:expired = {item.expired} class:imminent = {item.imminent} class:calculated = {item.timeRemaining}>
   <div class="item-internal grid gap-4 py-4">
     <div class="item__aside">
       {#if item.imagePath}

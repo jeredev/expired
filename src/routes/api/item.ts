@@ -79,7 +79,6 @@ export async function patch(event: RequestEvent) {
         // let fileError
         let filePath
         if (itemImage) {
-          console.log('image uploading detected')
           // Do Image upload first
           const file = itemImage
           const arrayBuffer = await file.arrayBuffer()
@@ -142,7 +141,6 @@ export async function patch(event: RequestEvent) {
           update.imagePath = itemId
         }
         if (!itemImage && itemImagePath) {
-          console.log('image deletion detected!')
           const fromPath = `${event.locals.user.id}/${itemImagePath}`
           const { data: removalData, error: removalError } = await supabase
             .storage
