@@ -1015,7 +1015,7 @@
                 on:input="{checkSearchValidity}"
               >
             </div>
-            <!-- <div class="area area--end-time my-2">
+            <div class="area area--end-time my-2">
               <div class="form-field relative">
                 <label for="expiration-search">Expiration Time</label>
                 <input
@@ -1091,7 +1091,7 @@
                   </select>
                 </div>
               {/if}
-            </div> -->
+            </div>
             <button type="submit" class="btn my-2" disabled={!searchQueryValid}>
               <Icon icon="clarity:search-line" />
             </button>
