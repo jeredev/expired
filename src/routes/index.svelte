@@ -127,7 +127,7 @@
           session.set({ user: data })
           if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
             categories = await getCategories()
-            clock = window.setInterval(runClock, 1000);
+            clock = window.setInterval(runClock, 1000)
             items = await getItems(searchQuery)
             generateListings()
           }
@@ -242,11 +242,11 @@
     }
   }
 
-  let clock;
+  let clock
 
   const runClock = () => {
     time = new Date().getTime()
-  };
+  }
 
   /* Sorting */
 
@@ -398,15 +398,12 @@
   const searchItems = async() => {
     searching = true
     // console.log('searching')
-    if (search.name) {
-      searchQuery.name = search.name
-    }
-    if (search.endTime) {
-      searchQuery.end = search.endTime
-    }
-    if (search.category) {
-      searchQuery.cat = search.category
-    }
+
+    searchQuery.name = search.name
+    searchQuery.end = search.endTime
+    searchQuery.cat = search.category
+
+    // console.log(searchQuery)
 
     searchMenuActive = false
 
@@ -417,7 +414,7 @@
     goto(url)
 
     // items = await getItems(searchQuery)
-    generateListings()
+    // generateListings()
 
   }
 
@@ -723,14 +720,10 @@
     });
   }
 
-  // if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
-  //   generateListings()
-  // }
-
-  // console.log(listings)
-  // if (listings !== null) {
-  //   generateListings()
-  // }
+  function clearSearchExpirationEntry() {
+    search.endTime = ''
+    updateEndTimeRelativity()
+  }
 
   beforeNavigate(async() => {
     // console.log('before navigating') // Clears before page load
@@ -752,6 +745,29 @@
   })
 
   afterNavigate(async() => {
+    // console.log($page.url)
+    if ($page.url.searchParams.get('name') === null) {
+      search.name = ''
+      searchQuery.name = ''
+    }
+    else {
+      // console.log('else true name:', $page.url.searchParams.get('name'))
+      // console.log(typeof $page.url.searchParams.get('name'))
+    }
+    if ($page.url.searchParams.get('end') === null) {
+      search.endTime = ''
+      searchQuery.end = ''
+    }
+    else {
+      // console.log('end:', $page.url.searchParams.get('end'))
+    }
+    if ($page.url.searchParams.get('cat') === null) {
+      search.category = ''
+      searchQuery.cat = ''
+    }
+    else {
+      // console.log('cat:', $page.url.searchParams.get('cat'))
+    }
     // console.log(items)
     // console.log('after navigating')
     // console.log(`searching = ${searching}`)
@@ -788,41 +804,11 @@
   })
 
   onMount(async() => {
-    console.log('onMount')
     if (items && items.length && listings === null) {
       generateListings()
     }
-    // console.log(items)
-    // generateListings()
     if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
       clock = window.setInterval(runClock, 1000);
-      // if ($page.url.searchParams.get('name')) {
-      //   searchQuery.name = $page.url.searchParams.get('name')
-      //   search.name = $page.url.searchParams.get('name')
-      // }
-      // else {
-      //   search.name = ''
-      //   searchQuery.name = ''
-      // }
-      // if ($page.url.searchParams.get('end')) {
-      //   searchQuery.end = $page.url.searchParams.get('end')
-      //   search.endTime = $page.url.searchParams.get('end')
-      // }
-      // else {
-      //   search.endTime = ''
-      //   searchQuery.end = ''
-      // }
-      // if ($page.url.searchParams.get('cat')) {
-      //   searchQuery.cat = $page.url.searchParams.get('cat')
-      //   search.category = $page.url.searchParams.get('cat')
-      // }
-      // else {
-      //   search.category = ''
-      //   searchQuery.cat = ''
-      // }
-      // // console.log(searchQuery)
-      // items = await getItems(searchQuery)
-      // generateListings()
     }
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (SpeechRecognition) {
@@ -904,7 +890,8 @@
     <div class="homebase">
       <button on:click={getState} class="btn" style="display: none;">State</button>
       <div class="controls pb-4 flex">
-        {#if Object.keys(searchQuery).length}
+        <!-- {#if Object.keys(searchQuery).length} -->
+        {#if $page.url.searchParams.get('name') || $page.url.searchParams.get('end') || $page.url.searchParams.get('cat')}
           <button class="btn" on:click="{() => { goBack() }}">
             <Icon icon="clarity:arrow-line" style="display: inline; transform: rotate(-90deg);" />
           </button>
@@ -1018,6 +1005,9 @@
             <div class="area area--end-time my-2">
               <div class="form-field relative">
                 <label for="expiration-search">Expiration Time</label>
+                {#if search.endTime}
+                  <button on:click="{clearSearchExpirationEntry}" class="btn">Clear</button>
+                {/if}
                 <input
                   name="end"
                   type="datetime-local"
