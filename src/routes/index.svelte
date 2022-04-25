@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-  export async function load({ url, params, fetch, session, stuff }) {
+  export async function load({ url, params, fetch, session, stuff, status, error }) {
     const { user } = session
     if (user && user.id) {
       // if (!user.account) {
@@ -37,11 +37,11 @@
   }
 </script>
 <script lang="ts">
-  import { page, session } from "$app/stores";
+  import { page, session } from "$app/stores"
+  import { afterNavigate, beforeNavigate, goto, invalidate } from '$app/navigation'
+  import { onDestroy, onMount } from "svelte"
 
-  import { onDestroy, onMount } from "svelte";
-
-  import { fade, slide } from 'svelte/transition';
+  import { fade, slide } from 'svelte/transition'
   import Icon from '@iconify/svelte'
   import {
     addYears,
@@ -70,7 +70,7 @@
   import CategoryBar from "../components/CategoryBar.svelte"
   import Item from "../components/Item.svelte"
   import Messenger from "../components/Messenger.svelte"
-  import { displayMode, sortingMode, timeStatusMode, message } from "../stores";
+  import { displayMode, sortingMode, timeStatusMode, message } from "../stores"
 
   export let categories: Array<CategoryProps> | null = null
   export let items: Array<ItemProps> | null = null
@@ -161,6 +161,7 @@
         })
       }
       if (res.ok) {
+        // items = null // Still doesn't work
         session.set({ user: null }),
         message.set({
           text: `Logout successful.`,
@@ -387,12 +388,37 @@
     checkSearchValidity()
   }
 
+  const getState = () => {
+    // console.log(history.state)
+    console.log(document.referrer)
+  }
+
+  let searching = false
+
   const searchItems = async() => {
-    // console.log('searching items!')
-    // let destination = ''
-    // if (searchQuery)
-    // goto('/')
-    // console.log($page.params.get('name'))
+    searching = true
+    // console.log('searching')
+    if (search.name) {
+      searchQuery.name = search.name
+    }
+    if (search.endTime) {
+      searchQuery.end = search.endTime
+    }
+    if (search.category) {
+      searchQuery.cat = search.category
+    }
+
+    searchMenuActive = false
+
+    await invalidate('/api/items')
+
+    const url = $page.url
+    url.search = new URLSearchParams(searchQuery)
+    goto(url)
+
+    // items = await getItems(searchQuery)
+    generateListings()
+
   }
 
   const sortItems = (payload: Array<ItemProps>) => {
@@ -459,6 +485,7 @@
   }
 
   const generateListings = () => {
+    // console.log('generating')
     if ($displayMode === 'categories') {
       categorizeItems()
     }
@@ -509,6 +536,7 @@
   }
 
   const getItems = async(query: searchQueryProps) => {
+    console.log('getItems')
     let appendage = ''
     if (query) {
       appendage = '?' + new URLSearchParams(query)
@@ -516,8 +544,8 @@
     const res = await fetch('/api/items' + appendage)
     if (!res.ok) {
       const error = await res.json()
-      console.log('error from getItems():')
-      console.log(error)
+      // console.log('error from getItems():')
+      // console.log(error)
       message.set({
         text: `Error: ${error.message}`,
         timed: true
@@ -646,8 +674,20 @@
   }
 
   function goBack() {
-    history.back()
+    if (searching === true) {
+      history.back()
+    }
+    else {
+      searching === false
+      goto('/')
+    }
+    // history.go(-1)
   }
+
+  // function goBack(defaultRoute = '/') {
+  //   const ref = document.referrer;
+  //   goto(ref.length > 0 ? ref : defaultRoute)
+  // }
 
   // Speech Recognition
   let recognition = false
@@ -683,21 +723,109 @@
     });
   }
 
-  if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
-    generateListings()
-  }
+  // if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
+  //   generateListings()
+  // }
+
+  // console.log(listings)
+  // if (listings !== null) {
+  //   generateListings()
+  // }
+
+  beforeNavigate(async() => {
+    // console.log('before navigating') // Clears before page load
+    // if ($page.url.searchParams.get('name')) {
+    //   searchQuery.name = $page.url.searchParams.get('name')
+    //   search.name = $page.url.searchParams.get('name')
+    // }
+    // if ($page.url.searchParams.get('end')) {
+    //   searchQuery.end = $page.url.searchParams.get('end')
+    //   search.endTime = $page.url.searchParams.get('end')
+    // }
+    // if ($page.url.searchParams.get('cat')) {
+    //   searchQuery.cat = $page.url.searchParams.get('cat')
+    //   search.category = $page.url.searchParams.get('cat')
+    // }
+    // console.log(searchQuery)
+    // items = await getItems(searchQuery)
+    // generateListings()
+  })
+
+  afterNavigate(async() => {
+    // console.log(items)
+    // console.log('after navigating')
+    // console.log(`searching = ${searching}`)
+    // console.log(items)
+    // if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
+    //   if ($page.url.searchParams.get('name')) {
+    //     searchQuery.name = $page.url.searchParams.get('name')
+    //     search.name = $page.url.searchParams.get('name')
+    //   }
+    //   else {
+    //     search.name = ''
+    //     searchQuery.name = ''
+    //   }
+    //   if ($page.url.searchParams.get('end')) {
+    //     searchQuery.end = $page.url.searchParams.get('end')
+    //     search.endTime = $page.url.searchParams.get('end')
+    //   }
+    //   else {
+    //     search.endTime = ''
+    //     searchQuery.end = ''
+    //   }
+    //   if ($page.url.searchParams.get('cat')) {
+    //     searchQuery.cat = $page.url.searchParams.get('cat')
+    //     search.category = $page.url.searchParams.get('cat')
+    //   }
+    //   else {
+    //     search.category = ''
+    //     searchQuery.cat = ''
+    //   }
+    //   // console.log(searchQuery)
+    //   items = await getItems(searchQuery)
+      generateListings()
+    // }
+  })
 
   onMount(async() => {
-    // console.log(`$session below:`)
-    // console.log($session)
-    // console.log(`user below:`)
-    // console.log(user)
+    console.log('onMount')
+    if (items && items.length && listings === null) {
+      generateListings()
+    }
+    // console.log(items)
+    // generateListings()
     if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
       clock = window.setInterval(runClock, 1000);
+      // if ($page.url.searchParams.get('name')) {
+      //   searchQuery.name = $page.url.searchParams.get('name')
+      //   search.name = $page.url.searchParams.get('name')
+      // }
+      // else {
+      //   search.name = ''
+      //   searchQuery.name = ''
+      // }
+      // if ($page.url.searchParams.get('end')) {
+      //   searchQuery.end = $page.url.searchParams.get('end')
+      //   search.endTime = $page.url.searchParams.get('end')
+      // }
+      // else {
+      //   search.endTime = ''
+      //   searchQuery.end = ''
+      // }
+      // if ($page.url.searchParams.get('cat')) {
+      //   searchQuery.cat = $page.url.searchParams.get('cat')
+      //   search.category = $page.url.searchParams.get('cat')
+      // }
+      // else {
+      //   search.category = ''
+      //   searchQuery.cat = ''
+      // }
+      // // console.log(searchQuery)
+      // items = await getItems(searchQuery)
+      // generateListings()
     }
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (SpeechRecognition) {
-      // console.log('true') // Chrome needs webkit prefix version
       recognition = new SpeechRecognition()
     }
   })
@@ -774,6 +902,7 @@
   </div>
   {#if user && user.account && user.account.subscription_status === 'active'}
     <div class="homebase">
+      <button on:click={getState} class="btn" style="display: none;">State</button>
       <div class="controls pb-4 flex">
         {#if Object.keys(searchQuery).length}
           <button class="btn" on:click="{() => { goBack() }}">
@@ -869,7 +998,7 @@
           <h2 class="py-2 mb-4 text-white" style="border-bottom: 2px solid red; border-top: 2px solid red;">
             Search
           </h2>
-          <form on:submit={searchItems} class="search">
+          <form on:submit|preventDefault={searchItems} class="search">
             <div class="form-field my-2">
               <label for="search-items--text">Name</label>
               {#if recognition}
@@ -886,7 +1015,7 @@
                 on:input="{checkSearchValidity}"
               >
             </div>
-            <div class="area area--end-time my-2">
+            <!-- <div class="area area--end-time my-2">
               <div class="form-field relative">
                 <label for="expiration-search">Expiration Time</label>
                 <input
@@ -962,7 +1091,7 @@
                   </select>
                 </div>
               {/if}
-            </div>
+            </div> -->
             <button type="submit" class="btn my-2" disabled={!searchQueryValid}>
               <Icon icon="clarity:search-line" />
             </button>

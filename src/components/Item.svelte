@@ -632,7 +632,7 @@
       rootMargin: '0px',
       threshold: [0],
     })
-    if (itemElement) {
+    if (itemElement && (item.timeRemaining || item.expired)) {
       io.observe(itemElement)
     }
     if (image) {
@@ -871,8 +871,10 @@
           <div class="timer__remainder">
             {#if item.timeRemaining}
               { item.timeRemaining }
-            {:else}
+            {:else if item.expired}
               Expired
+            {:else}
+              &nbsp;
             {/if}
           </div>
         </div>
