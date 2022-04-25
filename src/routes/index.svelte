@@ -673,6 +673,7 @@
   }
 
   function goBack() {
+    listings = null
     if (searching === true) {
       history.back()
     }
