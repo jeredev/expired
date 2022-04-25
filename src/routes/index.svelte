@@ -729,6 +729,7 @@
   }
 
   beforeNavigate(async() => {
+    listings = null
     // console.log('before navigating') // Clears before page load
     // if ($page.url.searchParams.get('name')) {
     //   searchQuery.name = $page.url.searchParams.get('name')
