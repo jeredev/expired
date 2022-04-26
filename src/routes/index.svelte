@@ -1116,7 +1116,12 @@
       {:else if listings && listings.length < 1}
         <p>No items found</p>
       {:else}
-        <p>Loading...</p>
+        <div class="py-8 relative">
+          <div class="elapser">
+            <div class="indication"><div class="node"></div>
+            </div>
+          </div>
+        </div>
       {/if}
     </div>
   {:else if user && user.account && user.account.subscription_status !== 'active'}
@@ -1203,5 +1208,39 @@
   .form-actions .btn {
     padding-bottom: 0.5rem;
     padding-top: 0.5rem;
+  }
+
+  .elapser {
+    background-color: var(--gray);
+    height: 2px;
+    position: absolute;
+    width: 40%;
+    z-index: -1;
+    left: 30%;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .elapser .indication {
+    height: 100%;
+    transform-origin: left;
+    position: relative;
+    width: 100%;
+  }
+  .elapser .indication .node {
+    width: 100%;
+    position: absolute;
+    height: 100%;
+    animation: looped-elapser 1.5s linear infinite;
+    transform-origin: left;
+  }
+  .elapser .indication .node::before {
+    background-color: #fff;
+    content: '';
+    display: block;
+    filter: drop-shadow(0 0 0.5rem white);
+    width: 20%;
+    position: absolute;
+    right: 0;
+    height: 100%;
   }
 </style>

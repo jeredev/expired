@@ -57,4 +57,42 @@
     color: white;
     border-color: rgba(220, 38, 38, 1);
   }
+  /* .elapser {
+    background-color: var(--gray);
+    height: 2px;
+    position: absolute;
+    width: 40%;
+    z-index: -1;
+    left: 30%;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .elapser .indication {
+    height: 100%;
+    transform-origin: left;
+    position: relative;
+    width: 100%;
+  }
+  .elapser .indication .node {
+    width: 100%;
+    position: absolute;
+    height: 100%;
+    animation: looped-elapser 1.5s linear infinite;
+    transform-origin: left;
+  }
+  .elapser .indication .node::before {
+    background-color: #fff;
+    content: '';
+    display: block;
+    filter: drop-shadow(0 0 0.5rem white);
+    width: 20%;
+    position: absolute;
+    right: 0;
+    height: 100%;
+  }
+  @keyframes looped-elapser {
+    50%, 100% {
+      transform: scaleX(0);
+    }
+  } */
 </style>
