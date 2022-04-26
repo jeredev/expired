@@ -162,6 +162,7 @@
       }
       if (res.ok) {
         // items = null // Still doesn't work
+        listings = null
         session.set({ user: null }),
         message.set({
           text: `Logout successful.`,
