@@ -38,7 +38,7 @@
 </script>
 <script lang="ts">
   import { page, session } from "$app/stores"
-  import { afterNavigate, beforeNavigate, goto, invalidate } from '$app/navigation'
+  import { afterNavigate, goto, invalidate } from '$app/navigation'
   import { onDestroy, onMount } from "svelte"
 
   import { fade, slide } from 'svelte/transition'
@@ -389,11 +389,6 @@
     checkSearchValidity()
   }
 
-  const getState = () => {
-    // console.log(history.state)
-    console.log(document.referrer)
-  }
-
   let searching = false
 
   const searchItems = async() => {
@@ -682,7 +677,6 @@
       searching === false
       goto('/')
     }
-    // history.go(-1)
   }
 
   // function goBack(defaultRoute = '/') {
@@ -729,83 +723,22 @@
     updateEndTimeRelativity()
   }
 
-  beforeNavigate(async() => {
-    listings = null
-    // console.log('before navigating') // Clears before page load
-    // if ($page.url.searchParams.get('name')) {
-    //   searchQuery.name = $page.url.searchParams.get('name')
-    //   search.name = $page.url.searchParams.get('name')
-    // }
-    // if ($page.url.searchParams.get('end')) {
-    //   searchQuery.end = $page.url.searchParams.get('end')
-    //   search.endTime = $page.url.searchParams.get('end')
-    // }
-    // if ($page.url.searchParams.get('cat')) {
-    //   searchQuery.cat = $page.url.searchParams.get('cat')
-    //   search.category = $page.url.searchParams.get('cat')
-    // }
-    // console.log(searchQuery)
-    // items = await getItems(searchQuery)
-    // generateListings()
-  })
-
   afterNavigate(async() => {
     // console.log($page.url)
+    listings = null
     if ($page.url.searchParams.get('name') === null) {
       search.name = ''
       searchQuery.name = ''
-    }
-    else {
-      // console.log('else true name:', $page.url.searchParams.get('name'))
-      // console.log(typeof $page.url.searchParams.get('name'))
     }
     if ($page.url.searchParams.get('end') === null) {
       search.endTime = ''
       searchQuery.end = ''
     }
-    else {
-      // console.log('end:', $page.url.searchParams.get('end'))
-    }
     if ($page.url.searchParams.get('cat') === null) {
       search.category = ''
       searchQuery.cat = ''
     }
-    else {
-      // console.log('cat:', $page.url.searchParams.get('cat'))
-    }
-    // console.log(items)
-    // console.log('after navigating')
-    // console.log(`searching = ${searching}`)
-    // console.log(items)
-    // if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
-    //   if ($page.url.searchParams.get('name')) {
-    //     searchQuery.name = $page.url.searchParams.get('name')
-    //     search.name = $page.url.searchParams.get('name')
-    //   }
-    //   else {
-    //     search.name = ''
-    //     searchQuery.name = ''
-    //   }
-    //   if ($page.url.searchParams.get('end')) {
-    //     searchQuery.end = $page.url.searchParams.get('end')
-    //     search.endTime = $page.url.searchParams.get('end')
-    //   }
-    //   else {
-    //     search.endTime = ''
-    //     searchQuery.end = ''
-    //   }
-    //   if ($page.url.searchParams.get('cat')) {
-    //     searchQuery.cat = $page.url.searchParams.get('cat')
-    //     search.category = $page.url.searchParams.get('cat')
-    //   }
-    //   else {
-    //     search.category = ''
-    //     searchQuery.cat = ''
-    //   }
-    //   // console.log(searchQuery)
-    //   items = await getItems(searchQuery)
-      generateListings()
-    // }
+    generateListings()
   })
 
   onMount(async() => {
@@ -891,13 +824,21 @@
       </form>
     {/if}
   </div>
+  {#if user && user.account}
+    <div class="controls pb-4 flex">
+      <a href="/profile" class="btn ml-2">
+        <Icon icon="clarity:avatar-solid" />
+      </a>
+      <button on:click={logOut} class="btn ml-2" disabled="{statusProcessing}">
+        <Icon icon="clarity:logout-solid" />
+      </button>
+    </div>
+  {/if}
   {#if user && user.account && user.account.subscription_status === 'active'}
-    <div class="homebase">
-      <button on:click={getState} class="btn" style="display: none;">State</button>
+    <div class="homebase"> <!-- Necessary? -->
       <div class="controls pb-4 flex">
-        <!-- {#if Object.keys(searchQuery).length} -->
         {#if $page.url.searchParams.get('name') || $page.url.searchParams.get('end') || $page.url.searchParams.get('cat')}
-          <button class="btn" on:click="{() => { goBack() }}">
+          <button class="btn" on:click="{goBack}">
             <Icon icon="clarity:arrow-line" style="display: inline; transform: rotate(-90deg);" />
           </button>
         {/if}
@@ -913,9 +854,6 @@
           </button>
           <button class={ addMenuActive ? 'active btn ml-2' : 'btn ml-2' } on:click={() => { addMenuActive = !addMenuActive }}>
             <Icon icon="clarity:add-line" />
-          </button>
-          <button on:click={logOut} class="btn ml-2" disabled="{statusProcessing}">
-            <Icon icon="clarity:logout-solid" />
           </button>
         </div>
       </div>
@@ -1126,7 +1064,7 @@
       {/if}
     </div>
   {:else if user && user.account && user.account.subscription_status !== 'active'}
-    <p>Account inactive. Please <a href="/">reactivate your account</a> here.</p>
+    <p>Account inactive. Please <a href="/profile">reactivate your account</a> here.</p>
   <!-- Really not supposed to be here -->
   {:else if user && !user.account}
     <p>No account found.</p>
