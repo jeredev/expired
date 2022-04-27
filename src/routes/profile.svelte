@@ -9,6 +9,7 @@
         })
         if (subscriptionQuery.ok) {
           const subscription = await subscriptionQuery.json()
+          // console.log(subscription)
           return {
             status: 200,
             props: {
@@ -40,11 +41,17 @@
 </script>
 <script lang="ts">
   import { loadStripe } from '@stripe/stripe-js'
+  import { onMount } from "svelte"
   import Icon from '@iconify/svelte'
   import { goto } from '$app/navigation'
+  import { session } from "$app/stores"
 
   export let subscription
   export let user
+
+  let stripe
+
+  let paymentReady = false
 
   let pwd
   let confirmPwd
@@ -92,6 +99,7 @@
         const error = await res.json()
       }
       if (res.ok) {
+        session.set({ user: null })
         goto('/')
         // items = null // Still doesn't work
       }
@@ -126,6 +134,104 @@
     }
   }
 
+  const renewSub = async () => {
+    try {
+      const res = await fetch('/api/stripe/new-subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(user.account.customer_id)
+      })
+      if (!res.ok) {
+        console.log('!res.ok')
+        const error = await res.json()
+        console.log(error)
+      }
+      if (res.ok) {
+        console.log('res.ok')
+        // console.log(await res.json())
+        const { clientSecret, userUID } = await res.json()
+        console.log(clientSecret)
+        if (clientSecret) {
+          // console.log('if:')
+          const elements = stripe.elements({
+            clientSecret: clientSecret,
+            appearance: {
+              theme: 'flat', // or 'none'
+              // variables: {
+              //   colorPrimary: '#0570de',
+              //   colorBackground: '#ffffff',
+              //   colorText: '#30313d',
+              //   colorDanger: '#df1b41',
+              //   fontFamily: 'Ideal Sans, system-ui, sans-serif',
+              //   spacingUnit: '2px',
+              //   borderRadius: '4px',
+              //   // See all possible variables below
+              // },
+              // rules: {
+              //   '.Tab': {
+              //     border: '1px solid #E0E6EB',
+              //     boxShadow: '0px 1px 1px rgba(0, 0, 0, 0.03), 0px 3px 6px rgba(18, 42, 66, 0.02)',
+              //   },
+
+              //   '.Tab:hover': {
+              //     color: 'var(--colorText)',
+              //   },
+
+              //   '.Tab--selected': {
+              //     borderColor: '#E0E6EB',
+              //     boxShadow: '0px 1px 1px rgba(0, 0, 0, 0.03), 0px 3px 6px rgba(18, 42, 66, 0.02), 0 0 0 2px var(--colorPrimary)',
+              //   },
+
+              //   '.Input--invalid': {
+              //     boxShadow: '0 1px 1px 0 rgba(0, 0, 0, 0.07), 0 0 0 2px var(--colorDanger)',
+              //   },
+
+              //   // See all supported class names and selector syntax below
+              // }
+              labels: 'floating', // or 'above'
+            },
+          })
+          const paymentElement = elements.create('payment')
+          paymentElement.mount('#payment-element')
+          paymentReady = true
+
+          const form = document.getElementById('payment-form')
+          form.addEventListener('submit', async (event) => {
+            // Complete payment
+            event.preventDefault();
+
+            const {error} = await stripe.confirmPayment({
+              //`Elements` instance that was used to create the Payment Element
+              elements,
+              confirmParams: {
+                return_url: `https://localhost:3000/complete?uid=${userUID}`,
+              }
+            });
+
+            if (error) {
+              // This point will only be reached if there is an immediate error when
+              // confirming the payment. Show error to your customer (for example, payment
+              // details incomplete)
+              const messageContainer = document.querySelector('#error-message');
+              messageContainer.textContent = error.message;
+            } else {
+              // Your customer will be redirected to your `return_url`. For some payment
+              // methods like iDEAL, your customer will be redirected to an intermediate
+              // site first to authorize the payment, then redirected to the `return_url`.
+              // http://localhost:3000/complete?uid=6ff73653-d81e-44c1-bd83-30649cefc261&payment_intent=pi_3KnTkkLQ7xMoFtsZ1JenM1gm&payment_intent_client_secret=pi_3KnTkkLQ7xMoFtsZ1JenM1gm_secret_1nh3FG4MXfIJnmhQiHRbPu0Ce&redirect_status=succeeded
+              // 6ff73653-d81e-44c1-bd83-30649cefc261
+            }
+          });
+        }
+      }
+    }
+    catch(e) {
+      console.log(e)
+    }
+  }
+
   function goBack() {
     history.back()
   }
@@ -134,6 +240,11 @@
     const date = new Date(time * 1000)
     return date.toString()
   }
+
+  onMount(async() => {
+    // console.log(String(import.meta.env.VITE_STRIPE_PUBLIC_KEY)) // Undefined
+    stripe = await loadStripe('pk_test_51KRkeiLQ7xMoFtsZ4kcH2EaR6fijSHMwk3RrOhBqJ29YujRfhb7PutQxU1XwBAKULC149Omq91I1KMqDKHceVfE600rKKbu7Mx')
+  })
 </script>
 
 <div class="decay mx-auto max-w-50rem p-4 text-white">
@@ -189,16 +300,50 @@
   </div>
   <div class="grouping mb-8 p-4 border-width-$1px border-light-400">
     <h2 class="mb-4">Subscription</h2>
-    <p>Status: {subscription.status} </p>
-    <p>Current Period Start: { getDate(subscription.current_period_start) }</p>
-    <p>Current Period End: { getDate(subscription.current_period_end) }</p>
-    <div class="my-4">
-      <button class="btn" on:click="{manageSub}">Manage Subscription</button>
-    </div>
-    <!-- {#if subscription.status === 'active'}
-      <div class="my-4">
-        <button class="btn">Cancel</button>
-      </div>
-    {/if} -->
+    {#if subscription}
+      <p>Status: {subscription.status} </p>
+      {#if subscription.status === 'active'}
+        <p>Current Period Start: { getDate(subscription.current_period_start) }</p>
+        <p>Current Period End: { getDate(subscription.current_period_end) }</p>
+      {/if}
+      {#if subscription.cancel_at_period_end}
+        <p class="my-2">Your subscription will automatically renew at the current period end.</p>
+      {/if}
+      {#if subscription.cancel_at_period_end}
+        <p class="my-2">Your subscription will expire at the current period end. To renew, use the Manage Subscription button below.</p>
+      {/if}
+      {#if subscription.status === 'canceled'}
+        <p class="my-2">Wish to reactivate your subscription? Use the Renew button below.</p>
+        <button class="btn">Renew Subscription</button>
+      {/if}
+      {#if subscription.status !== 'canceled'}
+        <div class="my-4">
+          <button class="btn" on:click="{manageSub}">Manage Subscription</button>
+        </div>
+      {/if}
+    {:else}
+      <p>Wish to purchase a subscription? Use the Renew button below.</p>
+      <button class="btn block mt-4" on:click="{renewSub}">Renew Subscription</button>
+      <form id="payment-form" class="mt-4">
+        <div id="payment-element">
+          <!-- Elements will create form elements here -->
+        </div>
+        {#if paymentReady}
+          <button id="submit" class="btn block mt-4">Subscribe</button>
+          <div id="error-message">
+            <!-- Display error message to your customers here -->
+          </div>
+        {/if}
+      </form>
+    {/if}
+  </div>
+  <div class="grouping mb-8 p-4 border-width-$1px border-light-400">
+    <h2 class="mb-4">App Options</h2>
+    <p>Display mode: (Light or Dark)</p>
+    <p>Notifications: (When? How often?)</p>
+    <ul>
+      <li>Push?</li>
+      <li>Email?</li>
+    </ul>
   </div>
 </div>

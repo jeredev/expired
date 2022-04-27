@@ -15,6 +15,8 @@ export async function post({ request }) {
     return
   }
 
+  // stripe listen --forward-to https://localhost:3000/api/stripe/webhook --skip-verify
+
   // Handle the event
   switch (stripeEvent.type) {
     // ... handle other event types

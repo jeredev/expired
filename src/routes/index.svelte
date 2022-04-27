@@ -480,7 +480,7 @@
   }
 
   const generateListings = () => {
-    // console.log('generating')
+    console.log('generating')
     if ($displayMode === 'categories') {
       categorizeItems()
     }
@@ -724,6 +724,7 @@
   }
 
   afterNavigate(async() => {
+    console.log('afterNavigate on index')
     // console.log($page.url)
     listings = null
     if ($page.url.searchParams.get('name') === null) {
@@ -738,7 +739,9 @@
       search.category = ''
       searchQuery.cat = ''
     }
-    generateListings()
+    if (items) {
+      generateListings()
+    }
   })
 
   onMount(async() => {
@@ -1181,5 +1184,10 @@
     position: absolute;
     right: 0;
     height: 100%;
+  }
+  @keyframes looped-elapser {
+    50%, 100% {
+      transform: scaleX(0);
+    }
   }
 </style>

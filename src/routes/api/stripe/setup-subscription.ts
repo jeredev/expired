@@ -56,6 +56,9 @@ export async function post({ request }) {
     if (error) {
       // console.log('error:') // { message: 'User already registered', status: 400 }
       // console.log(error)
+      // if (error.status === 400 && error.message === 'User already registered') {
+
+      // }
       return {
         status: error.status,
         body: JSON.stringify(error)
