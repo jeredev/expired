@@ -63,8 +63,6 @@
     // item.edits.category.id = null
   }
 
-  // console.log(item.edits)
-
   let itemElement
   let menuVisible = false
 
@@ -388,7 +386,7 @@
       }
       if (res.ok) {
         const updatedItem = await res.json()
-        console.log(updatedItem)
+        // console.log(updatedItem)
         file = null
         fileInput = null
         itemImagePreview = null
@@ -599,27 +597,11 @@
     });
   }
 
-  // const io = new IntersectionObserver((entries) => {
-  //   entries.forEach((entry) => {
-  //     if (entry.isIntersecting) {
-  //       entry.target.classList.remove('unset')
-  //       io.unobserve(entry.target)
-  //     }
-  //   })
-  // },
-  // {
-  //   root: null,
-  //   rootMargin: '0px',
-  //   threshold: [0],
-  // })
-
   onMount(() => {
     updateEndTimeRelativity()
     checkUpdateValidity()
     const SpeechRecognition = (<any>window).SpeechRecognition || (<any>window).webkitSpeechRecognition
     if (SpeechRecognition) {
-      // console.log('true') // Chrome needs webkit prefix version
-      // recognition = new SpeechRecognition()
       recognitionName = new SpeechRecognition()
       recognitionExpiration = new SpeechRecognition()
     }
@@ -678,7 +660,6 @@
             src="{item.image}" 
             alt="{item.name}" 
             class="item-image block m-auto"
-            loading="lazy"
             bind:this={image}
           >
         </div>
