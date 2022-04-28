@@ -7,7 +7,7 @@
       // }
       if (user.account?.subscription_status === 'active') {
         let appendage = '?' + new URLSearchParams(url.searchParams)
-        const items = await fetch('/api/items' + appendage)
+        const items = await fetch(`/api/items${appendage}`)
         const categories = await fetch('/api/categories')
         return {
           status: 200,
@@ -75,6 +75,8 @@
   export let categories: Array<CategoryProps> | null = null
   export let items: Array<ItemProps> | null = null
   export let user
+
+  const isItemsURL = (dep) => dep.includes('/api/items')
 
   // let categories = null
   // let categories: Array<CategoryProps> | null = null
@@ -405,7 +407,9 @@
 
     listings = null
 
-    await invalidate('/api/items')
+    // console.log('listings: ', listings)
+
+    await invalidate(isItemsURL)
 
     const url = $page.url
     url.search = new URLSearchParams(searchQuery)
@@ -480,7 +484,7 @@
   }
 
   const generateListings = () => {
-    console.log('generating')
+    // console.log('generating')
     if ($displayMode === 'categories') {
       categorizeItems()
     }
@@ -724,7 +728,7 @@
   }
 
   afterNavigate(async() => {
-    console.log('afterNavigate on index')
+    // console.log('afterNavigate on index')
     // console.log($page.url)
     listings = null
     if ($page.url.searchParams.get('name') === null) {
@@ -828,7 +832,7 @@
     {/if}
   </div>
   {#if user && user.account}
-    <div class="controls pb-4 flex">
+    <div class="controls mb-2 flex">
       <a href="/profile" class="btn ml-2">
         <Icon icon="clarity:avatar-solid" />
       </a>
