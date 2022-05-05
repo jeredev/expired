@@ -73,9 +73,20 @@
   import CategoryBar from "../components/CategoryBar.svelte"
   import Item from "../components/Item.svelte"
   import Messenger from "../components/Messenger.svelte"
-  import { displayMode, sortingMode, timeStatusMode, message } from "../stores"
+  import { displayMode, sortingMode, timeStatusMode, message, time } from "../stores"
 
   export let categories: Array<CategoryProps> | null = null
+
+  // export let categoriesFetched: Array<CategoryProps> | null = null
+  // console.log(categoriesFetched)
+  // categories.set(categoriesFetched)
+
+  // categories.subscribe(value => {
+  //   console.log('subscribe!')
+  //   console.log(value)
+  // })
+  
+  // setContext('categories', categories)
   // export let items: Array<ItemProps> | null = null
   export let items: Array<ItemProps> = []
   export let user: App.Session['user']
@@ -85,7 +96,7 @@
   // let items: Array<ItemProps> | null = null
 
   let listings: any[] | null = null
-  let time = new Date().getTime()
+  // let time = new Date().getTime()
 
   let email: string
   let password: string
@@ -152,7 +163,7 @@
           session.set({ user: data })
           if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
             categories = await getCategories()
-            clock = window.setInterval(runClock, 1000)
+            // clock = window.setInterval(runClock, 1000)
             items = await getItems(searchQuery as URLSearchParams)
             generateListings()
           }
@@ -273,17 +284,18 @@
     }
   }
 
-  let clock: number
-  const runClock = () => {
-    time = new Date().getTime()
-  }
+  // let clock: number
+  // const runClock = () => {
+  //   time = new Date().getTime()
+  //   timeClock.set(time)
+  // }
 
   /* Sorting */
   const getLifespan = (startTime: Date, endTime: Date) => {
     return new Date(endTime).getTime() - new Date(startTime).getTime()
   }
   const getTimeElapsed = (startTime: Date) => {
-    return time - new Date(startTime).getTime()
+    return $time - new Date(startTime).getTime()
   }
   const filterAll = () => {
     listings = items
@@ -727,8 +739,6 @@
   }
 
   afterNavigate(async() => {
-    // console.log('afterNavigate on index')
-    // console.log($page.url)
     listings = null
     if ($page.url.searchParams.get('name') === null) {
       search.name = ''
@@ -751,16 +761,16 @@
     if (items && items.length && listings === null) {
       generateListings()
     }
-    if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
-      clock = window.setInterval(runClock, 1000);
-    }
+    // if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
+    //   clock = window.setInterval(runClock, 1000);
+    // }
     const SpeechRecognition = (<any>window).SpeechRecognition || (<any>window).webkitSpeechRecognition
     if (SpeechRecognition) {
       recognition = new SpeechRecognition()
     }
   })
   onDestroy(() => {
-    clearInterval(clock)
+    // clearInterval(clock)
   })
 </script>
 
@@ -1049,14 +1059,15 @@
           {#if $displayMode === 'categories'}
             {#each listings as category}
               {#if category.items.length > 0}
-                <CategorizedItems categories={categories} category={category} time={time} items={category.items} on:remove={removeItem} on:update={updateItem} />
+                <CategorizedItems categories={categories} category={category} items={category.items} on:remove={removeItem} on:update={updateItem} />
                 <!-- <CategorizedItems category={category} time={time} items={category.items} on:remove={removeItem} on:update={updateItem} /> -->
               {/if}
             {/each}
           {:else}
           <div class="items-list">
+            Item list
             {#each listings as listing}
-              <Item item={listing} time={time} categories={categories} on:remove={removeItem} on:update={updateItem} />
+              <Item item={listing} categories={categories} on:remove={removeItem} on:update={updateItem} />
               <!-- <Item item={listing} time={time} on:remove={removeItem} on:update={updateItem} /> -->
             {/each}
           </div>

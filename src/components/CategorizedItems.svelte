@@ -1,14 +1,16 @@
-<script>
+<script lang="ts">
   import Item from "../components/Item.svelte"
   import Icon from '@iconify/svelte'
   import { slide } from 'svelte/transition';
 
   let itemsVisible = true
 
-  export let items
+  export let items: Array<ItemProps> = []
   export let categories
-  export let category
-  export let time
+  export let category: CategoryProps
+  // export let time: number
+
+  // &: categories = getContext('categories')
 
 </script>
 
@@ -36,7 +38,7 @@
   {#if itemsVisible}
     <div transition:slide|local class="items-list">
       {#each items as item}
-        <Item item={item} time={time} categories={categories} on:remove on:update />
+        <Item categories={categories} item={item} on:remove on:update />
       {/each}
     </div>
   {/if}

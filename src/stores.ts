@@ -1,10 +1,21 @@
-import { writable } from 'svelte/store';
+import { readable, writable } from 'svelte/store';
 import { browser } from '$app/env';
+
+export const categories = writable<Array<CategoryProps> | null>(null);
 
 export const message = writable({
   text: '',
   timed: false
 });
+
+export const time = readable(new Date().getTime(), function start(set) {
+  const interval = setInterval(() => {
+		set(new Date().getTime());
+	}, 1000);
+	return function stop() {
+		clearInterval(interval);
+	};
+})
 
 export const displayMode = writable(browser && (localStorage.getItem('displayMode') || 'list'));
 export const sortingMode = writable(browser && (localStorage.getItem('sortingMode') || 'endtime-descending'));

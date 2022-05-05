@@ -1,9 +1,9 @@
 <script lang="ts">
   import { session } from "$app/stores";
-  import { createEventDispatcher, onDestroy, onMount } from "svelte";
+  import { createEventDispatcher, getContext, onDestroy, onMount } from "svelte";
   import { slide } from 'svelte/transition';
   import Icon from '@iconify/svelte'
-  import { message } from "../stores";
+  import { message, time } from "../stores";
   import {
     formatDistanceToNowStrict,
     getTime,
@@ -32,8 +32,11 @@
   // import { stuff } from '../routes/index.svelte'
 
   export let categories: Array<CategoryProps>
+  // const categories = getContext('categories')
+  // $: categories = getContext('categories')
+
   export let item: ItemProps
-  export let time: number
+  // export let time: number
 
   let image: HTMLImageElement
   let imageLoaded = false
@@ -89,8 +92,9 @@
   const getLifespan = (startTime: Date, endTime: Date) => {
     return getTime(new Date(endTime)) - getTime(new Date(startTime))
   }
+  // console.log(timeClock)
   const getTimeElapsed = (startTime: Date) => {
-    return time - getTime(new Date(startTime))
+    return $time - getTime(new Date(startTime))
   }
   let statusRemoving = false
   const removeItem = async() => {
@@ -163,7 +167,7 @@
     }
     else {
       expired = false
-      let timeRemaining = lifespan - timeElapsed + time
+      let timeRemaining = lifespan - timeElapsed + $time
       let timeReported = formatDistanceToNowStrict(timeRemaining)
       return timeReported
     }
@@ -502,7 +506,6 @@
   }
 
   // Speech Recognition
-  // let recognition = false
   let recognitionExpiration: any = false
   let recognitionName: any = false
   let recognizing = false
@@ -637,7 +640,7 @@
   })
   // Reactivity to Time
   $: {
-    if (time) {
+    if ($time) {
       precursorBar = getPrecursorBar()
       timeBar = getTimeBar()
       timeRemaining = getTimeRemainder()
