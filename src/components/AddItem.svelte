@@ -180,6 +180,7 @@
       fileInput.value = ''
       newItemImagePreview = ''
       noImageFound = false
+      noItemFound = false
       addNewItemProcessing = false
       checkNewItemValidity()
       dispatch('add', newItems)
@@ -198,9 +199,13 @@
       itemImage = file
     }
     else {
-      itemImage = null
       newItemImagePreview = ''
     }
+  }
+
+  const clearImage = () => {
+    itemImage = null
+    newItemImagePreview = ''
   }
 
   let addingCategory = false
@@ -270,6 +275,7 @@
   let video: HTMLVideoElement
 
   let noImageFound = false
+  let noItemFound = false
 
   const setupScanner = () => {
     scanner = true
@@ -337,27 +343,31 @@
       text: 'Fetching item',
       timed: false
     })
+    // Set a timeout for this fetch?
     fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
       .then(response => response.json())
       .then(async(data) => {
-        if (data.product.product_name_en) newItem.name = camelize(data.product.product_name_en)
-        if (data.product.image_url) {
-          newItemImagePreview = data.product.image_url
-          itemImage = await fetch(data.product.image_url).then(r => r.blob())
-        } else {
-          noImageFound = true
+        if (data.product) {
+          if (data.product.product_name_en) newItem.name = camelize(data.product.product_name_en)
+          if (data.product.image_url) {
+            newItemImagePreview = data.product.image_url
+            itemImage = await fetch(data.product.image_url).then(r => r.blob())
+          } else {
+            noImageFound = true
+          }
+          noItemFound = false
+          message.set({
+            text: `Item successfully fetched!`,
+            timed: true
+          })
         }
-        message.set({
-          text: `Item successfully fetched!`,
-          timed: true
-        })
+        else {
+          noItemFound = true
+          message.set(null)
+        }
       })
       .catch(error => {
-        message.set({
-          text: `Fetch error: ${error}`,
-          timed: true
-        })
-        console.error('There has been a problem with your fetch operation:', error)
+        // console.error('There has been a problem with your fetch operation:', error)
         deactivateScanner()
       })
   }
@@ -501,6 +511,9 @@
             </video>
           </div>
         {/if}
+        {#if noItemFound}
+          <p class="no-image my-2 p-1">No product was found. Please enter or use speech to input this item.</p>
+        {/if}
       </div>
     {/if}
     <form on:submit|preventDefault class="form form--add-item" autocomplete="off">
@@ -515,15 +528,26 @@
       </div>
       <div class="form-field my-2">
         {#if noImageFound}
-          <p class="my-2 p-1 border-red-800">No image found for scanned item.</p>
+          <p class="no-image my-2 p-1">No image found for scanned item. You can use the form control below to upload your own image.</p>
         {/if}
         <div class="add-item-image">
           {#if newItemImagePreview}
             <h1>Preview</h1>
             <img src="{newItemImagePreview}" alt="">
           {/if}
-          <div class="file-input-region">
-            <label for="new-item--file" class="block">Item Image</label>
+          <div class="file-input-region my-3">
+            <label for="new-item--file" class="inline-block btn cursor-pointer">
+              {#if newItemImagePreview}
+                Change image
+              {:else}
+                Upload your own image
+              {/if}
+            </label>
+            {#if newItemImagePreview}
+              <button class="inline-block btn my-2" on:click="{clearImage}">
+                <Icon icon="clarity:close-line" style="margin: 0 auto;" />
+              </button>
+            {/if}
             <input
               bind:this={fileInput}
               id="new-item--file"
@@ -689,6 +713,20 @@
 {/if}
 
 <style>
+  .file-input-region {
+    position: relative;
+  }
+  .file-input {
+    opacity: 0;
+    width: 0.1px;
+    height: 0.1px;
+    position: absolute;
+  }
+  .no-image {
+    display: inline-block;
+    background-color: var(--red);
+    font-size: 80%;
+  }
   .form-field label {
     font-size: 90%;
   }

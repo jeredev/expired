@@ -2,6 +2,11 @@
   import { onDestroy } from "svelte";
   import { message } from '../stores';
 
+  // interface message {
+  //   text: string,
+  //   timed: boolean
+  // }
+
   let active = false
   const duration = 2500
   let timed = false
@@ -33,7 +38,9 @@
       transmitMessage()
     }
     if (!value) {
-      active = false
+      window.setTimeout(() => {
+        active = false
+      }, 400)
     }
   })
   onDestroy(() => {

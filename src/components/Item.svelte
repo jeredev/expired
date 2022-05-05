@@ -411,6 +411,10 @@
       }
     }
   }
+  const clearImage = () => {
+    file = null
+    itemImagePreview = null
+  }
 
   const updateEndTimeRelativelyForRenewal = () => {
     let adjTime = new Date()
@@ -673,17 +677,27 @@
             </button>
           {/if}
           <div class="file-input-region overflow-hidden">
-            <div class="form-field">
-              <input
-                bind:this={fileInput}
-                id="new-item--file"
-                type="file"
-                accept="image/*"
-                class="file-input"
-                capture
-                on:change="{analyzeFile}"
-              >
-            </div>
+            <label for="new-item--file-{item.id}" class="block btn cursor-pointer text-center">
+              {#if itemImagePreview}
+                Change
+              {:else}
+                <Icon icon="clarity:camera-solid" style="margin: 0 auto;" />
+              {/if}
+            </label>
+            {#if itemImagePreview}
+              <button class="block btn my-2 w-full" on:click="{clearImage}">
+                <Icon icon="clarity:close-line" style="margin: 0 auto;" />
+              </button>
+            {/if}
+            <input
+              bind:this={fileInput}
+              id="new-item--file-{item.id}"
+              type="file"
+              accept="image/*"
+              class="file-input"
+              capture
+              on:change="{analyzeFile}"
+            >
           </div>
         </div>
       {/if}
@@ -867,6 +881,15 @@
 </div>
 
 <style>
+  .file-input-region {
+    position: relative;
+  }
+  .file-input {
+    opacity: 0;
+    width: 0.1px;
+    height: 0.1px;
+    position: absolute;
+  }
   .menu-area {
     border-bottom: 1px solid var(--gray);
     border-top: 1px solid var(--gray);
