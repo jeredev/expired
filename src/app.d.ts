@@ -5,13 +5,33 @@
 declare namespace App {
 	interface Locals {
     user: {
-      id: string
+      id: string,
+      account: {
+        created_at: string,
+        id: string,
+        customer_id: string,
+        owner: string,
+        product_id: string,
+        subscription_id: string,
+        subscription_status: string,
+        updated_at: string
+      }
     } | null
   }
 	// interface Platform {}
 	interface Session {
     user: {
-      id: string
+      id: string,
+      account: {
+        created_at: string,
+        id: string,
+        customer_id: string,
+        owner: string,
+        product_id: string,
+        subscription_id: string,
+        subscription_status: string,
+        updated_at: string
+      }
     } | null
   }
 	// interface Stuff {}
@@ -20,7 +40,8 @@ declare namespace App {
 declare interface CategoryProps {
   id: string,
   name: string,
-  creator?: string
+  creator?: string,
+  items?: []
 }
 
 declare interface ItemProps {
@@ -28,10 +49,14 @@ declare interface ItemProps {
   name: string,
   startTime: Date,
   endTime: Date,
-  category?: string | {
+  category?: {
     id: string,
     name: string
-  },
+  } | null,
+  // category?: string | {
+  //   id: string,
+  //   name: string
+  // },
   imagePath?: string,
   image?: string,
   creator?: string

@@ -1,12 +1,12 @@
-<script>
+<script lang="ts">
   import { onDestroy } from "svelte";
   import { message } from '../stores';
 
   let active = false
   const duration = 2500
   let timed = false
-  let timeBomb
-  let text
+  let timeBomb: number
+  let text: string
 
   const transmitMessage = () => {
     active = true

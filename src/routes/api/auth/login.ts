@@ -1,9 +1,24 @@
 import { supabase } from '$lib/supabase'
 import { serialize } from 'cookie'
+import type { RequestEvent } from "@sveltejs/kit/types/internal"
+import type { User } from '@supabase/supabase-js'
 
-export async function post({ request }) {
+interface appUser extends User {
+  account?: {
+    created_at: string,
+    id: string,
+    customer_id: string,
+    owner: string,
+    product_id: string,
+    subscription_id: string,
+    subscription_status: string,
+    updated_at: string
+  }
+}
+
+export async function post(event: RequestEvent) {
   try {
-    const payload = await request.json()
+    const payload = await event.request.json()
     if (payload.email && payload.password) {
       const { user, session, error } = await supabase.auth.signIn({
         email: payload.email,
@@ -17,6 +32,7 @@ export async function post({ request }) {
         }
       }
       if (user) {
+        let appUser: appUser
         const { data: userData, error: userError } = await supabase
           .from('accounts')
           .select()
@@ -29,26 +45,30 @@ export async function post({ request }) {
           }
         }
         if (userData) {
-          user.account = userData[0]
+          appUser = user
+          appUser.account = userData[0]
+          if (session && session.expires_at) {
+            const cookieHeader = serialize('supatoken', session.access_token, {
+              domain: '',
+              path: '/',
+              sameSite: 'lax',
+              httpOnly: true,
+              expires: new Date(session.expires_at),
+              maxAge: session.expires_in
+            })
+            return {
+              status: 200,
+              // Set cookies?
+              headers: {
+                'set-cookie': cookieHeader
+              },
+              body: JSON.stringify(appUser)
+            };
+          }
         }
       }
-      if (session) {
-        const cookieHeader = serialize('supatoken', session.access_token, {
-          domain: '',
-          path: '/',
-          sameSite: 'lax',
-          httpOnly: true,
-          expires: new Date(session.expires_at),
-          maxAge: session.expires_in
-        })
-        return {
-          status: 200,
-          // Set cookies?
-          headers: {
-            'set-cookie': cookieHeader
-          },
-          body: JSON.stringify(user)
-        };
+      else {
+        throw new Error('No user found')
       }
     }
   }

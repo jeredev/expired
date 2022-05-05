@@ -1,5 +1,6 @@
 <script lang="ts" context="module">
-  export async function load({ url, params, fetch, session, stuff, status, error }) {
+  import type { Load } from "@sveltejs/kit"
+  export const load: Load = async({ url, params, fetch, session, stuff, status, error }) => {
     const { user } = session
     if (user && user.id) {
       if (user.account?.subscription_id && user.account?.subscription_status === 'active') {
@@ -9,7 +10,6 @@
         })
         if (subscriptionQuery.ok) {
           const subscription = await subscriptionQuery.json()
-          // console.log(subscription)
           return {
             status: 200,
             props: {
@@ -18,9 +18,9 @@
             }
           }
         }
-        else {
+        // else {
 
-        }
+        // }
       }
       return {
         status: 200,
@@ -40,21 +40,24 @@
   }
 </script>
 <script lang="ts">
-  import { loadStripe } from '@stripe/stripe-js'
+  import { loadStripe, type Stripe } from '@stripe/stripe-js'
+  import type { Stripe as StripeNode } from 'stripe'
   import { onMount } from "svelte"
   import Icon from '@iconify/svelte'
   import { goto } from '$app/navigation'
   import { session } from "$app/stores"
 
-  export let subscription
-  export let user
+  export let subscription: StripeNode.Subscription
+  export let user: App.Session['user']
 
-  let stripe
+  let messageContainer: HTMLDivElement
+  let paymentForm: HTMLFormElement
+  let stripe: Stripe | null
 
   let paymentReady = false
 
-  let pwd
-  let confirmPwd
+  let pwd: string
+  let confirmPwd: string
 
   let statusProcessing = false
   let resetPwdValid = false
@@ -99,9 +102,8 @@
         const error = await res.json()
       }
       if (res.ok) {
-        session.set({ user: null })
+        session.set({ user: null }),
         goto('/')
-        // items = null // Still doesn't work
       }
     }
     catch(e) {
@@ -153,7 +155,7 @@
         // console.log(await res.json())
         const { clientSecret, userUID } = await res.json()
         console.log(clientSecret)
-        if (clientSecret) {
+        if (stripe && clientSecret) {
           // console.log('if:')
           const elements = stripe.elements({
             clientSecret: clientSecret,
@@ -197,32 +199,37 @@
           paymentElement.mount('#payment-element')
           paymentReady = true
 
-          const form = document.getElementById('payment-form')
-          form.addEventListener('submit', async (event) => {
-            // Complete payment
-            event.preventDefault();
+          paymentForm.addEventListener('submit', async (event) => {
 
-            const {error} = await stripe.confirmPayment({
-              //`Elements` instance that was used to create the Payment Element
-              elements,
-              confirmParams: {
-                return_url: `https://localhost:3000/complete?uid=${userUID}`,
+            if (stripe) {
+              // Complete payment
+              event.preventDefault();
+
+              const {error} = await stripe.confirmPayment({
+                //`Elements` instance that was used to create the Payment Element
+                elements,
+                confirmParams: {
+                  return_url: `https://localhost:3000/complete?uid=${userUID}`,
+                }
+              });
+
+              if (error) {
+                // This point will only be reached if there is an immediate error when
+                // confirming the payment. Show error to your customer (for example, payment
+                // details incomplete)
+                // Do I need to do anything with error itself?
+                if (error.message) {
+                  messageContainer.textContent = error.message
+                }
+              } else {
+                // Your customer will be redirected to your `return_url`. For some payment
+                // methods like iDEAL, your customer will be redirected to an intermediate
+                // site first to authorize the payment, then redirected to the `return_url`.
+                // http://localhost:3000/complete?uid=6ff73653-d81e-44c1-bd83-30649cefc261&payment_intent=pi_3KnTkkLQ7xMoFtsZ1JenM1gm&payment_intent_client_secret=pi_3KnTkkLQ7xMoFtsZ1JenM1gm_secret_1nh3FG4MXfIJnmhQiHRbPu0Ce&redirect_status=succeeded
+                // 6ff73653-d81e-44c1-bd83-30649cefc261
               }
-            });
-
-            if (error) {
-              // This point will only be reached if there is an immediate error when
-              // confirming the payment. Show error to your customer (for example, payment
-              // details incomplete)
-              const messageContainer = document.querySelector('#error-message');
-              messageContainer.textContent = error.message;
-            } else {
-              // Your customer will be redirected to your `return_url`. For some payment
-              // methods like iDEAL, your customer will be redirected to an intermediate
-              // site first to authorize the payment, then redirected to the `return_url`.
-              // http://localhost:3000/complete?uid=6ff73653-d81e-44c1-bd83-30649cefc261&payment_intent=pi_3KnTkkLQ7xMoFtsZ1JenM1gm&payment_intent_client_secret=pi_3KnTkkLQ7xMoFtsZ1JenM1gm_secret_1nh3FG4MXfIJnmhQiHRbPu0Ce&redirect_status=succeeded
-              // 6ff73653-d81e-44c1-bd83-30649cefc261
             }
+            
           });
         }
       }
@@ -236,7 +243,7 @@
     history.back()
   }
 
-  function getDate(time) {
+  function getDate(time: number) {
     const date = new Date(time * 1000)
     return date.toString()
   }
@@ -324,13 +331,13 @@
     {:else}
       <p>Wish to purchase a subscription? Use the Renew button below.</p>
       <button class="btn block mt-4" on:click="{renewSub}">Renew Subscription</button>
-      <form id="payment-form" class="mt-4">
+      <form id="payment-form" class="mt-4" bind:this="{paymentForm}">
         <div id="payment-element">
           <!-- Elements will create form elements here -->
         </div>
         {#if paymentReady}
           <button id="submit" class="btn block mt-4">Subscribe</button>
-          <div id="error-message">
+          <div id="error-message" bind:this={messageContainer}>
             <!-- Display error message to your customers here -->
           </div>
         {/if}
@@ -347,3 +354,12 @@
     </ul>
   </div>
 </div>
+
+<style>
+  .text-white {
+    color: white;
+  }
+  .p-4 {
+    padding: 1rem;
+  }
+</style>

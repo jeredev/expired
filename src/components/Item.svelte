@@ -28,52 +28,68 @@
     subHours,
     subMinutes,
   } from 'date-fns'
+  
+  // import { stuff } from '../routes/index.svelte'
 
-  export let categories
-  export let item
-  export let time
+  export let categories: Array<CategoryProps>
+  export let item: ItemProps
+  export let time: number
 
   let image: HTMLImageElement
   let imageLoaded = false
 
-  item.expired = null
-  item.imminent = false
+  let expired: boolean | null = null
+  let imminent: boolean = false
 
-  item.edits = {
+  interface edits {
+    name: string,
+    category: string | null,
+    startTime: string,
+    endTime: string,
+    endRelatively: {
+      years: number,
+      months: number,
+      weeks: number,
+      days: number,
+      hours: number,
+      minutes: number
+    }
+  }
+  let edits: edits = {
     name: item.name,
-    category: {},
+    category: '',
     startTime: format(new Date(item.startTime), 'yyyy-MM-dd\'T\'HH:mm'),
     endTime: format(new Date(item.endTime), 'yyyy-MM-dd\'T\'HH:mm'), 
     endRelatively: {
-      years: null,
-      months: null,
-      weeks: null,
-      days: null,
-      hours: null,
-      minutes: null,
+      years: 0,
+      months: 0,
+      weeks: 0,
+      days: 0,
+      hours: 0,
+      minutes: 0,
     }
   }
 
+  // console.log(item)
+
   if (item.category) {
-    item.edits.category = item.category
+    edits.category = item.category.id
   }
   else {
-    item.edits.category = {}
-    item.edits.category.id = ''
-    // item.edits.category.id = null
+    edits.category = null
   }
 
-  let itemElement
+  let itemElement: HTMLDivElement
   let menuVisible = false
 
   let statusProcessing = false
 
   const dispatch = createEventDispatcher();
 
-  const getLifespan = (startTime, endTime) => {
+  const getLifespan = (startTime: Date, endTime: Date) => {
     return getTime(new Date(endTime)) - getTime(new Date(startTime))
   }
-  const getTimeElapsed = (startTime) => {
+  const getTimeElapsed = (startTime: Date) => {
     return time - getTime(new Date(startTime))
   }
   let statusRemoving = false
@@ -88,7 +104,6 @@
     })
     if (!res.ok) {
       // Error here
-      alert('failure!')
       const error = await res.json()
       message.set({
         text: `Error: ${error.message}`,
@@ -115,7 +130,7 @@
     }
     else {
       if (timeElapsed / lifespan >= 0.85) {
-        item.imminent = true;
+        imminent = true;
       }
       let percentLeft = `-${(timeElapsed / lifespan) * 100}%`
       let percentLeftCSS = `transform: translateX(${percentLeft})`
@@ -143,23 +158,23 @@
     let timeElapsed = getTimeElapsed(item.startTime)
     let lifespan = getLifespan(item.startTime, item.endTime)
     if (timeElapsed > lifespan) {
-      item.expired = true
+      expired = true
       return 'Expired'
     }
     else {
-      item.expired = false
+      expired = false
       let timeRemaining = lifespan - timeElapsed + time
       let timeReported = formatDistanceToNowStrict(timeRemaining)
       return timeReported
     }
   }
-  item.precursorBar = getPrecursorBar()
-  item.timeBar = getTimeBar()
-  item.timeRemaining = getTimeRemainder()
+  let precursorBar = getPrecursorBar()
+  let timeBar = getTimeBar()
+  let timeRemaining = getTimeRemainder()
 
   let updateValid = false
   const checkUpdateValidity = () => {
-    if (/([^\s])/.test(item.edits.name) && new Date(item.edits.endTime) > new Date(item.edits.startTime)) {
+    if (/([^\s])/.test(edits.name) && new Date(edits.endTime) > new Date(edits.startTime)) {
       updateValid = true
       return true
     } else {
@@ -169,7 +184,7 @@
   }
 
   const deleteImage = async() => {
-    if (item.imagePath && $session.user.id) {
+    if (item.imagePath && $session.user?.id) {
       statusProcessing = true
 
       const formData = new FormData()
@@ -203,8 +218,8 @@
         }
       }
       if (res.ok) {
-        item.imagePath = null
-        item.image = null
+        item.imagePath = undefined
+        item.image = undefined
         message.set({
           text: 'Successfully deleted item image.',
           timed: true 
@@ -246,22 +261,13 @@
       const renewedItem = processed[0]
 
       item.name = renewedItem.name
+      item.category = renewedItem.category
       item.startTime = renewedItem.startTime
       item.endTime = renewedItem.endTime
-      item.edits.name = renewedItem.name
-      // Find category name / Assign category
-      const found = categories.find(element => element.id === renewedItem.category)
-      if (!found) {
-        item.category = {}
-      } else {
-        item.category = {}
-        item.category.id = found.id
-        item.category.name = found.name
-        item.edits.category.id = found.id
-        item.edits.category.name = found.name
-      }
-      item.edits.startTime = format(new Date(renewedItem.startTime), 'yyyy-MM-dd\'T\'HH:mm')
-      item.edits.endTime = format(new Date(renewedItem.endTime), 'yyyy-MM-dd\'T\'HH:mm')
+      edits.name = renewedItem.name
+      edits.category = renewedItem.category
+      edits.startTime = format(new Date(renewedItem.startTime), 'yyyy-MM-dd\'T\'HH:mm')
+      edits.endTime = format(new Date(renewedItem.endTime), 'yyyy-MM-dd\'T\'HH:mm')
       updateEndTimeRelativity()
       menuVisible = false
       dispatch('update', item)
@@ -281,10 +287,12 @@
 
     const formData = new FormData()
     formData.append('id', item.id)
-    formData.append('name', item.edits.name)
-    formData.append('startTime', item.edits.startTime)
-    formData.append('endTime', item.edits.endTime)
-    formData.append('category', item.edits.category.id)
+    formData.append('name', edits.name)
+    formData.append('startTime', edits.startTime)
+    formData.append('endTime', edits.endTime)
+    if (edits.category) {
+      formData.append('category', edits.category)
+    }
 
     const res = await fetch('/api/item', {
       method: 'PATCH',
@@ -295,10 +303,7 @@
       console.log('!res.ok')
       statusProcessing = false
       statusUpdating = false
-      console.log('error before await')
       const error = await res.json()
-      console.log('error after await below:')
-      console.log(error)
       if (error.message) {
         message.set({
           text: `Error: ${error.message}`,
@@ -321,20 +326,11 @@
         item.name = updatedItem.name
         item.startTime = updatedItem.startTime
         item.endTime = updatedItem.endTime
-        item.edits.name = updatedItem.name
-        // Find category name / Assign category
-        const found = categories.find(element => element.id === updatedItem.category)
-        if (!found) {
-          item.category = {}
-        } else {
-          item.category = {}
-          item.category.id = found.id
-          item.category.name = found.name
-          item.edits.category.id = found.id
-          item.edits.category.name = found.name
-        }
-        item.edits.startTime = format(new Date(updatedItem.startTime), 'yyyy-MM-dd\'T\'HH:mm')
-        item.edits.endTime = format(new Date(updatedItem.endTime), 'yyyy-MM-dd\'T\'HH:mm')
+        item.category = updatedItem.category
+        edits.name = updatedItem.name
+        edits.category = updatedItem.category
+        edits.startTime = format(new Date(updatedItem.startTime), 'yyyy-MM-dd\'T\'HH:mm')
+        edits.endTime = format(new Date(updatedItem.endTime), 'yyyy-MM-dd\'T\'HH:mm')
         updateEndTimeRelativity()
         menuVisible = false
         dispatch('update', item)
@@ -350,11 +346,11 @@
 
   let confirmDelete = false
 
-  let fileInput
-  let file
-  let itemImagePreview
+  let fileInput: HTMLInputElement
+  let file: File | null
+  let itemImagePreview: string | null
   const addImage = async() => {
-    if (file && $session.user.id) {
+    if (file && $session.user?.id) {
       statusProcessing = true
       
       const formData = new FormData()
@@ -370,7 +366,6 @@
         alert('not ok')
         statusProcessing = false
         const error = await res.json()
-        // alert(error)
         if (error.message) {
           message.set({
             text: `Error: ${error.message}`,
@@ -386,9 +381,7 @@
       }
       if (res.ok) {
         const updatedItem = await res.json()
-        // console.log(updatedItem)
         file = null
-        fileInput = null
         itemImagePreview = null
         menuVisible = false
         message.set({
@@ -408,116 +401,119 @@
     }
   }
   const analyzeFile = () => {
-    file = fileInput.files[0]
-    if (file) {
-      itemImagePreview = URL.createObjectURL(file)
-    }
-    else {
-      itemImagePreview = null
+    if (fileInput.files) {
+      file = fileInput.files[0]
+      if (file) {
+        itemImagePreview = URL.createObjectURL(file)
+      }
+      else {
+        itemImagePreview = null
+      }
     }
   }
 
   const updateEndTimeRelativelyForRenewal = () => {
     let adjTime = new Date()
-    if (item.edits.endRelatively.years)
-      adjTime = addYears(adjTime, item.edits.endRelatively.years)
-    if (item.edits.endRelatively.months)
-      adjTime = addMonths(adjTime, item.edits.endRelatively.months)
-    if (item.edits.endRelatively.weeks)
-      adjTime = addWeeks(adjTime, item.edits.endRelatively.weeks)
-    if (item.edits.endRelatively.days)
-      adjTime = addDays(adjTime, item.edits.endRelatively.days)
-    if (item.edits.endRelatively.hours)
-      adjTime = addHours(adjTime, item.edits.endRelatively.hours)
-    if (item.edits.endRelatively.minutes)
-      adjTime = addMinutes(adjTime, item.edits.endRelatively.minutes)
+    if (edits.endRelatively.years)
+      adjTime = addYears(adjTime, edits.endRelatively.years)
+    if (edits.endRelatively.months)
+      adjTime = addMonths(adjTime, edits.endRelatively.months)
+    if (edits.endRelatively.weeks)
+      adjTime = addWeeks(adjTime, edits.endRelatively.weeks)
+    if (edits.endRelatively.days)
+      adjTime = addDays(adjTime, edits.endRelatively.days)
+    if (edits.endRelatively.hours)
+      adjTime = addHours(adjTime, edits.endRelatively.hours)
+    if (edits.endRelatively.minutes)
+      adjTime = addMinutes(adjTime, edits.endRelatively.minutes)
     return adjTime
   }
 
   const updateEndTimeRelatively = () => {
-    if (item.edits.endTime) {
-      let adjTime = new Date(item.edits.startTime)
-      if (item.edits.endRelatively.years)
-        adjTime = addYears(adjTime, item.edits.endRelatively.years)
-      if (item.edits.endRelatively.months)
-        adjTime = addMonths(adjTime, item.edits.endRelatively.months)
-      if (item.edits.endRelatively.weeks)
-        adjTime = addWeeks(adjTime, item.edits.endRelatively.weeks)
-      if (item.edits.endRelatively.days)
-        adjTime = addDays(adjTime, item.edits.endRelatively.days)
-      if (item.edits.endRelatively.hours)
-        adjTime = addHours(adjTime, item.edits.endRelatively.hours)
-      if (item.edits.endRelatively.minutes)
-        adjTime = addMinutes(adjTime, item.edits.endRelatively.minutes)
-        item.edits.endTime = format(new Date(adjTime), 'yyyy-MM-dd\'T\'HH:mm')
+    if (edits.endTime) {
+      let adjTime = new Date(edits.startTime)
+      if (edits.endRelatively.years)
+        adjTime = addYears(adjTime, edits.endRelatively.years)
+      if (edits.endRelatively.months)
+        adjTime = addMonths(adjTime, edits.endRelatively.months)
+      if (edits.endRelatively.weeks)
+        adjTime = addWeeks(adjTime, edits.endRelatively.weeks)
+      if (edits.endRelatively.days)
+        adjTime = addDays(adjTime, edits.endRelatively.days)
+      if (edits.endRelatively.hours)
+        adjTime = addHours(adjTime, edits.endRelatively.hours)
+      if (edits.endRelatively.minutes)
+        adjTime = addMinutes(adjTime, edits.endRelatively.minutes)
+        edits.endTime = format(new Date(adjTime), 'yyyy-MM-dd\'T\'HH:mm')
     }
     checkUpdateValidity()
   }
 
   const updateEndTimeRelativity = () => {
-    const startTime = new Date(item.edits.startTime)
-    if (item.edits.endTime) {
+    const startTime = new Date(edits.startTime)
+    if (edits.endTime) {
       
-      let endTime = new Date(item.edits.endTime)
+      let endTime = new Date(edits.endTime)
       if (subYears(new Date(endTime), differenceInYears(endTime, startTime)) < startTime) {
-        item.edits.endRelatively.years = 0
+        edits.endRelatively.years = 0
       }
       else {
-        item.edits.endRelatively.years = differenceInYears(endTime, startTime)
+        edits.endRelatively.years = differenceInYears(endTime, startTime)
         endTime = subYears(new Date(endTime), differenceInYears(endTime, startTime))
       }
 
       if (subMonths(new Date(endTime), differenceInMonths(endTime, startTime)) < startTime) {
-        item.edits.endRelatively.months = 0
+        edits.endRelatively.months = 0
       }
       else {
-        item.edits.endRelatively.months = differenceInMonths(endTime, startTime)
+        edits.endRelatively.months = differenceInMonths(endTime, startTime)
         endTime = subMonths(new Date(endTime), differenceInMonths(endTime, startTime))
       }
 
       if (subWeeks(new Date(endTime), differenceInWeeks(endTime, startTime)) < startTime) {
-        item.edits.endRelatively.weeks = 0
+        edits.endRelatively.weeks = 0
       }
       else {
-        item.edits.endRelatively.weeks = differenceInWeeks(endTime, startTime)
+        edits.endRelatively.weeks = differenceInWeeks(endTime, startTime)
         endTime = subWeeks(new Date(endTime), differenceInWeeks(endTime, startTime))
       }
 
-      item.edits.endRelatively.days = differenceInDays(endTime, startTime)
+      edits.endRelatively.days = differenceInDays(endTime, startTime)
       endTime = subDays(new Date(endTime), differenceInDays(endTime, startTime))
-      item.edits.endRelatively.hours = differenceInHours(endTime, startTime)
+      edits.endRelatively.hours = differenceInHours(endTime, startTime)
       endTime = subHours(new Date(endTime), differenceInHours(endTime, startTime))
-      item.edits.endRelatively.minutes = differenceInMinutes(endTime, startTime)
+      edits.endRelatively.minutes = differenceInMinutes(endTime, startTime)
       endTime = subMinutes(new Date(endTime), differenceInMinutes(endTime, startTime))
       
       checkUpdateValidity()
     }
     else {
-      item.edits.endRelatively.years = 0
-      item.edits.endRelatively.months = 0
-      item.edits.endRelatively.weeks = 0
-      item.edits.endRelatively.days = 0
-      item.edits.endRelatively.hours = 0
-      item.edits.endRelatively.minutes = 0
+      edits.endRelatively.years = 0
+      edits.endRelatively.months = 0
+      edits.endRelatively.weeks = 0
+      edits.endRelatively.days = 0
+      edits.endRelatively.hours = 0
+      edits.endRelatively.minutes = 0
     }
   }
 
   // Speech Recognition
-  let recognition = false
-  let recognitionExpiration = false
-  let recognitionName = false
+  // let recognition = false
+  let recognitionExpiration: any = false
+  let recognitionName: any = false
   let recognizing = false
 
   const listenForName = () => { 
     if (recognitionName) {
       recognitionName.start()
-      recognitionName.addEventListener('result', (e) => {
+      recognitionName.addEventListener('result', (e: any) => {
         let text = Array.from(e.results)
+          //@ts-ignore
           .map(result => result[0])
           .map(result => result.transcript)
           .join('')
         if (text) {
-          item.edits.name = camelize(text)
+          edits.name = camelize(text)
         }
         recognitionName.stop()
       })
@@ -537,8 +533,9 @@
     if (recognitionExpiration) {
       recognitionExpiration.abort() // Unsure :: InvalidStateError: Failed to execute 'start' on 'SpeechRecognition': recognition has already started.
       recognitionExpiration.start()
-      recognitionExpiration.addEventListener('result', (e) => {
+      recognitionExpiration.addEventListener('result', (e: any) => {
         let text = Array.from(e.results)
+          //@ts-ignore
           .map(result => result[0])
           .map(result => result.transcript)
           .join('')
@@ -546,11 +543,11 @@
           // newItem.endTimeTranscription = text
           const words = text.split(' ')
           // Determine if first word is 'end'
+          let year: number
           if (words[0].localeCompare('end', undefined, { sensitivity: 'accent' }) === 0) {
             // Find month
             const monthIndex = months.findIndex(month => month === words[2])
             // Process year
-            let year
             if (words[3]) {
               year = parseInt(words[3])
             }
@@ -558,7 +555,7 @@
               year = new Date().getFullYear()
             }
             const processedDate = endOfMonth(new Date(year, monthIndex, 1, 0, 0, 0))
-            item.edits.endTime = format(new Date(processedDate), 'yyyy-MM-dd\'T\'HH:mm')
+            edits.endTime = format(new Date(processedDate), 'yyyy-MM-dd\'T\'HH:mm')
             updateEndTimeRelativity()
           }
           else {
@@ -567,14 +564,13 @@
             // Process day
             const day = words[1].replace(/\D/g,'')
             // Process year
-            let year
             if (words[2]) {
               year = parseInt(words[2])
             }
             else {
               year = new Date().getFullYear()
             }
-            item.edits.endTime = format(new Date(parseInt(year), monthIndex, parseInt(day)), 'yyyy-MM-dd\'T\'HH:mm')
+            edits.endTime = format(new Date(year, monthIndex, parseInt(day)), 'yyyy-MM-dd\'T\'HH:mm')
             updateEndTimeRelativity()
           }
         }
@@ -618,7 +614,7 @@
       rootMargin: '0px',
       threshold: [0],
     })
-    if (itemElement && (item.timeRemaining || item.expired)) {
+    if (itemElement && (timeRemaining || expired)) {
       io.observe(itemElement)
     }
     if (image) {
@@ -638,14 +634,14 @@
   // Reactivity to Time
   $: {
     if (time) {
-      item.precursorBar = getPrecursorBar()
-      item.timeBar = getTimeBar()
-      item.timeRemaining = getTimeRemainder()
+      precursorBar = getPrecursorBar()
+      timeBar = getTimeBar()
+      timeRemaining = getTimeRemainder()
     }
   }
 </script>
 
-<div bind:this="{itemElement}" class="item unset" class:expired = {item.expired} class:imminent = {item.imminent} class:calculated = {item.timeRemaining}>
+<div bind:this="{itemElement}" class="item unset" class:expired = {expired} class:imminent = {imminent} class:calculated = {timeRemaining}>
   <div class="item-internal grid gap-4 py-4">
     <div class="item__aside">
       {#if item.imagePath}
@@ -716,16 +712,18 @@
                         <Icon icon="clarity:microphone-line" />
                       </button>
                     {/if}
-                    <input type="text" id="edit-{item.id}--name" class="bg-black p-2 text-white w-full" bind:value="{item.edits.name}" on:input="{checkUpdateValidity}" />
+                    <input type="text" id="edit-{item.id}--name" class="bg-black p-2 text-white w-full" bind:value="{edits.name}" on:input="{checkUpdateValidity}" />
                   </div>
                 </div>
                 <div class="area area--category">
                   <div class="form-field mb-2">
                     <label for="edit-{item.id}--category" class="block">Category</label>
-                    <select name="" id="edit-{item.id}--category" class="bg-black px-1 py-2 text-white w-full" bind:value="{item.edits.category.id}">
-                      {#each categories as category}
-                        <option value="{category.id}">{category.name}</option>
-                      {/each}
+                    <select name="" id="edit-{item.id}--category" class="bg-black px-1 py-2 text-white w-full" bind:value="{edits.category}">
+                      {#if categories}
+                        {#each categories as category}
+                          <option value="{category.id}">{category.name}</option>
+                        {/each}
+                      {/if}
                       <option value="{null}">Uncategorized</option>
                     </select>
                   </div>
@@ -735,7 +733,7 @@
                     <label for="edit-{item.id}--start-time" class="block">Start Time</label>
                     <div class="relative">
                       <input
-                        bind:value="{item.edits.startTime}"
+                        bind:value="{edits.startTime}"
                         id="edit-{item.id}--start-time"
                         type="datetime-local"
                         pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
@@ -756,7 +754,7 @@
                       {/if}
                       <div class="relative">
                         <input
-                          bind:value="{item.edits.endTime}"
+                          bind:value="{edits.endTime}"
                           id="edit-{item.id}--end-time"
                           type="datetime-local"
                           pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
@@ -774,27 +772,27 @@
                         <div class="unit-form-fields">
                           <div class="form-field mb-2">
                             <label for="edit-{item.id}--endtime-years">Years</label>
-                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-years" bind:value="{item.edits.endRelatively.years}" on:input="{updateEndTimeRelatively}" />
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-years" bind:value="{edits.endRelatively.years}" on:input="{updateEndTimeRelatively}" />
                           </div>
                           <div class="form-field mb-2">
                             <label for="edit-{item.id}--endtime-months">Months</label>
-                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-months" bind:value="{item.edits.endRelatively.months}" on:input="{updateEndTimeRelatively}" />
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-months" bind:value="{edits.endRelatively.months}" on:input="{updateEndTimeRelatively}" />
                           </div>
                           <div class="form-field mb-2">
                             <label for="edit-{item.id}--endtime-weeks">Weeks</label>
-                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-weeks" bind:value="{item.edits.endRelatively.weeks}" on:input="{updateEndTimeRelatively}" />
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-weeks" bind:value="{edits.endRelatively.weeks}" on:input="{updateEndTimeRelatively}" />
                           </div>
                           <div class="form-field mb-2">
                             <label for="edit-{item.id}--endtime-days">Days</label>
-                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-days" bind:value="{item.edits.endRelatively.days}" on:input="{updateEndTimeRelatively}" />
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-days" bind:value="{edits.endRelatively.days}" on:input="{updateEndTimeRelatively}" />
                           </div>
                           <div class="form-field mb-2">
                             <label for="edit-{item.id}--endtime-hours">Hours</label>
-                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-hours" bind:value="{item.edits.endRelatively.hours}" on:input="{updateEndTimeRelatively}" />
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-hours" bind:value="{edits.endRelatively.hours}" on:input="{updateEndTimeRelatively}" />
                           </div>
                           <div class="form-field mb-2">
                             <label for="edit-{item.id}--endtime-minutes">Minutes</label>
-                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-minutes" bind:value="{item.edits.endRelatively.minutes}" on:input="{updateEndTimeRelatively}" />
+                            <input type="number" min="0" class="bg-black p-1 text-white" id="edit-{item.id}--endtime-minutes" bind:value="{edits.endRelatively.minutes}" on:input="{updateEndTimeRelatively}" />
                           </div>
                         </div>
                       </fieldset>
@@ -846,17 +844,17 @@
       <div class="timer">
         <div class="timer__bar">
           <div class="precursor">
-            <div class="precursor-meter-veil" style="{ item.precursorBar }">
+            <div class="precursor-meter-veil" style="{ precursorBar }">
               <div class="precursor-meter"></div>
             </div>
           </div>
           <div class="measure">
-            <div class="meter" style="{ item.timeBar }"></div>
+            <div class="meter" style="{ timeBar }"></div>
           </div>
           <div class="timer__remainder">
-            {#if item.timeRemaining}
-              { item.timeRemaining }
-            {:else if item.expired}
+            {#if timeRemaining}
+              { timeRemaining }
+            {:else if expired}
               Expired
             {:else}
               &nbsp;

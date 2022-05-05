@@ -4,9 +4,10 @@ import type { RequestEvent } from "@sveltejs/kit/types/internal"
 export async function post(event: RequestEvent) {
   try {
     const payload = await event.request.formData()
-    if (payload.get('email')) {
+    const email = payload.get('email')?.toString()
+    if (email) {
       const { data, error } = await supabase.auth.api
-        .resetPasswordForEmail(payload.get('email'))
+        .resetPasswordForEmail(email)
       if (error) {
         console.error('There was a problem:', error)
         return {

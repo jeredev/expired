@@ -1,5 +1,6 @@
 <script lang="ts" context="module">
-  export async function load({ url, params, fetch, session, stuff, status, error }) {
+  import type { Load } from "@sveltejs/kit"
+  export const load: Load = async({ url, params, fetch, session, stuff, status, error }) => {
     const { user } = session
     if (user && user.id) {
       // if (!user.account) {
@@ -7,20 +8,23 @@
       // }
       if (user.account?.subscription_status === 'active') {
         let appendage = '?' + new URLSearchParams(url.searchParams)
-        const items = await fetch(`/api/items${appendage}`)
-        const categories = await fetch('/api/categories')
+        const itemsResponse = await fetch(`/api/items${appendage}`)
+        const items = await itemsResponse.json()
+        const categoriesResponse = await fetch('/api/categories')
+        const categories = await categoriesResponse.json()
         return {
-          status: 200,
           props: {
-            items: items.ok && (await items.json()),
-            categories: categories.ok && (await categories.json()),
-            user
-          }
+            items,
+            categories,
+            user,
+          },
+          // stuff: {
+          //   categories,
+          // }
           // status: response.status,
         }
       }
       return {
-        status: 200,
         props: {
           user
         }
@@ -28,7 +32,6 @@
     }
     else {
       return {
-        status: 200,
         props: {
           user
         }
@@ -73,18 +76,15 @@
   import { displayMode, sortingMode, timeStatusMode, message } from "../stores"
 
   export let categories: Array<CategoryProps> | null = null
-  export let items: Array<ItemProps> | null = null
-  export let user
+  // export let items: Array<ItemProps> | null = null
+  export let items: Array<ItemProps> = []
+  export let user: App.Session['user']
 
-  const isItemsURL = (dep) => dep.includes('/api/items')
+  const isItemsURL = (dep: string) => dep.includes('/api/items')
 
-  // let categories = null
-  // let categories: Array<CategoryProps> | null = null
-
-  // let allItems: Array<ItemProps> | null = null
   // let items: Array<ItemProps> | null = null
 
-  let listings = null
+  let listings: any[] | null = null
   let time = new Date().getTime()
 
   let email: string
@@ -94,6 +94,29 @@
   let categoriesMenuActive = false
   let searchMenuActive = false
   let sortingMenuActive = false
+
+  let addMenu = {}
+  let categoriesMenu = {}
+  let searchMenu = {}
+  let sortingMenu = {}
+
+  // addMenu.active = false
+  // categoriesMenu.active = false
+  // searchMenu.active = false
+  // sortingMenu.active = false
+
+  // let menus = [addMenu, categoriesMenu, searchMenu, sortingMenu]
+
+  // function openMenu(target) {
+  //   menus.forEach((menu) => {
+  //     if (target === menu) {
+  //       target.active = false
+  //     }
+  //     else {
+  //       target.active = true
+  //     }
+  //   })
+  // }
 
   let statusProcessing = false
 
@@ -130,7 +153,7 @@
           if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
             categories = await getCategories()
             clock = window.setInterval(runClock, 1000)
-            items = await getItems(searchQuery)
+            items = await getItems(searchQuery as URLSearchParams)
             generateListings()
           }
         }
@@ -186,39 +209,44 @@
     const newItems = e.detail
     // Determine if item should be shown in current list
     categories = await getCategories() // In the case that a new category was created when the item was added
-    // if ($timeStatusMode !== 'expired') {
-      newItems.forEach(async(item) => {
-        const found = categories.find((element: CategoryProps) => element.id === item.category)
-        if (!found) {
-          item.category = {}
-        } else {
-          item.category = {}
-          item.category.id = found.id
-          item.category.name = found.name
-          item.edits.category.id = found.id
-          item.edits.category.name = found.name
-        }
-        item.time = time
-        items.push(item)
-        // items = [...items, item]
-        // generateListings()
-      });
-    // }
+    newItems.forEach(async(item: ItemProps) => {
+      items.push(item)
+      // if (categories) {
+      //   const found = categories.find((element: CategoryProps) => element.id === item.category)
+      //   if (!found) {
+      //     item.category = ''
+      //   } else {
+      //     item.category = {}
+      //     item.category.id = found.id
+      //     item.category.name = found.name
+      //     // edits.category.id = found.id
+      //     // edits.category.name = found.name
+      //   }
+      //   // item.time = time
+      //   items.push(item)
+      //   // items = [...items, item]
+      //   // generateListings()
+      //   }
+    })
     generateListings()
   }
 
   const removeItem = (e: CustomEvent) => {
-    items = items.filter((item: ItemProps) => item.id !== e.detail.id)
-    generateListings()
+    if (items) {
+      items = items.filter((item: ItemProps) => item.id !== e.detail.id)
+      generateListings()
+    }
   }
 
   const updateItem = (e: CustomEvent) => {
     const updatedItem = e.detail
-    items.map(() => {
-      const item = items.find(({ id }) => id === updatedItem.id);
-      return item ? item : updatedItem;
-    });
-    generateListings()
+    if (items) {
+      items.map(() => {
+        const item = items.find(({ id }) => id === updatedItem.id);
+        return item ? item : updatedItem;
+      });
+      generateListings()
+    }
   }
 
   const resetPwd = async() => {
@@ -245,14 +273,12 @@
     }
   }
 
-  let clock
-
+  let clock: number
   const runClock = () => {
     time = new Date().getTime()
   }
 
   /* Sorting */
-
   const getLifespan = (startTime: Date, endTime: Date) => {
     return new Date(endTime).getTime() - new Date(startTime).getTime()
   }
@@ -300,12 +326,12 @@
     name: '',
     endTime: '',
     endRelatively: {
-      years: null,
-      months: null,
-      weeks: null,
-      days: null,
-      hours: null,
-      minutes: null,
+      years: 0,
+      months: 0,
+      weeks: 0,
+      days: 0,
+      hours: 0,
+      minutes: 0,
     },
     category: ''
   }
@@ -317,8 +343,8 @@
       searchQueryValid = true
     }
     else {
-      // searchQueryValid = false
-      searchQueryValid = true
+      searchQueryValid = false
+      // searchQueryValid = true
     }
   }
 
@@ -395,29 +421,15 @@
 
   const searchItems = async() => {
     searching = true
-    // console.log('searching')
-
     searchQuery.name = search.name
     searchQuery.end = search.endTime
     searchQuery.cat = search.category
-
-    // console.log(searchQuery)
-
     searchMenuActive = false
-
     listings = null
-
-    // console.log('listings: ', listings)
-
     await invalidate(isItemsURL)
-
     const url = $page.url
-    url.search = new URLSearchParams(searchQuery)
-    goto(url)
-
-    // items = await getItems(searchQuery)
-    // generateListings()
-
+    const queryString = new URLSearchParams(searchQuery as URLSearchParams).toString()
+    goto(`${url.origin}?${queryString}`)
   }
 
   const sortItems = (payload: Array<ItemProps>) => {
@@ -451,22 +463,21 @@
     }
   }
 
-  const setDisplayMode = (mode) => {
+  const setDisplayMode = (mode: string) => {
     displayMode.set(mode)
     generateListings()
   }
 
-  const setSortingMode = (mode) => {
+  const setSortingMode = (mode: string) => {
     sortingMode.set(mode)
     generateListings()
   }
 
-  const setTimeStatusMode = (mode) => {
+  const setTimeStatusMode = (mode: string) => {
     timeStatusMode.set(mode)
     generateListings()
   }
 
-  // let categories = []
   const getCategories = async() => {
     const res = await fetch('/api/categories')
     if (!res.ok) {
@@ -494,38 +505,40 @@
   }
 
   const categorizeItems = () => {
-    listings = items
-    let categorizedItems = []
-    if (categories) {
-      categories.forEach((category) => {
-        const found = categorizedItems.find(element => element.id === category.id)
-        if (!found) {
-          category.items = []
-          categorizedItems.push(category)
+    if (items) {
+      listings = items
+      let categorizedItems: any[] = []
+      if (categories) {
+        categories.forEach((category) => {
+          const found = categorizedItems.find(element => element.id === category.id)
+          if (!found) {
+            category.items = []
+            categorizedItems.push(category)
+          }
+        })
+      }
+      const uncategorizedCategory = {
+        id: null,
+        name: 'Uncategorized',
+        items: []
+      }
+      categorizedItems.push(uncategorizedCategory)
+      sortByTimeStatus(listings)
+      listings.forEach((item: ItemProps) => {
+        if (item.category) {
+          const found = categorizedItems.find(element => element.id === item.category?.id)
+          if (found) found.items.push(item)
+        }
+        else {
+          const found = categorizedItems.find(element => element.id === null)
+          found.items.push(item)
         }
       })
+      categorizedItems.forEach((category) => {
+        sortItems(category.items)
+      })
+      listings = categorizedItems
     }
-    const uncategorizedCategory = {
-      id: null,
-      name: 'Uncategorized',
-      items: []
-    }
-    categorizedItems.push(uncategorizedCategory)
-    sortByTimeStatus(listings)
-    listings.forEach((item: ItemProps) => {
-      if (item.category) {
-        const found = categorizedItems.find(element => element.id === item.category.id)
-        if (found) found.items.push(item)
-      }
-      else {
-        const found = categorizedItems.find(element => element.id === null)
-        found.items.push(item)
-      }
-    })
-    categorizedItems.forEach((category) => {
-      sortItems(category.items)
-    })
-    listings = categorizedItems
   }
 
   const listItems = () => {
@@ -534,8 +547,7 @@
     sortItems(listings)
   }
 
-  const getItems = async(query: searchQueryProps) => {
-    console.log('getItems')
+  const getItems = async(query: URLSearchParams) => {
     let appendage = ''
     if (query) {
       appendage = '?' + new URLSearchParams(query)
@@ -553,17 +565,6 @@
     if (res.ok) {
       return await res.json()
     }
-    // Error handling needed here
-    // if (data) return data
-    // if (error) {
-    //   message.set({
-    //     text: `Error: ${error.message}`,
-    //     timed: true
-    //   })
-    //   console.error('Error:', error)
-    //   return
-    // }
-    
   }
 
   // DRY and move this
@@ -596,10 +597,13 @@
       body: formData
     })
     if (!res.ok) {
-      // message.set({
-      //   text: `Error: ${error.message}`,
-      //   timed: true
-      // })
+      console.log('!res.ok')
+      const error = await res.json()
+      console.log(error)
+      message.set({
+        text: `Error: ${error}`,
+        timed: true
+      })
       // console.log('error adding new category:', error)
       return
     }
@@ -607,50 +611,49 @@
       const processed = await res.json()
       const returnedCategory = processed[0]
 
-      categories = [...categories, returnedCategory]
-      categories = sortCatsAlphaAsc(categories)
+      if (categories) {
+        categories = [...categories, returnedCategory]
+        categories = sortCatsAlphaAsc(categories)
+      }
 
       generateListings()
-      newCategory = null
+      newCategory = ''
       addingCategory = false
     }
   }
 
   const removeCategory = (e: CustomEvent) => {
-    categories = categories.filter((category: CategoryProps) => category.id !== e.detail.id)
-    generateListings() // Why?
+    if (categories) {
+      categories = categories.filter((category: CategoryProps) => category.id !== e.detail.id)
+      generateListings() // Why?
+    }
   }
 
   const updateCategory = (e: CustomEvent) => {
-    const indexCategories = categories.findIndex((x: CategoryProps) => x.id === e.detail.id)
-    if ( indexCategories !== -1) {
-      categories[indexCategories].name = e.detail.name
+    if (categories) {
+      const indexCategories = categories.findIndex((x: CategoryProps) => x.id === e.detail.id)
+      if ( indexCategories !== -1) {
+        categories[indexCategories].name = e.detail.name
+      }
+      generateListings()
     }
-    generateListings()
   }
 
   if ($page.url.searchParams.get('name')) {
-    searchQuery.name = $page.url.searchParams.get('name')
-    search.name = $page.url.searchParams.get('name')
+    const name = $page.url.searchParams.get('name')!
+    searchQuery.name = name
+    search.name = name
   }
   if ($page.url.searchParams.get('end')) {
-    searchQuery.end = $page.url.searchParams.get('end')
-    search.endTime = $page.url.searchParams.get('end')
+    const end = $page.url.searchParams.get('end')!
+    searchQuery.end = end
+    search.endTime = end
   }
   if ($page.url.searchParams.get('cat')) {
-    searchQuery.cat = $page.url.searchParams.get('cat')
-    search.category = $page.url.searchParams.get('cat')
+    const cat = $page.url.searchParams.get('cat')!
+    searchQuery.cat = cat
+    search.category = cat
   }
-
-  // Invitation :: New Users
-  // https://juvelylevqqyyokxzkkq.supabase.co/auth/v1/verify?token=CAspA-OBu4inFJdKu30D-g&type=invite&redirect_to=http://localhost:3000
-  // https://localhost:3000/#access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNjQ1MjA1OTk3LCJzdWIiOiIyOGIxN2NiNi1mYjM3LTRjNjMtYTkxNC0xZWRmMDkzYjYyNDQiLCJlbWFpbCI6ImplcmVteUBqZXJlZGV2LmNvbSIsInBob25lIjoiIiwiYXBwX21ldGFkYXRhIjp7InByb3ZpZGVyIjoiZW1haWwiLCJwcm92aWRlcnMiOlsiZW1haWwiXX0sInVzZXJfbWV0YWRhdGEiOnt9LCJyb2xlIjoiYXV0aGVudGljYXRlZCJ9.eRSn7dL7uqhO6iK4AH72RarfCWqFqrRZ5_-GdkdtAOE&expires_in=3600&refresh_token=0xjDXBM9mwaa6yPdTtUmzQ&token_type=bearer&type=invite
-  // http://localhost:3000/#error_code=410&error_description=Confirmation+token+expired
-  // const type = $page.url.searchParams.get('type')
-  // beforeNavigate(() => {
-  //   const type = $page.url.searchParams.get('type')
-  //   console.log(`type is ${type}`)
-  // })
   
   let forgot = false
   let loginValid = false
@@ -683,20 +686,16 @@
     }
   }
 
-  // function goBack(defaultRoute = '/') {
-  //   const ref = document.referrer;
-  //   goto(ref.length > 0 ? ref : defaultRoute)
-  // }
-
   // Speech Recognition
-  let recognition = false
+  let recognition: any = false
   let recognizing = false
   const listenForName = () => { 
     if (recognition) {
       recognition.abort() // Unsure :: InvalidStateError: Failed to execute 'start' on 'SpeechRecognition': recognition has already started.
       recognition.start()
-      recognition.addEventListener('result', (e) => {
+      recognition.addEventListener('result', (e: any) => {
         let text = Array.from(e.results)
+          //@ts-ignore
           .map(result => result[0])
           .map(result => result.transcript)
           .join('')
@@ -755,7 +754,7 @@
     if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
       clock = window.setInterval(runClock, 1000);
     }
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    const SpeechRecognition = (<any>window).SpeechRecognition || (<any>window).webkitSpeechRecognition
     if (SpeechRecognition) {
       recognition = new SpeechRecognition()
     }
@@ -886,9 +885,11 @@
             </div>
           </div>
           <div class="categories-list mt-2">
-            {#each categories as category (category.id)}
-              <CategoryBar category="{category}" on:updateCategory={updateCategory} on:removeCategory={removeCategory} />
-            {/each}
+            {#if categories}
+              {#each categories as category (category.id)}
+                <CategoryBar category="{category}" on:updateCategory={updateCategory} on:removeCategory={removeCategory} />
+              {/each}
+            {/if}
           </div>
         </div>
       {/if}
@@ -1049,12 +1050,14 @@
             {#each listings as category}
               {#if category.items.length > 0}
                 <CategorizedItems categories={categories} category={category} time={time} items={category.items} on:remove={removeItem} on:update={updateItem} />
+                <!-- <CategorizedItems category={category} time={time} items={category.items} on:remove={removeItem} on:update={updateItem} /> -->
               {/if}
             {/each}
           {:else}
           <div class="items-list">
             {#each listings as listing}
               <Item item={listing} time={time} categories={categories} on:remove={removeItem} on:update={updateItem} />
+              <!-- <Item item={listing} time={time} on:remove={removeItem} on:update={updateItem} /> -->
             {/each}
           </div>
         {/if}
@@ -1072,7 +1075,7 @@
     </div>
   {:else if user && user.account && user.account.subscription_status !== 'active'}
     <p>Account inactive. Please <a href="/profile">reactivate your account</a> here.</p>
-  <!-- Really not supposed to be here -->
+  <!-- Can this else if below really occur? -->
   {:else if user && !user.account}
     <p>No account found.</p>
   {:else}

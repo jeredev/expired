@@ -1,5 +1,5 @@
 import stripe from '$lib/stripe'
-import { supabase } from '$lib/supabase'
+// import { supabase } from '$lib/supabase'
 
 import type { RequestEvent } from "@sveltejs/kit/types/internal"
 
@@ -7,7 +7,6 @@ export async function post(event: RequestEvent) {
   try {
     // console.log('trying') // Works
     if (event.locals.user && event.locals.user.id && event.locals.user.account.id) {
-      console.log('if')
       // const payload = await event.request.formData()
       // const customer = payload.get('customer')
       const payload = await event.request.json()
@@ -38,7 +37,7 @@ export async function post(event: RequestEvent) {
             status: 200,
             body: JSON.stringify({
               subscriptionId: subscription.id,
-              clientSecret: subscription.latest_invoice.payment_intent.client_secret
+              clientSecret: subscription.latest_invoice?.payment_intent.client_secret
             })
           }
         }

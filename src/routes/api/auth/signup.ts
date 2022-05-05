@@ -1,4 +1,4 @@
-import { supabase } from '$lib/supabase'
+// import { supabase } from '$lib/supabase'
 import type { RequestEvent } from "@sveltejs/kit/types/internal"
 
 import stripe from '$lib/stripe'

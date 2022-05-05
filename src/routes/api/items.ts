@@ -4,8 +4,8 @@ import type { RequestEvent } from "@sveltejs/kit/types/internal"
 export async function get(event: RequestEvent) {
   try {
     if (event.locals.user && event.locals.user.id && event.locals.user.account.subscription_status === 'active' && event.locals.user.account.id) {
-      // console.log(event.locals.user)
       const params = event.url.searchParams
+      const end = params.get('end')
       let lookup = supabase
         .from('items')
         .select(`
@@ -23,8 +23,8 @@ export async function get(event: RequestEvent) {
       if (params.get('name')) {
         lookup = lookup.ilike('name', `%${params.get('name')}%`)
       }
-      if (params.get('end')) {
-        const endDate = new Date(params.get('end')).toISOString()
+      if (end) {
+        const endDate = new Date(end).toISOString()
         lookup = lookup.lte('endTime', endDate)
       }
       if (params.get('cat')) {
@@ -51,12 +51,12 @@ export async function get(event: RequestEvent) {
       const { data, error } = await lookup
       if (data) {
         // Loop through all items and build an array of file paths to be downloaded
-        const imagePaths = []
+        const imagePaths: (string)[] = []
         if (data.length) {
           data.forEach((item) => {
-            let objPath
+            let objPath = ''
             if (item.imagePath) {
-              objPath = `${event.locals.user.id}/${item.imagePath}`
+              objPath = `${event.locals.user?.id}/${item.imagePath}`
             }
             imagePaths.push(objPath)
           })

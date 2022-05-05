@@ -30,16 +30,20 @@
 
   const dispatch = createEventDispatcher();
 
-  export let active
+  export let active: boolean
 
   let newItem = {
-    name: null,
+    name: '',
     startTime: format(new Date(), 'yyyy-MM-dd\'T\'HH:mm'),
-    endTime: null,
+    endTime: '',
     image: null,
-    category: null,
-    // endTimeTranscription: null,
+    category: '',
   }
+
+  let itemImage: Blob | File | null = null
+
+  let fileInput: HTMLInputElement
+  let newItemImagePreview: string
 
   let newItemValid = false
   const checkNewItemValidity = () => {
@@ -53,31 +57,29 @@
   }
 
   const endRelatively = {
-    years: null,
-    months: null,
-    weeks: null,
-    days: null,
-    hours: null,
-    minutes: null,
+    years: 0,
+    months: 0,
+    weeks: 0,
+    days: 0,
+    hours: 0,
+    minutes: 0,
   }
 
   const updateEndTimeRelatively = () => {
-    // if (newItem.endTime) {
-      let adjTime = new Date(newItem.startTime)
-      if (endRelatively.years)
-        adjTime = addYears(adjTime, endRelatively.years)
-      if (endRelatively.months)
-        adjTime = addMonths(adjTime, endRelatively.months)
-      if (endRelatively.weeks)
-        adjTime = addWeeks(adjTime, endRelatively.weeks)
-      if (endRelatively.days)
-        adjTime = addDays(adjTime, endRelatively.days)
-      if (endRelatively.hours)
-        adjTime = addHours(adjTime, endRelatively.hours)
-      if (endRelatively.minutes)
-        adjTime = addMinutes(adjTime, endRelatively.minutes)
-        newItem.endTime = format(new Date(adjTime), 'yyyy-MM-dd\'T\'HH:mm')
-    // }
+    let adjTime = new Date(newItem.startTime)
+    if (endRelatively.years)
+      adjTime = addYears(adjTime, endRelatively.years)
+    if (endRelatively.months)
+      adjTime = addMonths(adjTime, endRelatively.months)
+    if (endRelatively.weeks)
+      adjTime = addWeeks(adjTime, endRelatively.weeks)
+    if (endRelatively.days)
+      adjTime = addDays(adjTime, endRelatively.days)
+    if (endRelatively.hours)
+      adjTime = addHours(adjTime, endRelatively.hours)
+    if (endRelatively.minutes)
+      adjTime = addMinutes(adjTime, endRelatively.minutes)
+      newItem.endTime = format(new Date(adjTime), 'yyyy-MM-dd\'T\'HH:mm')
     checkNewItemValidity()
   }
 
@@ -137,17 +139,14 @@
     addNewItemProcessing = true
     const formData = new FormData()
     formData.append('name', newItem.name.trim())
-    if (newItem.image) {
-      formData.append('image', newItem.image)
+    if (itemImage) {
+      formData.append('image', itemImage)
     }
-    // payload.startTime = new Date(newItem.startTime)
     const startTimeStr = new Date(newItem.startTime).toISOString()
     formData.append('startTime', startTimeStr)
-    // payload.endTime = new Date(newItem.endTime)
     const endTimeStr = new Date(newItem.endTime).toISOString()
     formData.append('endTime', endTimeStr)
     formData.append('category', newItem.category)
-    formData.append('creator', $session.user.id)
     
     const res = await fetch('/api/item', {
       method: 'POST',
@@ -155,8 +154,6 @@
     })
 
     if (!res.ok) {
-      // console.log('res NOT ok')
-      // console.log(await res.json())
       const error = await res.json()
       message.set({
         text: `Error: ${error.message}`,
@@ -166,54 +163,13 @@
     
     if (res.ok) {
       const newItems = await res.json()
-      // console.log(newItems) // This does work
-      newItems.forEach((item) => {
-        item.edits = {
-          name: item.name,
-          category: {},
-          startTime: format(new Date(item.startTime), 'yyyy-MM-dd\'T\'HH:mm'),
-          endTime: format(new Date(item.endTime), 'yyyy-MM-dd\'T\'HH:mm'), 
-          endRelatively: {
-            years: null,
-            months: null,
-            weeks: null,
-            days: null,
-            hours: null,
-            minutes: null,
-          }
-        }
-        const startTime = new Date(item.startTime)
-        if (item.endTime) {
-          let endTime = new Date(item.endTime)
-          item.edits.endRelatively.years = differenceInYears(endTime, startTime)
-          endTime = subYears(new Date(endTime), endRelatively.years)
-          item.edits.endRelatively.months = differenceInMonths(endTime, startTime)
-          endTime = subMonths(new Date(endTime), differenceInMonths(endTime, startTime))
-          item.edits.endRelatively.weeks = differenceInWeeks(endTime, startTime)
-          endTime = subWeeks(new Date(endTime), differenceInWeeks(endTime, startTime))
-          item.edits.endRelatively.days = differenceInDays(endTime, startTime)
-          endTime = subDays(new Date(endTime), differenceInDays(endTime, startTime))
-          item.edits.endRelatively.hours = differenceInHours(endTime, startTime)
-          endTime = subHours(new Date(endTime), differenceInHours(endTime, startTime))
-          item.edits.endRelatively.minutes = differenceInMinutes(endTime, startTime)
-          endTime = subMinutes(new Date(endTime), differenceInMinutes(endTime, startTime))
-        }
-        else {
-          item.edits.endRelatively.years = 0
-          item.edits.endRelatively.months = 0
-          item.edits.endRelatively.weeks = 0
-          item.edits.endRelatively.days = 0
-          item.edits.endRelatively.hours = 0
-          item.edits.endRelatively.minutes = 0
-        }
-      })
       // Reset New Item Form
       newItem = {
-        name: null,
+        name: '',
         startTime: format(new Date(), 'yyyy-MM-dd\'T\'HH:mm'),
-        endTime: null,
+        endTime: '',
         image: null,
-        category: null,
+        category: '',
       }
       endRelatively.years = 0
       endRelatively.months = 0
@@ -222,7 +178,7 @@
       endRelatively.hours = 0
       endRelatively.minutes = 0
       fileInput.value = ''
-      newItemImagePreview = null
+      newItemImagePreview = ''
       noImageFound = false
       addNewItemProcessing = false
       checkNewItemValidity()
@@ -235,26 +191,20 @@
     addNewItemProcessing = false
   }
 
-  let fileInput
-  let newItemImagePreview = null
-
   const analyzeFile = () => {
-    // const file = fileInput.files[0]
-    if (fileInput.files[0]) {
+    if (fileInput.files) {
       const file = fileInput.files[0]
       newItemImagePreview = URL.createObjectURL(file)
-      newItem.image = file
-      // newItemImagePreview = URL.createObjectURL(file)
-      // console.log(newItem.image)
+      itemImage = file
     }
     else {
-      newItem.image = null
-      newItemImagePreview = null
+      itemImage = null
+      newItemImagePreview = ''
     }
   }
 
   let addingCategory = false
-  let newCategory
+  let newCategory: string
   let newCategoryValid = false
 
   const checkNewCategoryValidity = () => {
@@ -268,62 +218,29 @@
     }
   }
 
-  // addingCategory = true
-  // const formData = new FormData()
-  // formData.append('name', newCategory.trim())
-  // const res = await fetch('/api/categories', {
-  //   method: 'POST',
-  //   body: formData
-  // })
-  // if (!res.ok) {
-  //   // message.set({
-  //   //   text: `Error: ${error.message}`,
-  //   //   timed: true
-  //   // })
-  //   // console.log('error adding new category:', error)
-  //   return
-  // }
-  // if (res.ok) {
-  //   const processed = await res.json()
-  //   const returnedCategory = processed[0]
-
-  //   categories = [...categories, returnedCategory]
-  //   categories = sortCatsAlphaAsc(categories)
-
-  //   generateListings()
-  //   newCategory = null
-  //   addingCategory = false
-  // }
-
   let addNewCategoryProcessing = false
   const addNewCategory = async() => {
     addNewCategoryProcessing = true
     const formData = new FormData()
     formData.append('name', newCategory.trim())
-    // const { data, error } = await supabase
-    //   .from('categories')
-    //   .insert([
-    //     {
-    //       name: newCategory.trim(),
-    //     },
-    //   ])
     const res = await fetch('/api/categories', {
       method: 'POST',
       body: formData
     })
     if (!res.ok) {
       addNewCategoryProcessing = false
-      // message.set({
-      //   text: `Error: ${error.message}`,
-      //   timed: true
-      // })
+      const error = await res.json()
+      message.set({
+        text: `Error: ${error}`,
+        timed: true
+      })
       // console.log('error adding new category:', error)
       return
     }
     if (res.ok) {
       addNewCategoryProcessing = false
       categories = await getCategories()
-      newCategory = null
+      newCategory = ''
       addingCategory = false
       // fileInput.value = null // Doesn't work
     }
@@ -347,17 +264,16 @@
   let scanner: boolean
   let scannerActive: boolean
   let detection: number
-  let barcodeDetector // The instantiated BarcodeDetector instance
+  let barcodeDetector: any // ???
   let mediaStream: MediaStream
-  let scannedBarcode
-  let video
-  // let video: HTMLVideoElement
+  let scannedBarcode: string | null = null
+  let video: HTMLVideoElement
 
   let noImageFound = false
 
   const setupScanner = () => {
     scanner = true
-    //@ts-ignore
+    //@ts-ignore // Cannot find name 'BarcodeDetector' ???
     barcodeDetector = new BarcodeDetector({
       formats: [
         // 'ean_13',
@@ -367,7 +283,6 @@
   }
 
   const activateScanner = async() => {
-    video = document.getElementById('barcode-capture')
     mediaStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment' }
     })
@@ -417,7 +332,7 @@
   }
 
   // API :: https://world.openfoodfacts.org/api/v0/product/652729101133.json
-  const barcodeLookup = async(barcode) => {
+  const barcodeLookup = async(barcode: string) => {
     message.set({
       text: 'Fetching item',
       timed: false
@@ -428,11 +343,10 @@
         if (data.product.product_name_en) newItem.name = camelize(data.product.product_name_en)
         if (data.product.image_url) {
           newItemImagePreview = data.product.image_url
-          newItem.image = await fetch(data.product.image_url).then(r => r.blob())
+          itemImage = await fetch(data.product.image_url).then(r => r.blob())
         } else {
           noImageFound = true
         }
-        // message.set(null)
         message.set({
           text: `Item successfully fetched!`,
           timed: true
@@ -449,16 +363,17 @@
   }
 
   // Speech Recognition
-  let recognition = false
-  let recognitionExpiration = false
-  let recognitionName = false
+  // let recognition = false
+  let recognitionExpiration: any = false
+  let recognitionName: any = false
   let recognizing = false
   const listenForName = () => { 
     if (recognitionName) {
       recognitionName.abort() // Unsure :: InvalidStateError: Failed to execute 'start' on 'SpeechRecognition': recognition has already started.
       recognitionName.start()
-      recognitionName.addEventListener('result', (e) => {
+      recognitionName.addEventListener('result', (e: any) => {
         let text = Array.from(e.results)
+          //@ts-ignore
           .map(result => result[0])
           .map(result => result.transcript)
           .join('')
@@ -483,8 +398,9 @@
     if (recognitionExpiration) {
       recognitionExpiration.abort() // Unsure :: InvalidStateError: Failed to execute 'start' on 'SpeechRecognition': recognition has already started.
       recognitionExpiration.start()
-      recognitionExpiration.addEventListener('result', (e) => {
+      recognitionExpiration.addEventListener('result', (e: any) => {
         let text = Array.from(e.results)
+          //@ts-ignore
           .map(result => result[0])
           .map(result => result.transcript)
           .join('')
@@ -520,7 +436,7 @@
             else {
               year = new Date().getFullYear()
             }
-            newItem.endTime = format(new Date(parseInt(year), monthIndex, parseInt(day)), 'yyyy-MM-dd\'T\'HH:mm')
+            newItem.endTime = format(new Date(year, monthIndex, parseInt(day)), 'yyyy-MM-dd\'T\'HH:mm')
             updateEndTimeRelativity()
           }
         }
@@ -577,6 +493,7 @@
               autoplay
               id="barcode-capture"
               src=""
+              bind:this={video}
             >
               <track default
                 kind="captions" />

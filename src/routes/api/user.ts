@@ -5,8 +5,10 @@ export async function patch(event: RequestEvent) {
   try {
     if (event.locals.user && event.locals.user.id) {
       const user = await event.request.formData()
-      if (user.get('pwd')) {
-        const { user: userData, error } = await supabase.auth.update({password: user.get('pwd')})
+      const email = user.get('email')?.toString()
+      const pwd = user.get('pwd')?.toString()
+      if (pwd) {
+        const { user: userData, error } = await supabase.auth.update({password: pwd})
         if (userData) {
           return {
             status: 200,
@@ -21,8 +23,8 @@ export async function patch(event: RequestEvent) {
           }
         }
       }
-      if (user.get('email')) {
-        const { user: userData, error } = await supabase.auth.update({email: user.get('email')})
+      if (email) {
+        const { user: userData, error } = await supabase.auth.update({email: email})
         if (userData) {
           return {
             status: 200,

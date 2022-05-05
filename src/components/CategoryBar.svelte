@@ -5,7 +5,7 @@
 
   const dispatch = createEventDispatcher()
 
-  export let category
+  export let category: CategoryProps
 
   let statusProcessing = false
   let statusUpdating = false
@@ -37,8 +37,9 @@
     if (!res.ok) {
       statusProcessing = false
       statusUpdating = false
+      const error = await res.json()
       message.set({
-        text: `There was an error in updating a category.`,
+        text: `Error: ${error}`,
         timed: true
       })
       return

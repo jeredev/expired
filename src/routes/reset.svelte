@@ -1,4 +1,8 @@
 <script lang="ts" context="module">
+  // import type { Load } from "@sveltejs/kit"
+  // export const load: Load = async({ url, params, fetch, session, stuff, status, error }) => {
+
+  // }
   export async function load({ url, params, fetch, session, stuff }) {
     const res = await fetch('/api/auth/user', {
       method: 'POST',
@@ -52,8 +56,8 @@
 
   export let access_token
 
-  let pwd
-  let confirmPwd
+  let pwd: string
+  let confirmPwd: string
 
   let statusProcessing = false
   let resetPwdValid = false

@@ -1,14 +1,15 @@
 import stripe from '$lib/stripe'
 import { supabase } from '$lib/supabase'
+import type { RequestEvent } from "@sveltejs/kit/types/internal"
 
-export async function post({ request }) {
-  const payload = await request.formData()
+export async function post(event: RequestEvent) {
+  const payload = await event.request.formData()
   if (payload.get('email')) {
     // Look up in supabase if a user/account already exists
     // Or just signup the user in supabase?
-    const { user, session, error } = await supabase.auth.signUp({
-      email: payload.get('email'),
-      password: payload.get('pwd'),
+    const { user, error } = await supabase.auth.signUp({
+      email: payload.get('email')?.toString(),
+      password: payload.get('pwd')?.toString(),
     })
     if (user) {
       const customer = await stripe.customers.create({
@@ -40,7 +41,7 @@ export async function post({ request }) {
               status: 200,
               body: JSON.stringify({
                 subscriptionId: subscription.id,
-                clientSecret: subscription.latest_invoice.payment_intent.client_secret
+                clientSecret: subscription.latest_invoice?.payment_intent.client_secret
               })
             }
           }

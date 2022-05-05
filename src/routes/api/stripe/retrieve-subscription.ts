@@ -6,7 +6,6 @@ export async function post(event: RequestEvent) {
   try {
     const subscriptionId = await event.request.json()
     const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-    console.log(subscription)
     return {
       status: 200,
       body: JSON.stringify(subscription)

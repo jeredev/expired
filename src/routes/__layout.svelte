@@ -57,6 +57,9 @@
     color: white;
     border-color: rgba(220, 38, 38, 1);
   }
+
+  
+
   /* .elapser {
     background-color: var(--gray);
     height: 2px;

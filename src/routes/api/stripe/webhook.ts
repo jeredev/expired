@@ -1,12 +1,13 @@
 import { supabase } from '$lib/supabase'
 import stripe from '$lib/stripe'
 import type Stripe from 'stripe'
+import type { RequestEvent } from "@sveltejs/kit/types/internal"
 
 const ENDPOINT_SECRET = String(import.meta.env.VITE_STRIPE_WEBHOOK_SIGNING_SECRET) // Works
 
-export async function post({ request }) {
-  const body = await request.text()
-  const sig = request.headers.get('stripe-signature') || ''
+export async function post(event: RequestEvent) {
+  const body = await event.request.text()
+  const sig = event.request.headers.get('stripe-signature') || ''
   let stripeEvent: Stripe.Event
   try {
     stripeEvent = stripe.webhooks.constructEvent(body, sig, ENDPOINT_SECRET)
@@ -68,7 +69,7 @@ export async function post({ request }) {
       
         // Retrieve the payment intent used to pay the subscription
         const payment_intent = await stripe.paymentIntents.retrieve(payment_intent_id);
-        const subscription = await stripe.subscriptions.update(
+        await stripe.subscriptions.update(
           subscription_id,
           {
             default_payment_method: payment_intent.payment_method,
