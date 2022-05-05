@@ -154,11 +154,11 @@
       if (res.ok) {
         const data = await res.json()
         if (data && data.role === 'authenticated') {
+          session.set({ user: data })
           message.set({
             text: `Login successful.`,
             timed: true
           })
-          session.set({ user: data })
           if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
             categories = await getCategories()
             // clock = window.setInterval(runClock, 1000)
@@ -216,26 +216,9 @@
 
   const addItems = async(e: CustomEvent) => {
     const newItems = e.detail
-    // Determine if item should be shown in current list
     categories = await getCategories() // In the case that a new category was created when the item was added
     newItems.forEach(async(item: ItemProps) => {
       items.push(item)
-      // if (categories) {
-      //   const found = categories.find((element: CategoryProps) => element.id === item.category)
-      //   if (!found) {
-      //     item.category = ''
-      //   } else {
-      //     item.category = {}
-      //     item.category.id = found.id
-      //     item.category.name = found.name
-      //     // edits.category.id = found.id
-      //     // edits.category.name = found.name
-      //   }
-      //   // item.time = time
-      //   items.push(item)
-      //   // items = [...items, item]
-      //   // generateListings()
-      //   }
     })
     generateListings()
   }
@@ -772,8 +755,8 @@
     {#if !user}
       <form on:submit|preventDefault={logIn} class="form form--login">
         {#if forgot}
-          <div transition:slide>
-            <h1>Reset your password</h1>
+          <div transition:slide class="pb-4">
+            <h1 class="mb-4" style="font-size: 2rem; font-weight: 400;">Reset your password</h1>
             <p>Enter the email address associated with your account and you'll receive a link to reset your password.</p>
           </div>
         {/if}
@@ -803,12 +786,12 @@
                   type="password"
                   id="login-password"
                   autocomplete="current-password" 
-                  class="bg-black text-white my-2 p-2 w-full"
+                  class="bg-black text-white p-2 w-full"
                 > 
               </div>
             {/if}
           </div>
-          <div class="form-actions">
+          <div class="form-actions mt-4">
             {#if forgot}
               <button on:click={resetPwd} type="button" class="btn" disabled={!resetPwdValid}>
                 Reset
@@ -1079,7 +1062,7 @@
   {:else if user && !user.account}
     <p>No account found.</p>
   {:else}
-    <div class="py-4">Authorized users only.</div>
+    <div class="py-4 text-center">Authorized users only.</div>
   {/if}
 </div>
 
