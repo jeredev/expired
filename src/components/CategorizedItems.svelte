@@ -1,14 +1,13 @@
 <script lang="ts">
   import Item from "../components/Item.svelte"
   import Icon from '@iconify/svelte'
-  import { slide } from 'svelte/transition';
+  import { slide } from 'svelte/transition'
 
   let itemsVisible = true
 
   export let items: Array<ItemProps> = []
-  export let categories
+  export let categories: Array<CategoryProps>
   export let category: CategoryProps
-  // export let time: number
 
   // &: categories = getContext('categories')
 

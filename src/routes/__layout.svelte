@@ -14,6 +14,10 @@
   
 </script>
 
+<svelte:head>
+  <title>Expired</title>
+</svelte:head>
+
 <slot />
 
 <style global windi:global windi:preflights:global windi:safelist:global>

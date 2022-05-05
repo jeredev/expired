@@ -1,9 +1,15 @@
-import { readable, writable } from 'svelte/store';
+import { readable, writable, type Writable } from 'svelte/store';
 import { browser } from '$app/env';
 
+// Can this be done? Should this be done?
 export const categories = writable<Array<CategoryProps> | null>(null);
 
-export const message = writable({
+interface Message {
+  text: string,
+  timed: boolean
+}
+
+export const message: Writable<Message | null> = writable({
   text: '',
   timed: false
 });

@@ -2,11 +2,6 @@
   import { onDestroy } from "svelte";
   import { message } from '../stores';
 
-  // interface message {
-  //   text: string,
-  //   timed: boolean
-  // }
-
   let active = false
   const duration = 2500
   let timed = false
@@ -91,10 +86,8 @@
   }
   .elapser {
     background-color: var(--gray);
-    /* border: 1px solid var(--blue); */
     height: 2px;
     margin: 0.7rem 0 0;
-    /* overflow: hidden; */
     position: relative;
     width: 100%;
   }
@@ -107,7 +100,6 @@
   }
   .elapser .measure .node {
     width: 100%;
-    /* background-color: red; */
     position: absolute;
     height: 100%;
     animation: looped-elapser 1.5s linear infinite;
@@ -132,9 +124,6 @@
     transform: scaleX(0);
     width: 100%;
   }
-  /* .timed .elapser .measure::before {
-    display: none;
-  } */
   @keyframes timed-elapser {
     0% {
       transform: scaleX(1)

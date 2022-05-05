@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { session } from "$app/stores";
   import { message } from "../stores";
   import { onMount } from "svelte";
   import { slide } from 'svelte/transition';
@@ -137,6 +136,7 @@
   let addNewItemProcessing = false
   const addNewItem = async() => {
     addNewItemProcessing = true
+
     const formData = new FormData()
     formData.append('name', newItem.name.trim())
     if (itemImage) {
@@ -247,17 +247,12 @@
       categories = await getCategories()
       newCategory = ''
       addingCategory = false
-      // fileInput.value = null // Doesn't work
     }
   }
 
   const getCategories = async() => {
     const res = await fetch('/api/categories')
     if (!res.ok) {
-      //   message.set({
-      //     text: `Error: ${error.message}`,
-      //     timed: true
-      //   })
       //   console.error('Error:', error)
     }
     if (res.ok) {
@@ -337,7 +332,6 @@
     cancelAnimationFrame(detection)
   }
 
-  // API :: https://world.openfoodfacts.org/api/v0/product/652729101133.json
   const barcodeLookup = async(barcode: string) => {
     message.set({
       text: 'Fetching item',

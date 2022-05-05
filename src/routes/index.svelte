@@ -42,7 +42,7 @@
 <script lang="ts">
   import { page, session } from "$app/stores"
   import { afterNavigate, goto, invalidate } from '$app/navigation'
-  import { onDestroy, onMount } from "svelte"
+  import { onMount } from "svelte"
 
   import { fade, slide } from 'svelte/transition'
   import Icon from '@iconify/svelte'
@@ -75,7 +75,7 @@
   import Messenger from "../components/Messenger.svelte"
   import { displayMode, sortingMode, timeStatusMode, message, time } from "../stores"
 
-  export let categories: Array<CategoryProps> | null = null
+  export let categories: Array<CategoryProps>
 
   // export let categoriesFetched: Array<CategoryProps> | null = null
   // console.log(categoriesFetched)
@@ -88,15 +88,13 @@
   
   // setContext('categories', categories)
   // export let items: Array<ItemProps> | null = null
+  // let items: Array<ItemProps> | null = null
   export let items: Array<ItemProps> = []
   export let user: App.Session['user']
 
   const isItemsURL = (dep: string) => dep.includes('/api/items')
 
-  // let items: Array<ItemProps> | null = null
-
   let listings: any[] | null = null
-  // let time = new Date().getTime()
 
   let email: string
   let password: string
@@ -761,16 +759,10 @@
     if (items && items.length && listings === null) {
       generateListings()
     }
-    // if ($session && $session.user && $session.user.account?.subscription_status === 'active') {
-    //   clock = window.setInterval(runClock, 1000);
-    // }
     const SpeechRecognition = (<any>window).SpeechRecognition || (<any>window).webkitSpeechRecognition
     if (SpeechRecognition) {
       recognition = new SpeechRecognition()
     }
-  })
-  onDestroy(() => {
-    // clearInterval(clock)
   })
 </script>
 
@@ -1060,15 +1052,12 @@
             {#each listings as category}
               {#if category.items.length > 0}
                 <CategorizedItems categories={categories} category={category} items={category.items} on:remove={removeItem} on:update={updateItem} />
-                <!-- <CategorizedItems category={category} time={time} items={category.items} on:remove={removeItem} on:update={updateItem} /> -->
               {/if}
             {/each}
           {:else}
           <div class="items-list">
-            Item list
             {#each listings as listing}
               <Item item={listing} categories={categories} on:remove={removeItem} on:update={updateItem} />
-              <!-- <Item item={listing} time={time} on:remove={removeItem} on:update={updateItem} /> -->
             {/each}
           </div>
         {/if}
