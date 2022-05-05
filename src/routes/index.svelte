@@ -1093,6 +1093,7 @@
   }
   @media only all and (min-width: 40em) {
     .login-form-fields {
+      align-items: flex-end;
       display: grid;
       grid-gap: 1rem;
       grid-template-columns: 1fr 1fr;
