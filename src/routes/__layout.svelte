@@ -27,6 +27,9 @@
 		/* --red: rgba(220, 38, 38, 1); */
 		--red: #b22020;
 	}
+  html {
+    scrollbar-gutter: stable;
+  }
 	body {
 		background-color: #181818;
 		font-family: 'Inter', sans-serif;
@@ -103,4 +106,18 @@
       transform: scaleX(0);
     }
   } */
+  .menu-title {
+    background-color: var(--red);
+    border-bottom: 2px solid var(--red);
+    border-top: 2px solid var(--red);
+    color: white;
+    font-family: 'Recursive', sans-serif;
+    font-size: 1.125rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  .null-area {
+    border-top: 2px solid var(--gray);
+    padding-top: 1rem;
+  }
 </style>

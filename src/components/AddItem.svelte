@@ -481,7 +481,7 @@
 
 {#if active}
   <div transition:slide class="container" style="max-width: 60rem;">
-    <h2 class="py-2 mb-4 text-white" style="border-bottom: 2px solid var(--red); border-top: 2px solid var(--red);">
+    <h2 class="py-2 mb-4 text-white menu-title">
       Add New Item
     </h2>
     {#if scanner}
@@ -719,6 +719,7 @@
   .no-image {
     display: inline-block;
     background-color: var(--red);
+    font-family: 'Recursive', sans-serif;
     font-size: 80%;
   }
   .form-field label {

@@ -488,7 +488,6 @@
   }
 
   const generateListings = () => {
-    // console.log('generating')
     if ($displayMode === 'categories') {
       categorizeItems()
     }
@@ -531,6 +530,8 @@
         sortItems(category.items)
       })
       listings = categorizedItems
+      // console.log('after sort:')
+      // console.log(listings)
     }
   }
 
@@ -850,7 +851,7 @@
       </div>
       {#if categoriesMenuActive}
         <div transition:slide class="sector mb-4">
-          <h2 class="py-2 mb-4 text-white" style="border-bottom: 2px solid red; border-top: 2px solid red;">
+          <h2 class="py-2 mb-4 text-white menu-title">
             Categories
           </h2>
           <div>
@@ -879,8 +880,8 @@
         </div>
       {/if}
       {#if sortingMenuActive}
-        <div transition:slide class="sector mb-4">
-          <h2 class="py-2 mb-4 text-white" style="border-bottom: 2px solid red; border-top: 2px solid red;">
+        <div transition:slide class="sector mb-4 sorting-filtering">
+          <h2 class="py-2 mb-4 text-white menu-title">
             Sorting and Filtering
           </h2>
           <div class="grid grid-cols-2 gap-2 my-2">
@@ -918,7 +919,7 @@
       {/if}
       {#if searchMenuActive}
         <div transition:slide class="search-menu pb-4">
-          <h2 class="py-2 mb-4 text-white" style="border-bottom: 2px solid red; border-top: 2px solid red;">
+          <h2 class="py-2 mb-4 text-white menu-title">
             Search
           </h2>
           <form on:submit|preventDefault={searchItems} class="search">
@@ -1029,7 +1030,7 @@
       </div>
     </div>
     <div class="items">
-      {#if items && items.length && listings}
+      {#if items && items.length && listings && listings.length}
         <div class="items-listing">
           {#if $displayMode === 'categories'}
             {#each listings as category}
@@ -1045,10 +1046,14 @@
           </div>
         {/if}
         </div>
-      {:else if $displayMode === 'list' && items && items.length < 1}
-        <p>No items found</p>
-      {:else if $displayMode === 'categories' && items && items.length < 1 && categories && categories.length < 1}
-        <p>No categories or items found</p>
+      {:else if $displayMode === 'list' && listings && listings.length === 0}
+        <div class="null-area">
+          <p>No items found</p>
+        </div>
+      {:else if $displayMode === 'categories' && listings && items.length < 1 && ( categories && categories.length < 1 )}
+        <div class="null-area">
+          <p>No categories or items found</p>
+        </div>
       {:else}
         <div class="py-8 relative">
           <div class="elapser">
@@ -1064,7 +1069,7 @@
   {:else if user && !user.account}
     <p>No account found.</p>
   {:else}
-    <div class="py-4 text-center">Authorized users only.</div>
+    <div class="py-4">Authorized users only.</div>
   {/if}
 </div>
 
@@ -1183,5 +1188,8 @@
     50%, 100% {
       transform: scaleX(0);
     }
+  }
+  .sorting-filtering button:disabled {
+    background-color: black;
   }
 </style>
