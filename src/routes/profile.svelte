@@ -254,7 +254,7 @@
   })
 </script>
 
-<div class="decay mx-auto max-w-50rem p-4 text-white">
+<div class="decay mx-auto max-w-4xl p-4 text-white">
   {#if user && user.account}
     <div class="controls pb-4 flex justify-between">
       <button class="btn" on:click="{goBack}">

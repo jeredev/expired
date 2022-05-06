@@ -60,7 +60,7 @@
 
 </script>
 
-<div class="decay mx-auto max-w-50rem p-4 text-white">
+<div class="decay mx-auto max-w-4xl p-4 text-white">
   <h1>Ascension Complete!</h1>
   <div id="message" bind:this="{message}">
 

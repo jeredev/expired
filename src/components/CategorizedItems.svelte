@@ -51,4 +51,7 @@
     top: 0;
     z-index: 2;
   }
+  .category__name {
+    font-weight: 600;
+  }
 </style>

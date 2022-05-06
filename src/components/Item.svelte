@@ -1006,7 +1006,7 @@
   }
   .timer__remainder {
     font-family: 'Recursive', sans-serif;
-    line-height: 1.2;
+    line-height: 1;
     mix-blend-mode: exclusion;
     text-align: right;
     white-space: nowrap;

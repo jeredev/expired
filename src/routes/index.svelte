@@ -749,7 +749,7 @@
   })
 </script>
 
-<div class="decay mx-auto max-w-50rem p-4 text-white">
+<div class="decay mx-auto max-w-4xl p-4 text-white">
   <Messenger />
   <div class="header">
     {#if !user}
