@@ -265,9 +265,9 @@
       </button>
     </div>
   {/if}
-  <h1>Profile</h1>
-  <div class="grouping my-8 p-4 border-width-$1px border-light-400">
-    <h2 class="mb-4">Change password</h2>
+  <h1 style="font-size: 2.5rem; font-weight: 900;">Profile</h1>
+  <div class="grouping my-8 p-4 border-width-$1px border-light-400" style="font-size: 0.875rem;">
+    <h2 class="mb-4" style="font-size: 1.4rem; font-weight: 600;">Change password</h2>
     {#if resetSuccess}
       Password successfully reset!
     {:else}
@@ -276,7 +276,7 @@
           <form on:submit|preventDefault={changePwd} class="form form--login">
             <div class="login-form-fields">
               <div class="form-field">
-                <label for="password">New password</label>
+                <label for="password" style="font-weight: 400;">New password</label>
                 <input
                   bind:value="{pwd}"
                   on:input="{validatePwd}"
@@ -305,8 +305,8 @@
       </form>
     {/if}
   </div>
-  <div class="grouping mb-8 p-4 border-width-$1px border-light-400">
-    <h2 class="mb-4">Subscription</h2>
+  <div class="grouping mb-8 p-4 border-width-$1px border-light-400" style="font-size: 0.875rem;">
+    <h2 class="mb-4" style="font-size: 1.4rem; font-weight: 600;">Subscription</h2>
     {#if subscription}
       <p>Status: {subscription.status} </p>
       {#if subscription.status === 'active'}
@@ -344,8 +344,8 @@
       </form>
     {/if}
   </div>
-  <div class="grouping mb-8 p-4 border-width-$1px border-light-400">
-    <h2 class="mb-4">App Options</h2>
+  <div class="grouping mb-8 p-4 border-width-$1px border-light-400" style="font-size: 0.875rem;">
+    <h2 class="mb-4" style="font-size: 1.4rem; font-weight: 600;">App Options</h2>
     <p>Display mode: (Light or Dark)</p>
     <p>Notifications: (When? How often?)</p>
     <ul>

@@ -547,6 +547,7 @@
           .map(result => result.transcript)
           .join('')
         if (text) {
+          // End of "month" "year"
           // newItem.endTimeTranscription = text
           const words = text.split(' ')
           // Determine if first word is 'end'
@@ -938,10 +939,15 @@
     grid-template-columns: 1fr max-content;
   }
   .item-title {
+    /* font-family: 'Recursive', sans-serif; */
     line-height: 1.2;
   }
   .form-field {
     grid-template-columns: max-content 1fr;
+  }
+  .form-field label {
+    /* font-family: 'Inter', sans-serif; */
+    /* font-family: 'Recursive', sans-serif */
   }
   .item-image {
     flex: 1;
@@ -961,7 +967,6 @@
     justify-content: space-between;
   }
   .timer {
-    font-family: 'JetBrains Mono', monospace;
     margin-top: 2rem;
     position: relative;
   }
@@ -1000,6 +1005,7 @@
     width: 100%;
   }
   .timer__remainder {
+    font-family: 'Recursive', sans-serif;
     line-height: 1.2;
     mix-blend-mode: exclusion;
     text-align: right;

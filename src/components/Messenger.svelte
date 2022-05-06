@@ -3,7 +3,7 @@
   import { message } from '../stores';
 
   let active = false
-  const duration = 2500
+  const duration = 1600
   let timed = false
   let timeBomb: number
   let text: string
@@ -82,7 +82,7 @@
     z-index: 100;
   }
   .message.active.timed .elapser .measure {
-    animation: timed-elapser 2500ms linear forwards;
+    animation: timed-elapser 1600ms linear forwards;
   }
   .elapser {
     background-color: var(--gray);
@@ -92,7 +92,6 @@
     width: 100%;
   }
   .elapser .measure {
-    
     height: 100%;
     transform-origin: left;
     position: relative;

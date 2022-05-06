@@ -756,8 +756,8 @@
       <form on:submit|preventDefault={logIn} class="form form--login">
         {#if forgot}
           <div transition:slide class="pb-4">
-            <h1 class="mb-4" style="font-size: 2rem; font-weight: 400;">Reset your password</h1>
-            <p>Enter the email address associated with your account and you'll receive a link to reset your password.</p>
+            <h1 class="mb-4" style="font-family: 'Inter', sans-serif; font-size: 2rem; font-weight: 400;">Reset your password</h1>
+            <p style="font-family: 'Recursive', sans-serif; font-size: 90%;">Enter the email address associated with your account and you'll receive a link to reset your password.</p>
           </div>
         {/if}
         <div class="login-form-area">
@@ -1085,6 +1085,7 @@
     filter: drop-shadow(0 0 0.125rem #fff);
   }
   .login-form-fields label {
+    font-family: 'Inter', sans-serif;
     font-size: 90%;
   }
   .form-field input:focus-visible, .form-field select:focus-visible {

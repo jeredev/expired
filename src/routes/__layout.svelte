@@ -30,6 +30,7 @@
   body {
     background-color: #181818;
     font-family: 'Inter', sans-serif;
+    /* font-family: 'Recursive', sans-serif; */
   }
   ::-webkit-calendar-picker-indicator {
     filter: invert(1);
@@ -39,6 +40,7 @@
     text-decoration: underline;
   }
   .btn {
+    /* font-family: 'Inter', sans-serif; */
     @apply
     px-4 py-1 text-sm text-red-600 font-semibold
     rounded-full border border-red-600 dark:border-red-800
