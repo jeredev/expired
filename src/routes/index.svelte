@@ -531,11 +531,7 @@
         sortItems(category.items)
       })
       listings = categorizedItems
-      console.log(listings)
     }
-    // else {
-    //   listings = []
-    // }
   }
 
   const listItems = () => {
@@ -743,7 +739,6 @@
   })
 
   onMount(async() => {
-    console.log(items)
     if (items && items.length && listings === null) {
       generateListings()
     }
@@ -1050,8 +1045,10 @@
           </div>
         {/if}
         </div>
-      {:else if items && items.length < 1}
+      {:else if $displayMode === 'list' && items && items.length < 1}
         <p>No items found</p>
+      {:else if $displayMode === 'categories' && items && items.length < 1 && categories && categories.length < 1}
+        <p>No categories or items found</p>
       {:else}
         <div class="py-8 relative">
           <div class="elapser">
