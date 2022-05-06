@@ -2,11 +2,11 @@
 	"name": "expired",
 	"version": "0.0.1",
 	"scripts": {
-		"dev": "svelte-kit dev --https --host",
-		"dev:https": "svelte-kit dev --https --host",
-		"build": "svelte-kit build",
+		"dev": "env-cmd svelte-kit dev --https --host",
+		"dev:https": "env-cmd svelte-kit dev --https --host",
+		"build": "env-cmd svelte-kit build",
 		"package": "svelte-kit package",
-		"preview": "svelte-kit preview",
+		"preview": "env-cmd svelte-kit preview",
 		"test": "playwright test",
 		"check": "svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
@@ -49,6 +49,7 @@
 		"@supabase/supabase-js": "^1.35.1",
 		"cookie": "^0.4.2",
 		"date-fns": "^2.28.0",
+		"env-cmd": "^10.1.0",
 		"sharp": "^0.30.3"
 	}
 }

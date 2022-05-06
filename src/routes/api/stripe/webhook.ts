@@ -3,7 +3,7 @@ import stripe from '$lib/stripe'
 import type Stripe from 'stripe'
 import type { RequestEvent } from "@sveltejs/kit/types/internal"
 
-const ENDPOINT_SECRET = String(import.meta.env.VITE_STRIPE_WEBHOOK_SIGNING_SECRET) // Works
+const ENDPOINT_SECRET = String(process.env.STRIPE_WEBHOOK_SIGNING_SECRET) // Works
 
 export async function post(event: RequestEvent) {
   const body = await event.request.text()

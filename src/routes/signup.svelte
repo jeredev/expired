@@ -154,14 +154,14 @@
 </script>
 
 <div class="decay mx-auto max-w-4xl p-4 text-white">
-  <h1>Your life begins now!</h1>
+  <!-- <h1>Your life begins now!</h1>
   <ul>
     <li>Benefits</li>
     <li>Payment plan</li>
-  </ul>
-  <h1>Sign Up!</h1>
-  <form on:submit|preventDefault={setupStripe} bind:this={form}>
+  </ul> -->
+  <form on:submit|preventDefault={setupStripe} bind:this={form} class="mt-8">
     <fieldset>
+      <h1>Create an account</h1>
       <div class="form-field mt-2">
         <label for="signup-email">Email address</label>
         <input type="email" id="signup-email" bind:value="{email}" on:input="{validateSignup}" class="bg-black text-white p-2 w-full">
@@ -184,7 +184,7 @@
           on:input="{validateSignup}"
           type="password"
           id="signup-confirmPassword"
-          class="bg-black text-white my-2 p-2 w-full"
+          class="bg-black text-white mb-2 p-2 w-full"
         >
       </div>
       {#if !paymentReady}
@@ -208,3 +208,16 @@
   </form>
   
 </div>
+
+<style>
+  h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+  }
+  /* form h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  } */
+</style>
