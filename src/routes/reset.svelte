@@ -1,67 +1,82 @@
 <script lang="ts" context="module">
+  import { browser } from '$app/env'
   // import type { Load } from "@sveltejs/kit"
   // export const load: Load = async({ url, params, fetch, session, stuff, status, error }) => {
 
   // }
   export async function load({ url, params, fetch, session, stuff }) {
     // Look to see if there is even an access token first!!!
-    if (url.hash) {
-      const res = await fetch('/api/auth/user', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ access_token: url.hash.slice(14, url.hash.indexOf('&')) })
-      })
-      if (!res.ok) {
-        const error = await res.json()
-        console.log(error)
-        if (error.status === 401) {
-          console.log('invalid')
-          return {
-            status: 200,
-            props: {
-              access_token: 'invalid'
+    // console.log('url: ', url.searchParams.get('type'))
+    if (browser) {
+      if (url.hash) {
+        console.log('running before supabase call:') // This runs in browser, not on server
+        const res = await fetch('/api/auth/user', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ access_token: url.hash.slice(14, url.hash.indexOf('&')) })
+        })
+        if (!res.ok) {
+          const error = await res.json()
+          console.log(error)
+          if (error.status === 401) {
+            console.log('invalid')
+            return {
+              status: 200,
+              props: {
+                access_token: 'invalid'
+              }
+            }
+          }
+          else {
+            return {
+              status: 200,
+              props: {
+                access_token: null
+              }
             }
           }
         }
-        // else {
-        //   return {
-        //     status: error.status,
-        //     props: {
-        //       access_token: null
-        //     }
-        //   }
-        // }
-      }
-      if (res.ok) {
-        console.log('res.ok')
-        // console.log(await res.json())
-        // const user = await res.json()
-        return {
-          status: 200,
-          props: {
-            access_token: url.hash.slice(14, url.hash.indexOf('&'))
+        if (res.ok) {
+          console.log('res.ok')
+          // console.log(await res.json())
+          // const user = await res.json()
+          return {
+            status: 200,
+            props: {
+              access_token: url.hash.slice(14, url.hash.indexOf('&'))
+            }
           }
         }
       }
+      else {
+        // No hash in browser :: Render initiate
+        console.log('else hey')
+        return {
+          status: 200,
+          props: {
+            access_token: null
+          }
+        }
+      } 
     }
     else {
       return {
         status: 200,
         props: {
-          access_token: null
+          access_token: undefined
         }
       }
-    } 
+    }
   }
 </script>
 
 <script lang="ts">
   import { fade } from 'svelte/transition'
 
-  export let access_token: string | null | undefined
+  export let access_token: string | null | undefined = undefined
 
   let pwd: string
   let confirmPwd: string
@@ -137,12 +152,12 @@
   }
 </script>
 
-<div class="decay mx-auto max-w-4xl p-4 text-white">
+<div class="decay mx-auto max-w-2xl p-4 text-white">
   {#if access_token}
     {#if resetSuccess}
       Password successfully reset!
     {:else}
-      <h1>Reset your password</h1>
+      <h1 class="mb-8">Reset your password</h1>
       {#if access_token === 'invalid'}
         <div class="mb-4 mt-2 validation">
           <p>Invalid token detected so resetting your password cannot resume. Please try again by using the form below and then using the new link you receive shortly thereafter.</p>
