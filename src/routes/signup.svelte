@@ -17,6 +17,8 @@
 
   let messageContainer: HTMLDivElement
 
+  let signupError: string | null = null
+
   const validateSignup = () => {
     if (email && pwd && /([^\s])/.test(email) && /([^\s])/.test(pwd) && /([^\s])/.test(pwd) && pwd.length >= 6 && pwd === confirmPwd) {
       signupValid = true
@@ -37,8 +39,8 @@
       // console.log(await res.json())
       const error = await res.json()
       console.log(error)
-      if (error.message === 'User already registered') {
-
+      if (error.status === 400 && error.message === 'User already registered') {
+        signupError = 'User already registered'
       }
     }
     if (res.ok) {
@@ -187,6 +189,13 @@
           class="bg-black text-white mb-2 p-2 w-full"
         >
       </div>
+      {#if signupError}
+        <div class="signup-error my-4 p-2">
+          {#if signupError === 'User already registered'}
+            <p>This email address has already been registered. Please either <a href="login">sign in</a> or <a href="reset">reset your password</a>.</p>
+          {/if}
+        </div>
+      {/if}
       {#if !paymentReady}
         <button type="submit" class="btn mt-2" disabled="{statusProcessing || !signupValid}">
           Sign Up
@@ -210,6 +219,14 @@
 </div>
 
 <style>
+  .signup-error {
+    background-color: var(--red);
+    color: white;
+    font-family: 'Recursive', sans-serif;
+  }
+  .signup-error a {
+    color: inherit;
+  }
   h1 {
     font-size: 2rem;
     font-weight: 800;

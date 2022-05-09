@@ -50,6 +50,10 @@
     disabled:bg-gray-600 disabled:text-white disabled:border-transparent disabled:opacity-50 disabled:cursor-not-allowed
     focus:outline-none focus:ring-2 ring-red-600 ring-opacity-40;
 	}
+  h1 {
+    font-size: 2rem;
+    font-weight: 600;
+  }
 	.btn.active {
 		background-color: var(--red);
 		color: white;

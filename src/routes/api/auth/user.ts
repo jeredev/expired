@@ -4,6 +4,7 @@ import type { RequestEvent } from "@sveltejs/kit/types/internal"
 export async function post(event: RequestEvent) {
   try {
     const payload = await event.request.json()
+    // console.log(payload)
     if (payload.access_token) {
       const { user, error } = await supabase.auth.api.getUser(payload.access_token)
       if (error) {
@@ -15,7 +16,7 @@ export async function post(event: RequestEvent) {
       }
       if (user) {
         // console.log('apparent success')
-        // console.log(data) // {}
+        // // console.log(data) // {}
         // console.log(user)
         return {
           status: 200,

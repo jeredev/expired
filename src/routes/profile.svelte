@@ -286,14 +286,14 @@
                   class="bg-black text-white p-2 w-full"
                 >
               </div>
-              <div class="form-field">
+              <div class="form-field mt-2">
                 <label for="confirmPassword">Confirm your password</label>
                 <input
                   bind:value="{confirmPwd}"
                   on:input="{validatePwd}"
                   type="password"
                   id="confirmPassword"
-                  class="bg-black text-white my-2 p-2 w-full"
+                  class="bg-black text-white mb-4 p-2 w-full"
                 >
               </div>
               <button type="block mt-4 submit" class="btn" disabled="{statusProcessing || !resetPwdValid}">
@@ -361,5 +361,8 @@
   }
   .p-4 {
     padding: 1rem;
+  }
+  .grouping {
+    border: 1px solid var(--gray);
   }
 </style>
