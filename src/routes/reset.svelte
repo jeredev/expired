@@ -222,7 +222,7 @@
         {/if}
       {/if}
     {:else if access_token === null}
-      <h1 class="mb-4">Reset your password</h1>
+      <h1 class="mb-6">Reset your password</h1>
       <p style="font-family: 'Recursive', sans-serif; font-size: 90%;">Enter the email address associated with your account and you'll receive a link to reset your password.</p>
       <form on:submit|preventDefault={initiatePwdReset} class="form form--login mt-8">
         <div class="login-form-area">
