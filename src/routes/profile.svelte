@@ -267,7 +267,7 @@
   {/if}
   <h1 style="font-size: 2.5rem; font-weight: 900;">Profile</h1>
   <div class="grouping my-8 p-4 border-width-$1px border-light-400" style="font-size: 0.875rem;">
-    <h2 class="mb-4" style="font-size: 1.4rem; font-weight: 600;">Change password</h2>
+    <h2 class="mb-6" style="font-size: 1.4rem; font-weight: 600;">Change password</h2>
     {#if resetSuccess}
       Password successfully reset!
     {:else}
@@ -306,7 +306,7 @@
     {/if}
   </div>
   <div class="grouping mb-8 p-4 border-width-$1px border-light-400" style="font-size: 0.875rem;">
-    <h2 class="mb-4" style="font-size: 1.4rem; font-weight: 600;">Subscription</h2>
+    <h2 class="mb-6" style="font-size: 1.4rem; font-weight: 600;">Subscription</h2>
     {#if subscription}
       <p>Status: {subscription.status} </p>
       {#if subscription.status === 'active'}
@@ -345,7 +345,7 @@
     {/if}
   </div>
   <div class="grouping mb-8 p-4 border-width-$1px border-light-400" style="font-size: 0.875rem;">
-    <h2 class="mb-4" style="font-size: 1.4rem; font-weight: 600;">App Options</h2>
+    <h2 class="mb-6" style="font-size: 1.4rem; font-weight: 600;">App Options</h2>
     <p>Display mode: (Light or Dark)</p>
     <p>Notifications: (When? How often?)</p>
     <ul>
@@ -363,6 +363,10 @@
     padding: 1rem;
   }
   .grouping {
-    border: 1px solid var(--gray);
+    /* border: 1px solid var(--gray); */
+    background-color: rgba(16, 16, 16, 1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 5px 12px 0 rgba(255, 255, 255, 0.08), 0 2px 5px 0 rgba(255, 255, 255, 0.12);
+    
   }
 </style>

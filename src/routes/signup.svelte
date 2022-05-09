@@ -155,67 +155,68 @@
   
 </script>
 
-<div class="decay mx-auto max-w-4xl p-4 text-white">
+<div class="decay mx-auto max-w-2xl p-4 text-white">
   <!-- <h1>Your life begins now!</h1>
   <ul>
     <li>Benefits</li>
     <li>Payment plan</li>
   </ul> -->
-  <form on:submit|preventDefault={setupStripe} bind:this={form} class="mt-8">
-    <fieldset>
-      <h1>Create an account</h1>
-      <div class="form-field mt-2">
-        <label for="signup-email">Email address</label>
-        <input type="email" id="signup-email" bind:value="{email}" on:input="{validateSignup}" class="bg-black text-white p-2 w-full">
+  <div class="shell">
+    <form on:submit|preventDefault={setupStripe} bind:this={form}>
+      <fieldset>
+        <h1>Create an account</h1>
+        <div class="form-field mt-2">
+          <label for="signup-email">Email address</label>
+          <input type="email" id="signup-email" bind:value="{email}" on:input="{validateSignup}" class="bg-black text-white p-2 w-full">
+        </div>
+        <div class="form-field mt-2">
+          <label for="signup-password">Password</label>
+          <input
+            bind:value="{pwd}"
+            on:input="{validateSignup}"
+            type="password"
+            id="signup-password"
+            required
+            class="bg-black text-white p-2 w-full"
+          >
+        </div>
+        <div class="form-field mt-2">
+          <label for="signup-confirmPassword">Confirm your password</label>
+          <input
+            bind:value="{confirmPwd}"
+            on:input="{validateSignup}"
+            type="password"
+            id="signup-confirmPassword"
+            class="bg-black text-white mb-2 p-2 w-full"
+          >
+        </div>
+        {#if signupError}
+          <div class="signup-error my-4 p-2">
+            {#if signupError === 'User already registered'}
+              <p>This email address has already been registered. Please either <a href="login">sign in</a> or <a href="reset">reset your password</a>.</p>
+            {/if}
+          </div>
+        {/if}
+        {#if !paymentReady}
+          <button type="submit" class="btn mt-2" disabled="{statusProcessing || !signupValid}">
+            Sign Up
+          </button>
+        {/if}
+      </fieldset>
+    </form>
+    
+    <form id="payment-form" class="mt-4">
+      <div id="payment-element">
+        <!-- Elements will create form elements here -->
       </div>
-      <div class="form-field mt-2">
-        <label for="signup-password">Password</label>
-        <input
-          bind:value="{pwd}"
-          on:input="{validateSignup}"
-          type="password"
-          id="signup-password"
-          required
-          class="bg-black text-white p-2 w-full"
-        >
-      </div>
-      <div class="form-field mt-2">
-        <label for="signup-confirmPassword">Confirm your password</label>
-        <input
-          bind:value="{confirmPwd}"
-          on:input="{validateSignup}"
-          type="password"
-          id="signup-confirmPassword"
-          class="bg-black text-white mb-2 p-2 w-full"
-        >
-      </div>
-      {#if signupError}
-        <div class="signup-error my-4 p-2">
-          {#if signupError === 'User already registered'}
-            <p>This email address has already been registered. Please either <a href="login">sign in</a> or <a href="reset">reset your password</a>.</p>
-          {/if}
+      {#if paymentReady}
+        <button id="submit" class="btn">Subscribe</button>
+        <div id="error-message" bind:this={messageContainer}>
+          <!-- Display error message to your customers here -->
         </div>
       {/if}
-      {#if !paymentReady}
-        <button type="submit" class="btn mt-2" disabled="{statusProcessing || !signupValid}">
-          Sign Up
-        </button>
-      {/if}
-    </fieldset>
-  </form>
-  
-  <form id="payment-form" class="mt-4">
-    <div id="payment-element">
-      <!-- Elements will create form elements here -->
-    </div>
-    {#if paymentReady}
-      <button id="submit" class="btn">Subscribe</button>
-      <div id="error-message" bind:this={messageContainer}>
-        <!-- Display error message to your customers here -->
-      </div>
-    {/if}
-  </form>
-  
+    </form>
+  </div>
 </div>
 
 <style>

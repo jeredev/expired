@@ -5,8 +5,6 @@
 
   // }
   export async function load({ url, params, fetch, session, stuff }) {
-    // Look to see if there is even an access token first!!!
-    // console.log('url: ', url.searchParams.get('type'))
     if (browser) {
       if (url.hash) {
         console.log('running before supabase call:') // This runs in browser, not on server
@@ -153,111 +151,113 @@
 </script>
 
 <div class="decay mx-auto max-w-2xl p-4 text-white">
-  {#if access_token}
-    {#if resetSuccess}
-      Password successfully reset!
-    {:else}
-      <h1 class="mb-8">Reset your password</h1>
-      {#if access_token === 'invalid'}
-        <div class="mb-4 mt-2 validation">
-          <p>Invalid token detected so resetting your password cannot resume. Please try again by using the form below and then using the new link you receive shortly thereafter.</p>
-        </div>
-        <form on:submit|preventDefault={initiatePwdReset} class="form form--login mt-4">
-          <div class="login-form-area">
+  <div class="shell">
+    {#if access_token}
+      {#if resetSuccess}
+        Password successfully reset!
+      {:else}
+        <h1 class="mb-8">Reset your password</h1>
+        {#if access_token === 'invalid'}
+          <div class="mb-4 mt-2 validation">
+            <p>Invalid token detected so resetting your password cannot resume. Please try again by using the form below and then using the new link you receive shortly thereafter.</p>
+          </div>
+          <form on:submit|preventDefault={initiatePwdReset} class="form form--login mt-4">
+            <div class="login-form-area">
+              <div class="login-form-fields">
+                <div class="form-field">
+                  <label for="login-email">Email</label>
+                  <input
+                    bind:value="{email}"
+                    on:input="{checkLoginValidity}"
+                    type="email"
+                    id="login-email"
+                    autocomplete="email"
+                    required
+                    class="bg-black text-white p-2 w-full"
+                  >
+                </div>
+              </div>
+              <div class="form-actions mt-4">
+                <button on:click={initiatePwdReset} type="button" class="btn" disabled={!initiateResetPwdValid || initiateResetPwdProcessing}>
+                  Reset
+                </button>
+              </div>
+            </div>
+            {#if resetRequestSuccessful}
+              <div transition:fade class="mt-2 validation">
+                <h2>Check your email for instructions to reset your password.</h2>
+                <p>If you haven't received an email in 5 minutes, check your spam or resubmit the form.</p>
+              </div>
+            {/if}
+          </form>
+        {:else}
+          <form on:submit|preventDefault={resetPwd} class="form form--login mt-4">
             <div class="login-form-fields">
               <div class="form-field">
-                <label for="login-email">Email</label>
+                <label for="password">New password</label>
                 <input
-                  bind:value="{email}"
-                  on:input="{checkLoginValidity}"
-                  type="email"
-                  id="login-email"
-                  autocomplete="email"
+                  bind:value="{pwd}"
+                  on:input="{validatePwd}"
+                  type="password"
+                  id="password"
                   required
                   class="bg-black text-white p-2 w-full"
                 >
               </div>
-            </div>
-            <div class="form-actions mt-4">
-              <button on:click={initiatePwdReset} type="button" class="btn" disabled={!initiateResetPwdValid || initiateResetPwdProcessing}>
-                Reset
+              <div class="form-field mt-2">
+                <label for="confirmPassword">Confirm your password</label>
+                <input
+                  bind:value="{confirmPwd}"
+                  on:input="{validatePwd}"
+                  type="password"
+                  id="confirmPassword"
+                  class="bg-black text-white mb-2 p-2 w-full"
+                >
+              </div>
+              <button type="submit" class="btn mt-2" disabled="{statusProcessing || !resetPwdValid}">
+                Continue
               </button>
             </div>
-          </div>
-          {#if resetRequestSuccessful}
-            <div transition:fade class="mt-2 validation">
-              <h2>Check your email for instructions to reset your password.</h2>
-              <p>If you haven't received an email in 5 minutes, check your spam or resubmit the form.</p>
-            </div>
-          {/if}
-        </form>
-      {:else}
-        <form on:submit|preventDefault={resetPwd} class="form form--login mt-4">
+          </form>
+        {/if}
+      {/if}
+    {:else if access_token === null}
+      <h1 class="mb-4">Reset your password</h1>
+      <p style="font-family: 'Recursive', sans-serif; font-size: 90%;">Enter the email address associated with your account and you'll receive a link to reset your password.</p>
+      <form on:submit|preventDefault={initiatePwdReset} class="form form--login mt-8">
+        <div class="login-form-area">
           <div class="login-form-fields">
             <div class="form-field">
-              <label for="password">New password</label>
+              <label for="login-email">Email</label>
               <input
-                bind:value="{pwd}"
-                on:input="{validatePwd}"
-                type="password"
-                id="password"
+                bind:value="{email}"
+                on:input="{checkLoginValidity}"
+                type="email"
+                id="login-email"
+                autocomplete="email"
                 required
                 class="bg-black text-white p-2 w-full"
               >
             </div>
-            <div class="form-field mt-2">
-              <label for="confirmPassword">Confirm your password</label>
-              <input
-                bind:value="{confirmPwd}"
-                on:input="{validatePwd}"
-                type="password"
-                id="confirmPassword"
-                class="bg-black text-white mb-2 p-2 w-full"
-              >
-            </div>
-            <button type="submit" class="btn mt-2" disabled="{statusProcessing || !resetPwdValid}">
-              Continue
+          </div>
+          <div class="form-actions mt-4">
+            <button on:click={initiatePwdReset} type="button" class="btn" disabled={!initiateResetPwdValid || initiateResetPwdProcessing}>
+              Reset Password
             </button>
           </div>
-        </form>
-      {/if}
-    {/if}
-  {:else if access_token === null}
-    <h1 class="mb-4">Reset your password</h1>
-    <p style="font-family: 'Recursive', sans-serif; font-size: 90%;">Enter the email address associated with your account and you'll receive a link to reset your password.</p>
-    <form on:submit|preventDefault={initiatePwdReset} class="form form--login mt-4">
-      <div class="login-form-area">
-        <div class="login-form-fields">
-          <div class="form-field">
-            <label for="login-email">Email</label>
-            <input
-              bind:value="{email}"
-              on:input="{checkLoginValidity}"
-              type="email"
-              id="login-email"
-              autocomplete="email"
-              required
-              class="bg-black text-white p-2 w-full"
-            >
+        </div>
+        {#if resetRequestSuccessful}
+          <div transition:fade class="mt-2 validation">
+            <h2>Check your email for instructions to reset your password.</h2>
+            <p>If you haven't received an email in 5 minutes, check your spam or resubmit the form.</p>
           </div>
-        </div>
-        <div class="form-actions mt-4">
-          <button on:click={initiatePwdReset} type="button" class="btn" disabled={!initiateResetPwdValid || initiateResetPwdProcessing}>
-            Reset
-          </button>
-        </div>
-      </div>
-      {#if resetRequestSuccessful}
-        <div transition:fade class="mt-2 validation">
-          <h2>Check your email for instructions to reset your password.</h2>
-          <p>If you haven't received an email in 5 minutes, check your spam or resubmit the form.</p>
-        </div>
-      {/if}
-    </form>
-    <!-- Your password reset request couldn't be processed. Make sure cookies are enabled in your browser and try again. -->
-  {:else}
-    Loading...
-  {/if}
+        {/if}
+      </form>
+      <!-- Your password reset request couldn't be processed. Make sure cookies are enabled in your browser and try again. -->
+    {:else}
+      Loading...
+    {/if}
+  </div>
 </div>
 
 <style>
@@ -266,5 +266,12 @@
     font-family: 'Recursive', sans-serif;
     margin-top: 1rem;
     padding: 0.5rem;
+  }
+  .shell {
+    background-color: rgba(16, 16, 16, 1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 15px 35px 0 rgba(255, 255, 255, 0.08), 0 5px 15px 0 rgba(255, 255, 255, 0.12);
+    margin-top: 4rem;
+    padding: 2rem;
   }
 </style>
