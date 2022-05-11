@@ -754,66 +754,68 @@
   <Messenger />
   <div class="header">
     {#if !user}
-      <form on:submit|preventDefault={logIn} class="form form--login">
-        {#if forgot}
-          <div transition:slide class="pb-4">
-            <h1 class="mb-4" style="font-family: 'Inter', sans-serif; font-size: 2rem; font-weight: 400;">Reset your password</h1>
-            <p style="font-family: 'Recursive', sans-serif; font-size: 90%;">Enter the email address associated with your account and you'll receive a link to reset your password.</p>
-          </div>
-        {/if}
-        <div class="login-form-area">
-          <div class="login-form-fields" class:forgot-mode={forgot}>
-            <div class="form-field">
-              <label for="login-email">Email</label>
-              <input
-                bind:value="{email}"
-                on:input="{checkLoginValidity}"
-                type="email"
-                id="login-email"
-                autocomplete="email"
-                required
-                class="bg-black text-white p-2 w-full"
-              >
+      <div class="shelled mt-4">
+        <form on:submit|preventDefault={logIn} class="form form--login">
+          {#if forgot}
+            <div transition:slide class="pb-4">
+              <h1 class="mb-4" style="font-family: 'Inter', sans-serif; font-size: 2rem; font-weight: 400;">Reset your password</h1>
+              <p style="font-family: 'Recursive', sans-serif; font-size: 90%;">Enter the email address associated with your account and you'll receive a link to reset your password.</p>
             </div>
-            {#if !forgot}
+          {/if}
+          <div class="login-form-area">
+            <div class="login-form-fields" class:forgot-mode={forgot}>
               <div class="form-field">
-                <div class="label-field">
-                  <label for="login-password">Password</label>
-                  <div class="forgot" on:click={() => { forgot = true }}>Forgot?</div>
-                </div>
+                <label for="login-email">Email</label>
                 <input
-                  bind:value="{password}"
+                  bind:value="{email}"
                   on:input="{checkLoginValidity}"
-                  type="password"
-                  id="login-password"
-                  autocomplete="current-password" 
+                  type="email"
+                  id="login-email"
+                  autocomplete="email"
+                  required
                   class="bg-black text-white p-2 w-full"
-                > 
+                >
               </div>
-            {/if}
+              {#if !forgot}
+                <div class="form-field">
+                  <div class="label-field">
+                    <label for="login-password">Password</label>
+                    <div class="forgot" on:click={() => { forgot = true }}>Forgot?</div>
+                  </div>
+                  <input
+                    bind:value="{password}"
+                    on:input="{checkLoginValidity}"
+                    type="password"
+                    id="login-password"
+                    autocomplete="current-password" 
+                    class="bg-black text-white p-2 w-full"
+                  > 
+                </div>
+              {/if}
+            </div>
+            <div class="form-actions mt-4">
+              {#if forgot}
+                <button on:click={resetPwd} type="button" class="btn" disabled={!resetPwdValid}>
+                  Reset
+                </button>
+                <button on:click={() => { forgot = false }} type="button" class="btn ml-2">
+                  Cancel
+                </button>
+              {:else}
+                <button type="submit" class="btn" disabled="{statusProcessing || !loginValid}">
+                  Login
+                </button>
+              {/if}
+            </div>
           </div>
-          <div class="form-actions mt-4">
-            {#if forgot}
-              <button on:click={resetPwd} type="button" class="btn" disabled={!resetPwdValid}>
-                Reset
-              </button>
-              <button on:click={() => { forgot = false }} type="button" class="btn ml-2">
-                Cancel
-              </button>
-            {:else}
-              <button type="submit" class="btn" disabled="{statusProcessing || !loginValid}">
-                Login
-              </button>
-            {/if}
-          </div>
-        </div>
-        {#if resetRequestSuccessful}
-          <div transition:fade class="mt-2">
-            <h2>Check your email for instructions to reset your password.</h2>
-            <p>If you haven't received an email in 5 minutes, check your spam or resubmit the form.</p>
-          </div>
-        {/if}
-      </form>
+          {#if resetRequestSuccessful}
+            <div transition:fade class="mt-2">
+              <h2>Check your email for instructions to reset your password.</h2>
+              <p>If you haven't received an email in 5 minutes, check your spam or resubmit the form.</p>
+            </div>
+          {/if}
+        </form>
+      </div>
     {/if}
   </div>
   {#if user && user.account}
@@ -851,10 +853,10 @@
       </div>
       {#if categoriesMenuActive}
         <div transition:slide class="sector mb-4">
-          <h2 class="py-2 mb-4 text-white menu-title">
-            Categories
+          <h2 class="py-2 text-white menu-title">
+            <Icon icon="clarity:blocks-group-line" /> Categories
           </h2>
-          <div>
+          <div class="sector-body">
             <div class="form-field">
               <label for="new-category-name" style="font-size: 80%;">Add New Category</label>
               <div class="entry flex">
@@ -869,160 +871,164 @@
                 <button type="button" class="btn ml-2" disabled="{!newCategoryValid || addingCategory}" on:click="{addNewCategory}">Add</button>
               </div>   
             </div>
-          </div>
-          <div class="categories-list mt-2">
-            {#if categories}
-              {#each categories as category (category.id)}
-                <CategoryBar category="{category}" on:updateCategory={updateCategory} on:removeCategory={removeCategory} />
-              {/each}
-            {/if}
+            <div class="categories-list mt-4">
+              {#if categories}
+                {#each categories as category (category.id)}
+                  <CategoryBar category="{category}" on:updateCategory={updateCategory} on:removeCategory={removeCategory} />
+                {/each}
+              {/if}
+            </div>
           </div>
         </div>
       {/if}
       {#if sortingMenuActive}
         <div transition:slide class="sector mb-4 sorting-filtering">
           <h2 class="py-2 mb-4 text-white menu-title">
-            Sorting and Filtering
+            <Icon icon="clarity:sort-by-line" /> Sorting and Filtering
           </h2>
-          <div class="grid grid-cols-2 gap-2 my-2">
-            <button class="btn" disabled="{ $displayMode === 'list' }" on:click="{() => { setDisplayMode('list') }}">List</button>
-            <button class="btn" disabled="{ $displayMode === 'categories' }" on:click="{() => { setDisplayMode('categories') }}">Categories</button>
-          </div>
-          <div class="grid grid-cols-3 gap-2 my-2">
-            <button class="btn" disabled="{ $timeStatusMode === 'all' }" on:click="{() => setTimeStatusMode('all')}">
-              All
-            </button>
-            <button class="btn" disabled="{ $timeStatusMode === 'safe' }" on:click="{() => setTimeStatusMode('safe')}">
-              Safe
-            </button>
-            <button class="btn" disabled="{ $timeStatusMode === 'expired' }" on:click="{() => setTimeStatusMode('expired')}">
-              Expired
-            </button>
-          </div>
-          <div class="grid grid-cols-4 gap-2">
-            <button class="btn whitespace-nowrap" disabled="{ $sortingMode === "alpha-ascending" }" on:click={() => setSortingMode('alpha-ascending')}>
-              A <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(90deg);" /> Z
-            </button>
-            <button class="btn whitespace-nowrap" disabled="{ $sortingMode === "alpha-descending" }" on:click={() => setSortingMode('alpha-descending')}>
-              Z <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(90deg);" /> A
-            </button>
-            <button class="btn whitespace-nowrap" disabled="{ $sortingMode === "endtime-ascending" }" on:click={() => setSortingMode('endtime-ascending')}>
-              <Icon icon="clarity:clock-line" inline={true} style="display: inline-block;" />
-              <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block;" />
-            </button>
-            <button class="btn whitespace-nowrap" disabled="{ $sortingMode === "endtime-descending" }" on:click={() => setSortingMode('endtime-descending')}>
-              <Icon icon="clarity:clock-line" inline={true} style="display: inline-block;" />
-              <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(180deg);" />
-            </button>
+          <div class="sector-body">
+            <div class="grid grid-cols-2 gap-2 my-2">
+              <button class="btn" disabled="{ $displayMode === 'list' }" on:click="{() => { setDisplayMode('list') }}">List</button>
+              <button class="btn" disabled="{ $displayMode === 'categories' }" on:click="{() => { setDisplayMode('categories') }}">Categories</button>
+            </div>
+            <div class="grid grid-cols-3 gap-2 my-2">
+              <button class="btn" disabled="{ $timeStatusMode === 'all' }" on:click="{() => setTimeStatusMode('all')}">
+                All
+              </button>
+              <button class="btn" disabled="{ $timeStatusMode === 'safe' }" on:click="{() => setTimeStatusMode('safe')}">
+                Safe
+              </button>
+              <button class="btn" disabled="{ $timeStatusMode === 'expired' }" on:click="{() => setTimeStatusMode('expired')}">
+                Expired
+              </button>
+            </div>
+            <div class="grid grid-cols-4 gap-2">
+              <button class="btn whitespace-nowrap" disabled="{ $sortingMode === "alpha-ascending" }" on:click={() => setSortingMode('alpha-ascending')}>
+                A <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(90deg);" /> Z
+              </button>
+              <button class="btn whitespace-nowrap" disabled="{ $sortingMode === "alpha-descending" }" on:click={() => setSortingMode('alpha-descending')}>
+                Z <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(90deg);" /> A
+              </button>
+              <button class="btn whitespace-nowrap" disabled="{ $sortingMode === "endtime-ascending" }" on:click={() => setSortingMode('endtime-ascending')}>
+                <Icon icon="clarity:clock-line" inline={true} style="display: inline-block;" />
+                <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block;" />
+              </button>
+              <button class="btn whitespace-nowrap" disabled="{ $sortingMode === "endtime-descending" }" on:click={() => setSortingMode('endtime-descending')}>
+                <Icon icon="clarity:clock-line" inline={true} style="display: inline-block;" />
+                <Icon icon="clarity:arrow-line" inline={true} style="display: inline-block; transform:rotate(180deg);" />
+              </button>
+            </div>
           </div>
         </div>
       {/if}
       {#if searchMenuActive}
         <div transition:slide class="search-menu pb-4">
           <h2 class="py-2 mb-4 text-white menu-title">
-            Search
+            <Icon icon="clarity:search-line" /> Search
           </h2>
-          <form on:submit|preventDefault={searchItems} class="search">
-            <div class="form-field my-2">
-              <label for="search-items--text">Name</label>
-              {#if recognition}
-                <button type="button" class="btn ml-2 px-2 py-1" class:recognizing = {recognizing} on:click="{listenForName}">
-                  <Icon icon="clarity:microphone-line" />
-                </button>
-              {/if}
-              <input
-                name="name"
-                id="search-items--text"
-                class="bg-black p-2 text-white w-full"
-                type="text"
-                bind:value={search.name}
-                on:input="{checkSearchValidity}"
-              >
-            </div>
-            <div class="area area--end-time my-2">
-              <div class="form-field relative">
-                <label for="expiration-search">Expiration Time</label>
-                {#if search.endTime}
-                  <button on:click="{clearSearchExpirationEntry}" class="btn">Clear</button>
+          <div class="sector-body">
+            <form on:submit|preventDefault={searchItems} class="search">
+              <div class="form-field my-2">
+                <label for="search-items--text">Name</label>
+                {#if recognition}
+                  <button type="button" class="btn ml-2 px-2 py-1" class:recognizing = {recognizing} on:click="{listenForName}">
+                    <Icon icon="clarity:microphone-line" />
+                  </button>
                 {/if}
                 <input
-                  name="end"
-                  type="datetime-local"
-                  class="p-2"
-                  id="expiration-search"
-                  pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
-                  style="background-color: black; color: white; width: 100%;"
-                  bind:value={search.endTime}
-                  on:change={updateEndTimeRelativity}
+                  name="name"
+                  id="search-items--text"
+                  class="bg-black p-2 text-white w-full"
+                  type="text"
+                  bind:value={search.name}
+                  on:input="{checkSearchValidity}"
                 >
               </div>
-              <div class="unit-form-fields mt-2">
-                <div class="form-field my-2">
-                  <label for="search-items--years">Years</label>
+              <div class="area area--end-time my-2">
+                <div class="form-field relative">
+                  <label for="expiration-search">Expiration Time</label>
+                  {#if search.endTime}
+                    <button on:click="{clearSearchExpirationEntry}" class="btn">Clear</button>
+                  {/if}
                   <input
-                    id="search-items--years"
-                    class="bg-black p-2 text-white w-full"
-                    type="number"
-                    step="1"
-                    bind:value={search.endRelatively.years}
-                    on:input="{updateEndTimeRelatively}"
+                    name="end"
+                    type="datetime-local"
+                    class="p-2"
+                    id="expiration-search"
+                    pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
+                    style="background-color: black; color: white; width: 100%;"
+                    bind:value={search.endTime}
+                    on:change={updateEndTimeRelativity}
                   >
                 </div>
-                <div class="form-field my-2">
-                  <label for="search-items--months">Months</label>
-                  <input
-                    id="search-items--months"
-                    class="bg-black p-2 text-white w-full"
-                    type="number"
-                    step="1"
-                    bind:value={search.endRelatively.months}
-                    on:input="{updateEndTimeRelatively}"
-                  >
+                <div class="unit-form-fields mt-2">
+                  <div class="form-field my-2">
+                    <label for="search-items--years">Years</label>
+                    <input
+                      id="search-items--years"
+                      class="bg-black p-2 text-white w-full"
+                      type="number"
+                      step="1"
+                      bind:value={search.endRelatively.years}
+                      on:input="{updateEndTimeRelatively}"
+                    >
+                  </div>
+                  <div class="form-field my-2">
+                    <label for="search-items--months">Months</label>
+                    <input
+                      id="search-items--months"
+                      class="bg-black p-2 text-white w-full"
+                      type="number"
+                      step="1"
+                      bind:value={search.endRelatively.months}
+                      on:input="{updateEndTimeRelatively}"
+                    >
+                  </div>
+                  <div class="form-field my-2">
+                    <label for="search-items--weeks">Weeks</label>
+                    <input
+                      id="search-items--weeks"
+                      class="bg-black p-2 text-white w-full"
+                      type="number"
+                      step="1"
+                      bind:value={search.endRelatively.weeks}
+                      on:input="{updateEndTimeRelatively}"
+                    >
+                  </div>
+                  <div class="form-field my-2">
+                    <label for="search-items--days">Days</label>
+                    <input
+                      id="search-items--days"
+                      class="bg-black p-2 text-white w-full"
+                      type="number"
+                      step="1"
+                      bind:value={search.endRelatively.days}
+                      on:input="{updateEndTimeRelatively}"
+                    >
+                  </div>
                 </div>
-                <div class="form-field my-2">
-                  <label for="search-items--weeks">Weeks</label>
-                  <input
-                    id="search-items--weeks"
-                    class="bg-black p-2 text-white w-full"
-                    type="number"
-                    step="1"
-                    bind:value={search.endRelatively.weeks}
-                    on:input="{updateEndTimeRelatively}"
-                  >
-                </div>
-                <div class="form-field my-2">
-                  <label for="search-items--days">Days</label>
-                  <input
-                    id="search-items--days"
-                    class="bg-black p-2 text-white w-full"
-                    type="number"
-                    step="1"
-                    bind:value={search.endRelatively.days}
-                    on:input="{updateEndTimeRelatively}"
-                  >
-                </div>
+                {#if categories}
+                  <div class="form-field my-2">
+                    <label for="search-items--category">Category</label>
+                    <select
+                      name="cat"
+                      id="new-item--category"
+                      class="bg-black p-2 text-white w-full"
+                      bind:value="{search.category}"
+                      on:change="{checkSearchValidity}"
+                    >
+                      {#each categories as category}
+                        <option value="{category.name}">{category.name}</option>
+                      {/each}
+                    </select>
+                  </div>
+                {/if}
               </div>
-              {#if categories}
-                <div class="form-field my-2">
-                  <label for="search-items--category">Category</label>
-                  <select
-                    name="cat"
-                    id="new-item--category"
-                    class="bg-black p-2 text-white w-full"
-                    bind:value="{search.category}"
-                    on:change="{checkSearchValidity}"
-                  >
-                    {#each categories as category}
-                      <option value="{category.name}">{category.name}</option>
-                    {/each}
-                  </select>
-                </div>
-              {/if}
-            </div>
-            <button type="submit" class="btn my-2" disabled={!searchQueryValid}>
-              <Icon icon="clarity:search-line" />
-            </button>
-          </form>
+              <button type="submit" class="btn my-2" disabled={!searchQueryValid}>
+                <Icon icon="clarity:search-line" />
+              </button>
+            </form>
+          </div>
         </div>
       {/if}
       <div class="add-item-menu">
@@ -1069,7 +1075,7 @@
   {:else if user && !user.account}
     <p>No account found.</p>
   {:else}
-    <div class="py-4">Authorized users only.</div>
+    <div class="mt-12">Authorized users only.</div>
   {/if}
 </div>
 
@@ -1095,10 +1101,13 @@
     font-family: 'Inter', sans-serif;
     font-size: 90%;
   }
-  .form-field input:focus-visible, .form-field select:focus-visible {
-    filter: drop-shadow(0 0 0.125rem #fff);
-    outline: 1px solid #fff;
+  /* .form-field {
+    transition: outline 400ms, filter 400ms;
   }
+  .form-field input:focus-visible, .form-field select:focus-visible {
+    filter: drop-shadow(0 0 0.125rem var(--gray));
+    outline: 1px solid var(--gray);
+  } */
   @media only all and (min-width: 40em) {
     .login-form-fields {
       align-items: flex-end;
@@ -1126,7 +1135,8 @@
     color: white;
   }
   .items-list {
-    border-top: 2px solid var(--gray);
+    /* border-top: 1px solid var(--gray); */
+    border-top: 1px solid rgba(102, 102, 102, 0.6);
   }
   .controls {
     justify-content: flex-end;
@@ -1191,5 +1201,9 @@
   }
   .sorting-filtering button:disabled {
     background-color: black;
+  }
+  .items-listing {
+    /* border-bottom: 1px solid var(--gray); */
+    border-bottom: 1px solid rgba(102, 102, 102, 0.6);
   }
 </style>

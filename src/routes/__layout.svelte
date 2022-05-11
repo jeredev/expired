@@ -28,7 +28,11 @@
 		--red: #b22020;
 	}
   html {
+    box-sizing: border-box;
     scrollbar-gutter: stable;
+  }
+  *, *:before, *:after {
+    box-sizing: inherit;
   }
 	body {
 		background-color: #181818;
@@ -114,21 +118,57 @@
     background-color: var(--red);
     border-bottom: 2px solid var(--red);
     border-top: 2px solid var(--red);
+    border: 2px solid var(--red);
     color: white;
     font-family: 'Recursive', sans-serif;
     font-size: 1.125rem;
+    margin: 0;
     padding-left: 0.75rem;
     padding-right: 0.75rem;
   }
+  .menu-title svg {
+    display: inline-block;
+    margin-right: 0.25rem;
+    position: relative;
+    top: -0.0625rem;
+    vertical-align: middle;
+  }
   .null-area {
-    border-top: 2px solid var(--gray);
+    border-top: 1px solid var(--gray);
     padding-top: 1rem;
   }
   .shell {
     background-color: rgba(16, 16, 16, 1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    /* border: 1px solid rgba(255, 255, 255, 0.3); */
+    border: 1px solid rgba(102, 102, 102, 0.6);
     box-shadow: 0 15px 35px 0 rgba(255, 255, 255, 0.08), 0 5px 15px 0 rgba(255, 255, 255, 0.12);
     margin-top: 4rem;
     padding: 2rem;
+  }
+  .shelled {
+    background-color: rgba(16, 16, 16, 1);
+    /* border: 1px solid rgba(255, 255, 255, 0.2); */
+    border: 1px solid rgba(102, 102, 102, 0.6);
+    /* box-shadow: 0 15px 35px 0 rgba(255, 255, 255, 0.08), 0 5px 15px 0 rgba(255, 255, 255, 0.12); */
+    box-shadow: 0px 13px 30px rgba(255, 255, 255, 0.08), 0px 0px 4px rgba(255, 255, 255, 0.12);
+    padding: 1.5rem 1.5rem;
+  }
+  .sector-body {
+    background-color: rgba(16, 16, 16, 1);
+    border-bottom: 1px solid rgba(102, 102, 102, 0.6);
+    border-left: 1px solid rgba(102, 102, 102, 0.6);
+    border-right: 1px solid rgba(102, 102, 102, 0.6);
+    padding: 1.5rem;
+  }
+
+  .form-field {
+    transition: outline 400ms, filter 400ms;
+  }
+  .form-field input:focus-visible, .form-field select:focus-visible {
+    filter: drop-shadow(0 0 0.125rem var(--gray));
+    outline: 1px solid var(--gray);
+  }
+  .form-field input, .form-field select {
+    border: 1px solid rgba(102, 102, 102, 0.3);
   }
 </style>

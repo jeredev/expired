@@ -267,11 +267,11 @@
     margin-top: 1rem;
     padding: 0.5rem;
   }
-  .shell {
+  /* .shell {
     background-color: rgba(16, 16, 16, 1);
     border: 1px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 15px 35px 0 rgba(255, 255, 255, 0.08), 0 5px 15px 0 rgba(255, 255, 255, 0.12);
     margin-top: 4rem;
     padding: 2rem;
-  }
+  } */
 </style>

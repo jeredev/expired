@@ -480,229 +480,231 @@
 </script>
 
 {#if active}
-  <div transition:slide class="container" style="max-width: 60rem;">
+  <div transition:slide class="container mb-4">
     <h2 class="py-2 mb-4 text-white menu-title">
-      Add New Item
+      <Icon icon="clarity:add-line" /> Add New Item
     </h2>
-    {#if scanner}
-      <div class="scanner-panel">
-        {#if scannerActive}
-          <button class="btn my-2" on:click="{deactivateScanner}">Cancel</button>
-        {:else}
-          <button class="btn my-2" on:click="{() => { scannerActive = true }}">Add using barcode</button>
-        {/if}
-        {#if scannerActive}
-          <div transition:slide on:introstart="{activateScanner}">
-            <video
-              autoplay
-              id="barcode-capture"
-              src=""
-              bind:this={video}
-            >
-              <track default
-                kind="captions" />
-              Sorry, your browser doesn't support embedded videos.
-            </video>
-          </div>
-        {/if}
-        {#if noItemFound}
-          <p class="no-image my-2 p-1">No product was found. Please enter or use speech to input this item.</p>
-        {/if}
-      </div>
-    {/if}
-    <form on:submit|preventDefault class="form form--add-item" autocomplete="off">
-      <div class="form-field my-2">
-        <label for="new-item--name block mb-1">Item Name</label>
-        {#if recognitionName}
-          <button type="button" class="btn ml-2 px-2 py-1 listener" class:recognizing = {recognizing} on:click="{listenForName}">
-            <Icon icon="clarity:microphone-line" />
-          </button>
-        {/if}
-        <input id="new-item-name" bind:value={newItem.name} type="text" class="bg-black p-1 text-white w-full" on:input="{checkNewItemValidity}" required>
-      </div>
-      <div class="form-field my-2">
-        {#if noImageFound}
-          <p class="no-image my-2 p-1">No image found for scanned item. You can use the form control below to upload your own image.</p>
-        {/if}
-        <div class="add-item-image">
-          {#if newItemImagePreview}
-            <h1>Preview</h1>
-            <img src="{newItemImagePreview}" alt="">
+    <div class="sector-body">
+      {#if scanner}
+        <div class="scanner-panel">
+          {#if scannerActive}
+            <button class="btn my-2" on:click="{deactivateScanner}">Cancel</button>
+          {:else}
+            <button class="btn my-2" on:click="{() => { scannerActive = true }}">Add using barcode</button>
           {/if}
-          <div class="file-input-region my-3">
-            <label for="new-item--file" class="inline-block btn cursor-pointer">
-              {#if newItemImagePreview}
-                Change image
-              {:else}
-                Upload your own image
-              {/if}
-            </label>
-            {#if newItemImagePreview}
-              <button class="inline-block btn my-2" on:click="{clearImage}">
-                <Icon icon="clarity:close-line" style="margin: 0 auto;" />
-              </button>
-            {/if}
-            <input
-              bind:this={fileInput}
-              id="new-item--file"
-              type="file"
-              accept="image/*"
-              class="file-input"
-              capture
-              on:change="{analyzeFile}"
-            >
-          </div>
+          {#if scannerActive}
+            <div transition:slide on:introstart="{activateScanner}">
+              <video
+                autoplay
+                id="barcode-capture"
+                src=""
+                bind:this={video}
+              >
+                <track default
+                  kind="captions" />
+                Sorry, your browser doesn't support embedded videos.
+              </video>
+            </div>
+          {/if}
+          {#if noItemFound}
+            <p class="no-image my-2 p-1">No product was found. Please enter or use speech to input this item.</p>
+          {/if}
         </div>
-      </div>
-      <div class="form-field my-2">
-        <label for="new-item--start-time block mb-1">Start Time</label>
-        <div class="date-picker">
-          <input
-            bind:value={newItem.startTime}
-            type="datetime-local"
-            pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
-            required
-            style="background-color: black; color: white;"
-            class="px-2 py-1 w-full"
-          >
-        </div>
-      </div>
-      <div v-show="newItem.startTime" class="form-field my-2">
-        <label for="new-item--end-time block mb-1">Expiration Time</label>
-        {#if recognitionExpiration}
-          <button type="button" class="btn ml-2 px-2 py-1 listener" class:recognizing = {recognizing} on:click="{listenForEndTime}">
-            <Icon icon="clarity:microphone-line" />
-          </button>
-        {/if}
-        <!-- <input type="text" style="background-color: black; color: white;"
-        class="mb-2 px-2 py-1 w-full" bind:value="{newItem.endTimeTranscription}"> -->
-        <div class="date-picker">
-          <input
-            bind:value={newItem.endTime}
-            type="datetime-local"
-            pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
-            required
-            style="background-color: black; color: white;"
-            class="px-2 py-1 w-full"
-            on:change={updateEndTimeRelativity}
-          >
-        </div>
-        <div class="relative relativity-fields grid gap-2 my-4">
-          <div class="form-field">
-            <label for="new-item--end-time-years" class="block">Years</label>
-            <input
-              id="new-item--end-time-years"
-              bind:value={endRelatively.years}
-              type="number"
-              min="0"
-              step="1"
-              class="bg-black p-1 text-white"
-              on:input="{updateEndTimeRelatively}"
-            >
-          </div>
-          <div class="form-field">
-            <label for="new-item--end-time-months" class="block">Months</label>
-            <input
-              id="new-item--end-time-months"
-              bind:value={endRelatively.months}
-              type="number"
-              min="0"
-              step="1"
-              class="bg-black p-1 text-white"
-              on:input="{updateEndTimeRelatively}"
-            >
-          </div>
-          <div class="form-field">
-            <label for="new-item--end-time-weeks" class="block">Weeks</label>
-            <input
-              id="new-item--end-time-weeks"
-              bind:value={endRelatively.weeks}
-              type="number"
-              min="0"
-              step="1"
-              class="bg-black p-1 text-white"
-              on:input="{updateEndTimeRelatively}"
-            >
-          </div>
-          <div class="form-field">
-            <label for="new-item--end-time-days" class="block">Days</label>
-            <input
-              id="new-item--end-time-days"
-              bind:value={endRelatively.days}
-              type="number"
-              min="0"
-              step="1"
-              class="bg-black p-1 text-white"
-              on:input="{updateEndTimeRelatively}"
-            >
-          </div>
-          <div class="form-field">
-            <label for="new-item--end-time-days" class="block">Hours</label>
-            <input
-              id="new-item--end-time-days"
-              bind:value={endRelatively.hours}
-              type="number"
-              min="0"
-              step="1"
-              class="bg-black p-1 text-white"
-              on:input="{updateEndTimeRelatively}"
-            >
-          </div>
-          <div class="form-field">
-            <label for="new-item--end-time-days" class="block">Minutes</label>
-            <input
-              id="new-item--end-time-days"
-              bind:value={endRelatively.minutes}
-              type="number"
-              min="0"
-              step="1"
-              class="bg-black p-1 text-white"
-              on:input="{updateEndTimeRelatively}"
-            >
-          </div>
-        </div>
-      </div>
-      <div class="form-field my-2">
-        <div class="label-field grid gap-2">
-          <label for="new-item--category" class="block mb-1">Category</label>
-          <div class="label-field__panel">
-            <button type="button" on:click={() => {addingCategory = !addingCategory}}>
-              {#if addingCategory}
-                <Icon icon="clarity:minus-line" />
-              {:else}
-                <Icon icon="clarity:plus-line" />
-              {/if}
+      {/if}
+      <form on:submit|preventDefault class="form form--add-item" autocomplete="off">
+        <div class="form-field mb-2">
+          <label for="new-item--name block mb-1">Item Name</label>
+          {#if recognitionName}
+            <button type="button" class="btn ml-2 px-2 py-1 listener" class:recognizing = {recognizing} on:click="{listenForName}">
+              <Icon icon="clarity:microphone-line" />
             </button>
-          </div>
+          {/if}
+          <input id="new-item-name" bind:value={newItem.name} type="text" class="bg-black p-1 text-white w-full" on:input="{checkNewItemValidity}" required>
         </div>
-        {#if addingCategory}
-          <div class="input-field grid gap-2">
-            <input
-              type="text"
-              name="new-category-name"
-              id="new-category-name"
-              class="bg-black p-2 text-white"
-              placeholder="Category Name"
-              bind:value="{newCategory}"
-              on:input="{checkNewCategoryValidity}"
-            >
-            <div class="input-field__panel">
-              <button type="button" class="btn" disabled="{!newCategoryValid || addNewCategoryProcessing}" on:click="{addNewCategory}">Add</button>
+        <div class="form-field my-2">
+          {#if noImageFound}
+            <p class="no-image my-2 p-1">No image found for scanned item. You can use the form control below to upload your own image.</p>
+          {/if}
+          <div class="add-item-image">
+            {#if newItemImagePreview}
+              <h1>Preview</h1>
+              <img src="{newItemImagePreview}" alt="">
+            {/if}
+            <div class="file-input-region my-3">
+              <label for="new-item--file" class="inline-block btn cursor-pointer">
+                {#if newItemImagePreview}
+                  Change image
+                {:else}
+                  Upload your own image
+                {/if}
+              </label>
+              {#if newItemImagePreview}
+                <button class="inline-block btn my-2" on:click="{clearImage}">
+                  <Icon icon="clarity:close-line" style="margin: 0 auto;" />
+                </button>
+              {/if}
+              <input
+                bind:this={fileInput}
+                id="new-item--file"
+                type="file"
+                accept="image/*"
+                class="file-input"
+                capture
+                on:change="{analyzeFile}"
+              >
             </div>
           </div>
-        {/if}
-        {#if categories && !addingCategory}
-          <select name="item-category" id="new-item--category" class="bg-black p-2 text-white w-full" bind:value="{newItem.category}">
-            {#each categories as category}
-              <option value="{category.id}">{category.name}</option>
-            {/each}
-          </select>
-        {/if}
-      </div>
-      <button type="submit" class="btn my-4" disabled={!newItemValid || addNewItemProcessing} on:click="{addNewItem}">
-        Add Item
-      </button>
-    </form>
+        </div>
+        <div class="form-field my-2">
+          <label for="new-item--start-time block mb-1">Start Time</label>
+          <div class="date-picker">
+            <input
+              bind:value={newItem.startTime}
+              type="datetime-local"
+              pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
+              required
+              style="background-color: black; color: white;"
+              class="px-2 py-1 w-full"
+            >
+          </div>
+        </div>
+        <div v-show="newItem.startTime" class="form-field my-2">
+          <label for="new-item--end-time block mb-1">Expiration Time</label>
+          {#if recognitionExpiration}
+            <button type="button" class="btn ml-2 px-2 py-1 listener" class:recognizing = {recognizing} on:click="{listenForEndTime}">
+              <Icon icon="clarity:microphone-line" />
+            </button>
+          {/if}
+          <!-- <input type="text" style="background-color: black; color: white;"
+          class="mb-2 px-2 py-1 w-full" bind:value="{newItem.endTimeTranscription}"> -->
+          <div class="date-picker">
+            <input
+              bind:value={newItem.endTime}
+              type="datetime-local"
+              pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}"
+              required
+              style="background-color: black; color: white;"
+              class="px-2 py-1 w-full"
+              on:change={updateEndTimeRelativity}
+            >
+          </div>
+          <div class="relative relativity-fields grid gap-2 my-4">
+            <div class="form-field">
+              <label for="new-item--end-time-years" class="block">Years</label>
+              <input
+                id="new-item--end-time-years"
+                bind:value={endRelatively.years}
+                type="number"
+                min="0"
+                step="1"
+                class="bg-black p-1 text-white"
+                on:input="{updateEndTimeRelatively}"
+              >
+            </div>
+            <div class="form-field">
+              <label for="new-item--end-time-months" class="block">Months</label>
+              <input
+                id="new-item--end-time-months"
+                bind:value={endRelatively.months}
+                type="number"
+                min="0"
+                step="1"
+                class="bg-black p-1 text-white"
+                on:input="{updateEndTimeRelatively}"
+              >
+            </div>
+            <div class="form-field">
+              <label for="new-item--end-time-weeks" class="block">Weeks</label>
+              <input
+                id="new-item--end-time-weeks"
+                bind:value={endRelatively.weeks}
+                type="number"
+                min="0"
+                step="1"
+                class="bg-black p-1 text-white"
+                on:input="{updateEndTimeRelatively}"
+              >
+            </div>
+            <div class="form-field">
+              <label for="new-item--end-time-days" class="block">Days</label>
+              <input
+                id="new-item--end-time-days"
+                bind:value={endRelatively.days}
+                type="number"
+                min="0"
+                step="1"
+                class="bg-black p-1 text-white"
+                on:input="{updateEndTimeRelatively}"
+              >
+            </div>
+            <div class="form-field">
+              <label for="new-item--end-time-days" class="block">Hours</label>
+              <input
+                id="new-item--end-time-days"
+                bind:value={endRelatively.hours}
+                type="number"
+                min="0"
+                step="1"
+                class="bg-black p-1 text-white"
+                on:input="{updateEndTimeRelatively}"
+              >
+            </div>
+            <div class="form-field">
+              <label for="new-item--end-time-days" class="block">Minutes</label>
+              <input
+                id="new-item--end-time-days"
+                bind:value={endRelatively.minutes}
+                type="number"
+                min="0"
+                step="1"
+                class="bg-black p-1 text-white"
+                on:input="{updateEndTimeRelatively}"
+              >
+            </div>
+          </div>
+        </div>
+        <div class="form-field my-2">
+          <div class="label-field grid gap-2">
+            <label for="new-item--category" class="block mb-1">Category</label>
+            <div class="label-field__panel">
+              <button type="button" on:click={() => {addingCategory = !addingCategory}}>
+                {#if addingCategory}
+                  <Icon icon="clarity:minus-line" />
+                {:else}
+                  <Icon icon="clarity:plus-line" />
+                {/if}
+              </button>
+            </div>
+          </div>
+          {#if addingCategory}
+            <div class="input-field grid gap-2">
+              <input
+                type="text"
+                name="new-category-name"
+                id="new-category-name"
+                class="bg-black p-2 text-white"
+                placeholder="Category Name"
+                bind:value="{newCategory}"
+                on:input="{checkNewCategoryValidity}"
+              >
+              <div class="input-field__panel">
+                <button type="button" class="btn" disabled="{!newCategoryValid || addNewCategoryProcessing}" on:click="{addNewCategory}">Add</button>
+              </div>
+            </div>
+          {/if}
+          {#if categories && !addingCategory}
+            <select name="item-category" id="new-item--category" class="bg-black p-2 text-white w-full" bind:value="{newItem.category}">
+              {#each categories as category}
+                <option value="{category.id}">{category.name}</option>
+              {/each}
+            </select>
+          {/if}
+        </div>
+        <button type="submit" class="btn mt-4" disabled={!newItemValid || addNewItemProcessing} on:click="{addNewItem}">
+          Add Item
+        </button>
+      </form>
+    </div>
   </div>
 {/if}
 
@@ -725,9 +727,9 @@
   .form-field label {
     font-size: 90%;
   }
-  .form-field input, .form-field select {
+  /* .form-field input, .form-field select {
     transition: 400ms;
-  }
+  } */
   .input-field {
     align-items: center;
     grid-template-columns: 1fr min-content;
@@ -747,8 +749,8 @@
     /* width: 4rem; */
     width: 100%;
   }
-  .form-field input:focus-visible, .form-field select:focus-visible {
+  /* .form-field input:focus-visible, .form-field select:focus-visible {
     filter: drop-shadow(0 0 0.125rem #fff);
     outline: 1px solid #fff;
-  }
+  } */
 </style>

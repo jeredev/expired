@@ -650,7 +650,7 @@
 </script>
 
 <div bind:this="{itemElement}" class="item unset" class:expired = {expired} class:imminent = {imminent} class:calculated = {timeRemaining}>
-  <div class="item-internal grid gap-4 py-4">
+  <div class="item-internal grid gap-4 p-4">
     <div class="item__aside">
       {#if item.imagePath}
         <div class="image-block">
@@ -927,7 +927,8 @@
     width: 100%;
   }
   .item:not(:first-child) {
-    border-top: 2px solid var(--gray);
+    border-top: 1px solid var(--gray);
+    border-top: 1px solid rgba(102, 102, 102, 0.6);
   }
   .item.expired .timer__remainder {
     color: var(--red);
@@ -940,6 +941,7 @@
   }
   .item-title {
     /* font-family: 'Recursive', sans-serif; */
+    font-size: clamp(1rem, 2vw, 1.2rem);
     line-height: 1.2;
   }
   .form-field {
@@ -953,7 +955,8 @@
     flex: 1;
     opacity: 1;
     transition: 400ms opacity;
-    aspect-ratio: 1 / 1;
+    /* aspect-ratio: 1 / 1; */
+    aspect-ratio: 3 / 4;
     /* object-fit: cover; */
     object-fit: contain;
   }
@@ -1017,7 +1020,8 @@
   /*  Item Image  */
 
   .image-block {
-    aspect-ratio: 1 / 1;
+    /* aspect-ratio: 1 / 1; */
+    aspect-ratio: 3 / 4;
     display: flex;
     flex-direction: column;
     min-height: 100px;
@@ -1100,4 +1104,12 @@
   .unit-form-fields .form-field label {
     font-size: 80%;
   }
+  .item {
+    background-color: rgba(16, 16, 16, 1);
+    /* border-left: 1px solid var(--gray);
+    border-right: 1px solid var(--gray); */
+    border-left: 1px solid rgba(102, 102, 102, 0.6);
+    border-right: 1px solid rgba(102, 102, 102, 0.6);
+  }
+  
 </style>

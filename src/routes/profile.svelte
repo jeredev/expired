@@ -365,8 +365,8 @@
   .grouping {
     /* border: 1px solid var(--gray); */
     background-color: rgba(16, 16, 16, 1);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 5px 12px 0 rgba(255, 255, 255, 0.08), 0 2px 5px 0 rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(102, 102, 102, 0.6);
+    /* box-shadow: 0 5px 12px 0 rgba(255, 255, 255, 0.08), 0 2px 5px 0 rgba(255, 255, 255, 0.12); */
     
   }
 </style>

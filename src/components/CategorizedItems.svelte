@@ -47,6 +47,8 @@
   .category {
     align-items: center;
     grid-template-columns: 1fr max-content;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
     position: sticky;
     top: 0;
     z-index: 2;

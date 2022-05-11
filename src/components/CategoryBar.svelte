@@ -167,6 +167,9 @@
 </div>
 
 <style>
+  .category-panel {
+    font-family: 'Recursive', sans-serif;
+  }
   .category-name-field {
     pointer-events: none;
   }
