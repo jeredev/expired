@@ -708,7 +708,7 @@
     </div>
     <div class="item__main">
       <div class="item__main-wrapper">
-        <div class="item-title-area grid gap-8 pb-4">
+        <div class="item-title-area grid gap-8">
           <div class="item-title">
             {item.name}
           </div>
@@ -718,7 +718,7 @@
             </button>
           </aside>
         </div>
-        <div class="item-menu-wrapper">
+        <div class="item-menu-wrapper mt-4">
           {#if menuVisible}
             <div transition:slide class="item-menu pb-4">
               <div class="menu-area">
