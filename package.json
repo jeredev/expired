@@ -4,7 +4,7 @@
 	"scripts": {
 		"dev": "env-cmd svelte-kit dev --https --host",
 		"dev:https": "env-cmd svelte-kit dev --https --host",
-		"build": "env-cmd svelte-kit build",
+		"build": "svelte-kit build",
 		"package": "svelte-kit package",
 		"preview": "env-cmd svelte-kit preview",
 		"test": "playwright test",
