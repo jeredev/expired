@@ -56,7 +56,7 @@ export async function get(event: RequestEvent) {
           data.forEach((item) => {
             let objPath = ''
             if (item.imagePath) {
-              objPath = `${event.locals.user?.id}/${item.imagePath}`
+              objPath = `${event.locals.user?.account.id}/${item.imagePath}`
             }
             imagePaths.push(objPath)
           })

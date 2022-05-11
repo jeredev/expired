@@ -24,7 +24,7 @@ export async function del(event: RequestEvent) {
         }
         if (data) {
           if (data[0] && data[0].imagePath) {
-            const fromPath = `${event.locals.user.id}/${data[0].imagePath}`
+            const fromPath = `${event.locals.user.account.id}/${data[0].imagePath}`
             const { error: storageError } = await supabase
               .storage
               .from('expired')
@@ -91,7 +91,7 @@ export async function patch(event: RequestEvent) {
                 const { data: imageData, error: imageError } = await supabase
                   .storage
                   .from('expired')
-                  .upload(`${event.locals.user?.id}/${itemId}`, sharpData, {
+                  .upload(`${event.locals.user?.account.id}/${itemId}`, sharpData, {
                     contentType: `image/${info.format}`,
                     upsert: true
                   })
@@ -136,7 +136,7 @@ export async function patch(event: RequestEvent) {
           update.imagePath = itemId
         }
         if (!itemImage && itemImagePath) {
-          const fromPath = `${event.locals.user.id}/${itemImagePath}`
+          const fromPath = `${event.locals.user.account.id}/${itemImagePath}`
           const { data: removalData, error: removalError } = await supabase
             .storage
             .from('expired')
@@ -182,7 +182,7 @@ export async function patch(event: RequestEvent) {
         if (lookupData) {
           // console.log(lookupData[0])
           if (itemImage && itemImage !== null) {
-            const path = `${event.locals.user.id}/${lookupData[0].id}`
+            const path = `${event.locals.user.account.id}/${lookupData[0].id}`
             const { data: imageData, error: imageURLError } = await supabase
               .storage
               .from('expired')
@@ -267,7 +267,7 @@ export async function post(event: RequestEvent) {
                   const { data: imageData, error: imageError } = await supabase
                     .storage
                     .from('expired')
-                    .upload(`${event.locals.user?.id}/${data[0].id}`, sharpData, {
+                    .upload(`${event.locals.user?.account.id}/${data[0].id}`, sharpData, {
                       contentType: `image/${info.format}`
                     })
                   if (imageError) {
