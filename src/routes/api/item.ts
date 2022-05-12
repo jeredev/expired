@@ -24,7 +24,7 @@ export async function del(event: RequestEvent) {
         }
         if (data) {
           if (data[0] && data[0].imagePath) {
-            const r2Delete = await fetch(`https://expired-media-worker.jeredev.workers.dev/${event.locals.user?.account.id}/${data[0].id}.webp`, {
+            const r2Delete = await fetch(`https://media.expired.app/${event.locals.user?.account.id}/${data[0].id}.webp`, {
               method: 'DELETE',
               headers: {
                 'X-Custom-Auth-Key': String(process.env.CLOUDFLARE_AUTH_KEY_SECRET)
@@ -103,7 +103,7 @@ export async function patch(event: RequestEvent) {
                 // console.log(sharpData) //  <Buffer ...
                 // console.log(process.env.CLOUDFLARE_AUTH_KEY_SECRET)
                 // START: Upload to R2
-                const r2Upload = await fetch(`https://expired-media-worker.jeredev.workers.dev/${event.locals.user?.account.id}/${itemId}.${info.format}`, {
+                const r2Upload = await fetch(`https://media.expired.app/${event.locals.user?.account.id}/${itemId}.${info.format}`, {
                   method: 'PUT',
                   body: sharpData,
                   headers: {
@@ -167,7 +167,7 @@ export async function patch(event: RequestEvent) {
         }
         if (!itemImage && itemImagePath) {
           // START: R2 Object Deletion
-          const r2Delete = await fetch(`https://expired-media-worker.jeredev.workers.dev/${event.locals.user?.account.id}/${itemId}.webp`, {
+          const r2Delete = await fetch(`https://media.expired.app/${event.locals.user?.account.id}/${itemId}.webp`, {
             method: 'DELETE',
             headers: {
               'X-Custom-Auth-Key': String(process.env.CLOUDFLARE_AUTH_KEY_SECRET)
@@ -228,7 +228,7 @@ export async function patch(event: RequestEvent) {
         if (lookupData) {
           // console.log(lookupData[0])
           if (itemImage && itemImage !== null) {
-            lookupData[0].image = `https://expired-media-worker.jeredev.workers.dev/${event.locals.user.account.id}/${lookupData[0].id}.webp`
+            lookupData[0].image = `https://media.expired.app/${event.locals.user.account.id}/${lookupData[0].id}.webp`
             // const path = `${event.locals.user.account.id}/${lookupData[0].id}`
             // const { data: imageData, error: imageURLError } = await supabase
             //   .storage
@@ -313,7 +313,7 @@ export async function post(event: RequestEvent) {
                   // console.log(sharpData) //  <Buffer ...
                   // START: R2 Object Upload
                   // START: Upload to R2
-                  const r2Upload = await fetch(`https://expired-media-worker.jeredev.workers.dev/${event.locals.user?.account.id}/${data[0].id}.${info.format}`, {
+                  const r2Upload = await fetch(`https://media.expired.app/${event.locals.user?.account.id}/${data[0].id}.${info.format}`, {
                     method: 'PUT',
                     body: sharpData,
                     headers: {
@@ -353,7 +353,7 @@ export async function post(event: RequestEvent) {
                       throw lookupError
                     }
                     if (lookupData) {
-                      lookupData[0].image = `https://expired-media-worker.jeredev.workers.dev/${event.locals.user.account.id}/${lookupData[0].id}.webp`
+                      lookupData[0].image = `https://media.expired.app/${event.locals.user.account.id}/${lookupData[0].id}.webp`
                       response = lookupData
                       // const path = `${event.locals.user?.id}/${lookupData[0].id}`
                       // const { data: imageData, error: imageURLError } = await supabase
