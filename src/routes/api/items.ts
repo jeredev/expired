@@ -50,7 +50,18 @@ export async function get(event: RequestEvent) {
       }
       const { data, error } = await lookup
       if (data) {
+        // Cloudflare R2 start
+        data.forEach((item) => {
+          if (item.imagePath) {
+            item.image = `https://expired-worker.jeredev.workers.dev/${event.locals.user.account.id}/${item.imagePath}.webp`
+          }
+        })
+        return {
+          status: 200,
+          body: JSON.stringify(data)
+        }
         // Loop through all items and build an array of file paths to be downloaded
+        /*
         const imagePaths: (string)[] = []
         if (data.length) {
           data.forEach((item) => {
@@ -61,6 +72,7 @@ export async function get(event: RequestEvent) {
             imagePaths.push(objPath)
           })
           if (imagePaths.length) {
+            // START: Attempt to use Cloudflare R2
             const chunks = []
             const chunkSize = 40
             let chunkTracker = 0
@@ -99,6 +111,7 @@ export async function get(event: RequestEvent) {
             body: JSON.stringify(data)
           }
         }
+        */
       }
       if (error) {
         console.error('Error:', error)

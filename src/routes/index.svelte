@@ -12,9 +12,13 @@
         const items = await itemsResponse.json()
         const categoriesResponse = await fetch('/api/categories')
         const categories = await categoriesResponse.json()
+        // const objects = await fetch('https://expired-worker.jeredev.workers.dev/test.png')
+        // const objectsResponse = await fetch(`http://127.0.0.1:8787/${user.account.id}`)
+        // const objects = await objectsResponse.json()
         return {
           props: {
             items,
+            // objects,
             categories,
             user,
           },
@@ -74,6 +78,8 @@
   import Item from "../components/Item.svelte"
   import Messenger from "../components/Messenger.svelte"
   import { displayMode, sortingMode, timeStatusMode, message, time } from "../stores"
+
+  // export let objects: Array<any>
 
   export let categories: Array<CategoryProps>
 
@@ -740,6 +746,20 @@
   })
 
   onMount(async() => {
+    // if (objects) {
+    //   console.log('objects below:')
+    //   // console.log(objects.objects)
+    //   /*
+    //     customMetadata: {}
+    //     etag: "9d1bcb1b5b70114412711fa7c102efc3"
+    //     httpEtag: "\"9d1bcb1b5b70114412711fa7c102efc3\""
+    //     httpMetadata: {contentType: 'image/webp'}
+    //     key: "47e31c57-2b1f-458d-baab-f07df54ee18a/007dbf07-1ebc-4f89-97d0-4f0edc7d794c.webp"
+    //     size: 88900
+    //     uploaded: "2022-05-12T00:48:03.796Z"
+    //     version: "6e2da43fcda84086a09df5a290d531bb"
+    //   */
+    // }
     if (items && items.length && listings === null) {
       generateListings()
     }
