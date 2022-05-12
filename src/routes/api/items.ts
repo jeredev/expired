@@ -54,7 +54,7 @@ export async function get(event: RequestEvent) {
         data.forEach((item) => {
           if (item.imagePath) {
             // item.image = `https://expired-worker.jeredev.workers.dev/${event.locals.user.account.id}/${item.imagePath}.webp`
-            item.image = `http://127.0.0.1:8787/${event.locals.user.account.id}/${item.imagePath}.webp`
+            item.image = `https://expired-worker.jeredev.workers.dev/${event.locals.user.account.id}/${item.imagePath}.webp`
           }
         })
         return {
