@@ -367,7 +367,8 @@
       })
       // Res.error
       if (!res.ok) {
-        alert('not ok')
+        // alert('not ok')
+        console.log('addImage not ok!')
         statusProcessing = false
         const error = await res.json()
         if (error.message) {
